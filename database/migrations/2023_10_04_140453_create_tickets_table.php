@@ -17,7 +17,6 @@ return new class extends Migration
             $table->unsignedBigInteger('company_id'); // Chiave esterna per l'azienda
             $table->string('status');
             $table->text('description');
-            $table->string('type');
             $table->string('file')->nullable();
             $table->string('duration'); // Durata del ticket in minuti
             $table->unsignedBigInteger('admin_user_id')->nullable(); // Chiave esterna per l'utente admin

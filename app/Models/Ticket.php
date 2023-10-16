@@ -42,4 +42,8 @@ class Ticket extends Model
     {
         return $this->hasMany(TicketStatusUpdate::class);
     }
+
+    public function ticketType() {
+        return $this->belongsTo(TicketType::class);
+    }
 }

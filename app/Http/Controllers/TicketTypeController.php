@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\TicketStatusUpdate;
+use App\Models\TicketType;
 use Illuminate\Http\Request;
 
-class TicketStatusUpdateController extends Controller
+class TicketTypeController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -34,7 +34,7 @@ class TicketStatusUpdateController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(TicketStatusUpdate $ticketStatusUpdate)
+    public function show(TicketType $ticketType)
     {
         //
     }
@@ -42,7 +42,7 @@ class TicketStatusUpdateController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(TicketStatusUpdate $ticketStatusUpdate)
+    public function edit(TicketType $ticketType)
     {
         //
     }
@@ -50,7 +50,7 @@ class TicketStatusUpdateController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, TicketStatusUpdate $ticketStatusUpdate)
+    public function update(Request $request, TicketType $ticketType)
     {
         //
     }
@@ -58,7 +58,7 @@ class TicketStatusUpdateController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(TicketStatusUpdate $ticketStatusUpdate)
+    public function destroy(TicketType $ticketType)
     {
         //
     }
