@@ -1,2 +1,3 @@
 frontend
 /sslcert/private.key
+.env
