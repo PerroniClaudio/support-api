@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('type_form_fields', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('type_id');
+            $table->unsignedBigInteger('ticket_type_id');
             $table->string('field_name');
             $table->string('field_type');
             $table->string('field_label');
@@ -29,7 +29,7 @@ return new class extends Migration
 
             $table->timestamps();
 
-            $table->foreign('type_id')
+            $table->foreign('ticket_type_id')
                 ->references('id')
                 ->on('ticket_types');
         });

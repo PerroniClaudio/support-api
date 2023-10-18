@@ -54,13 +54,19 @@ class TicketController extends Controller
             'type' => 'required|string',
         ]);
 
+        if($request->file('file')) {
+            $file = $request->file('file');
+            $file_name = time() . '_' . $file->getClientOriginalName();
+            $storeFile = $file->storeAs("test", $file_name, "gcs");  
+        }
+
         $ticket = Ticket::create([
             'description' => $fields['description'],
             'type' => $fields['type'],
             'user_id' => $user->id,
             'status' => '0',
             'company_id' => auth()->user()->company_id,
-            'file' =>  $request->file('file') ? $request->file('file')->store('files') : null,
+            'file' =>  $file_name  ? $file_name : null,
         ]);
 
         cache()->forget('user_' . $user->id . '_tickets');

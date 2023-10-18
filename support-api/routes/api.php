@@ -18,6 +18,11 @@ Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     return $request->user();
 });
 
+Route::middleware(['auth:sanctum'])->get(
+    "/ticket-types", 
+    [App\Http\Controllers\UserController::class, "ticketTypes"]
+);
+
 Route::post(
     "/upload-file", 
     [App\Http\Controllers\FileUploadController::class, "uploadFileToCloud"]
