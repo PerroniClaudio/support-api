@@ -22,9 +22,11 @@ ENV PATH="${PATH}:/root/.composer/vendor/bin"
 
 # Altre personalizzazioni, se necessario
 
-
-
 WORKDIR /var/www/html
+
+# Altre personalizzazioni, se necessario
+RUN composer install
+
 
 CMD ["php-fpm"]
 
