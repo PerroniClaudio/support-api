@@ -6,6 +6,7 @@ use App\Models\Ticket;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache; // Otherwise no redis connection :)
+use Illuminate\Support\Facades\Storage;
 
 class TicketController extends Controller
 {
