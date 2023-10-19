@@ -1,39 +1,33 @@
-# Use the official PHP 8.2-fpm base image
 FROM php:8.2-fpm
 
-# Set the working directory
-WORKDIR /var/www/html
-
-# Install system dependencies
+# Installa le estensioni necessarie per Laravel
 RUN apt-get update && apt-get install -y \
+    libzip-dev \
+    unzip \
     git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    zip \
-    unzip
+    && docker-php-ext-configure zip \
+    && docker-php-ext-install zip \
+    && docker-php-ext-install pdo pdo_mysql \
+    && pecl install xdebug \
+    && docker-php-ext-enable xdebug
 
-# Install PHP extensions
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
-
-# Install Composer
+# Composer: Installa Composer globalmente
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Copy the application files to the container
-COPY ../support-api .
+# Laravel Installer: Installa il Laravel Installer globalmente
+RUN composer global require laravel/installer
 
-# Install application dependencies
-RUN composer install --no-interaction --no-scripts --no-progress --prefer-dist
+# Aggiungi il binario Composer all'ambiente
+ENV PATH="${PATH}:/root/.composer/vendor/bin"
 
-# Generate the application key
-RUN php artisan key:generate
+# Altre personalizzazioni, se necessario
 
-# Set the correct permissions for the storage and bootstrap/cache directories
-RUN chown -R www-data:www-data \
-    storage \
-    bootstrap/cache
+WORKDIR /var/www/html
 
-# Expose port 9000 and start php-fpm server
-EXPOSE 9000
+# Altre personalizzazioni, se necessario
+RUN composer install
+
+
 CMD ["php-fpm"]
+
+EXPOSE 9000
