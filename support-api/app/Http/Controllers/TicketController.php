@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ticket;
+use App\Models\TicketMesage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache; // Otherwise no redis connection :)
@@ -17,7 +18,7 @@ class TicketController extends Controller
     {
         // Show only the tickets belonging to the authenticated user
 
-        $user = auth()->user();
+        $user = $request->user();
         $cacheKey = 'user_' . $user->id . '_tickets';
 
         $tickets = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($user) {
@@ -45,16 +46,15 @@ class TicketController extends Controller
      */
     public function store(Request $request)
     {
-        //
 
-        $user = auth()->user();
+        $user = $request->user();
 
         $fields = $request->validate([
             'description' => 'required|string',
-            'type' => 'required|string',
+            'type_id' => 'required|int',
         ]);
 
-        if($request->file('file')) {
+        if($request->file('file') != null) {
             $file = $request->file('file');
             $file_name = time() . '_' . $file->getClientOriginalName();
             $storeFile = $file->storeAs("test", $file_name, "gcs");  
@@ -62,14 +62,29 @@ class TicketController extends Controller
 
         $ticket = Ticket::create([
             'description' => $fields['description'],
-            'type' => $fields['type'],
+            'type_id' => $fields['type_id'],
             'user_id' => $user->id,
             'status' => '0',
-            'company_id' => auth()->user()->company_id,
-            'file' =>  $file_name  ? $file_name : null,
+            'company_id' => $user->company_id,
+            'file' =>  $request->file('file') != null  ? $file_name : null,
+            'duration' => 0
         ]);
 
         cache()->forget('user_' . $user->id . '_tickets');
+
+        $ticketMessage = TicketMesage::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'message' => $fields['description'],
+            'is_read' => 0
+        ]);
+        
+        $ticketMessage = TicketMesage::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $user->id,
+            'message' => json_encode($request['messageData']),
+            'is_read' => 0
+        ]);
 
         return response([
             'ticket' => $ticket,
@@ -83,11 +98,11 @@ class TicketController extends Controller
     public function show(Ticket $ticket)
     {
 
-        $user = auth()->user();
+        $user = $request->user();
         $cacheKey = 'user_' . $user->id . '_tickets_show:' . $ticket->id;
 
         $tickets = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($user) {
-            return Ticket::where('id', $ticket->id)->where('user_id', auth()->id())->first();
+            return Ticket::where('id', $ticket->id)->where('user_id', $user->id)->first();
         });
 
         return response([
@@ -113,7 +128,7 @@ class TicketController extends Controller
     {
         //
 
-        $user = auth()->user();
+        $user = $request->user();
         $cacheKey = 'user_' . $user->id . '_tickets_show:' . $ticket->id;
 
         $fields = $request->validate([
@@ -121,7 +136,7 @@ class TicketController extends Controller
             'due_date' => 'required|date',
         ]);
 
-        $ticket = Ticket::where('id', $ticket->id)->where('user_id', auth()->id())->first();
+        $ticket = Ticket::where('id', $ticket->id)->where('user_id', $user->id)->first();
 
         $ticket->update([
             'duration' => $fields['duration'],
@@ -141,8 +156,9 @@ class TicketController extends Controller
     public function destroy(Ticket $ticket)
     {
         //
+        $user = $request->user();
 
-        $ticket = Ticket::where('id', $ticket->id)->where('user_id', auth()->id())->first();
+        $ticket = Ticket::where('id', $ticket->id)->where('user_id', $user->id)->first();
         cache()->forget('user_' . $user->id . '_tickets');
 
         $ticket->update([

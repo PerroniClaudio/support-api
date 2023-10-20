@@ -19,7 +19,8 @@ class Ticket extends Model
         'duration',
         'admin_user_id',
         'group_id',
-        'due_date'
+        'due_date',
+        'type_id'
     ];
 
     /* get the owner */

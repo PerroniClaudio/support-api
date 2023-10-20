@@ -17,10 +17,10 @@ class TicketFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_id' => fake()->numberBetween(1, 10),
-            'company_id' => fake()->numberBetween(1, 10),
+            'user_id' => fake()->numberBetween(9, 11),
+            'company_id' => fake()->numberBetween(2, 4),
             'status' => fake()->numberBetween(0, 3),
-            'type' => 'Ticket di prova',
+            'type_id' => fake()->numberBetween(1, 10),
             'description' => fake()->sentence(),
             'duration' => 0,
         ];

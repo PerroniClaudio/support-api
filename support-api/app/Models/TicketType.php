@@ -18,7 +18,7 @@ class TicketType extends Model
     }
 
     public function typeFormField() {
-        return $this->hasMany(TypeFormFields::class);
+        return $this->hasMany(TypeFormFields::class, 'ticket_type_id');
     }
 
     public function companies() {

@@ -18,7 +18,8 @@ services:
   php:
     platform: linux/arm64
     build:
-      context: ./php/
+      context: ./support-api
+      dockerfile: Dockerfile
     image: blaudio/supporto-ift-api
     volumes:
       - ./support-api:/var/www/html

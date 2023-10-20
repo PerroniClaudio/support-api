@@ -23,6 +23,15 @@ Route::middleware(['auth:sanctum'])->get(
     [App\Http\Controllers\UserController::class, "ticketTypes"]
 );
 
+Route::middleware(['auth:sanctum'])->get(
+    "/ticket-type-webform/{ticketType}", 
+    [App\Http\Controllers\TicketTypeController::class, "getWebForm"]
+);
+
+Route::middleware(['auth:sanctum'])->group(function() {
+    Route::resource('ticket', App\Http\Controllers\TicketController::class);
+});
+
 Route::post(
     "/upload-file", 
     [App\Http\Controllers\FileUploadController::class, "uploadFileToCloud"]
