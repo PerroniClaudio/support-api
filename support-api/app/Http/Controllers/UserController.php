@@ -23,7 +23,7 @@ class UserController extends Controller
 
         $user = $request->user();
 
-        $ticketTypes = $user->company->ticketTypes;
+        $ticketTypes = $user->company->ticketTypes()->with('category')->get();
 
         return response([
             'ticketTypes' => $ticketTypes,

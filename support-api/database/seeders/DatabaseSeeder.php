@@ -20,18 +20,12 @@ class DatabaseSeeder extends Seeder
             'email' => 'c.perroni@example.com',
         ]);
 
-        \App\Models\Company::factory(4)->create();
 
-        \App\Models\TicketType::factory(8)
-            ->has(\App\Models\Company::factory()->count(3))
-            ->has(\App\Models\TypeFormFields::factory()->count(5))
+        \App\Models\Company::factory(4)
+            ->has(\App\Models\TicketType::factory(8)
+                ->has(\App\Models\TypeFormFields::factory()->count(5))
+                ->count(3))
             ->create();
-
-        // \App\Models\Company::factory(4)
-        //     ->has(\App\Models\TicketType::factory(8)
-        //         ->has(\App\Models\TypeFormFields::factory()->count(5))
-        //         ->count(3))
-        //     ->create();
 
   
 
