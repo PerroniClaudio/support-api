@@ -75,14 +75,14 @@ class TicketController extends Controller
         $ticketMessage = TicketMesage::create([
             'ticket_id' => $ticket->id,
             'user_id' => $user->id,
-            'message' => $fields['description'],
+            'message' => json_encode($request['messageData']),
             'is_read' => 0
         ]);
-        
+
         $ticketMessage = TicketMesage::create([
             'ticket_id' => $ticket->id,
             'user_id' => $user->id,
-            'message' => json_encode($request['messageData']),
+            'message' => $fields['description'],
             'is_read' => 0
         ]);
 

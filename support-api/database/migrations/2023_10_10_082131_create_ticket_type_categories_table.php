@@ -11,10 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('ticket_types', function (Blueprint $table) {
+        Schema::create('ticket_type_categories', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->foreignId('ticket_type_category_id')->constrained();
+            $table->boolean('is_problem');
+            $table->boolean('is_request');
             $table->timestamps();
         });
     }
@@ -24,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('ticket_types');
+        Schema::dropIfExists('ticket_type_categories');
     }
 };
