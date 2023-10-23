@@ -18,4 +18,9 @@ class Company extends Model
     {
         return $this->belongsToMany(TicketType::class, 'company_ticket_types');
     }
+
+    public function tickets()
+    {
+        return $this->hasMany(Ticket::class);
+    }
 }

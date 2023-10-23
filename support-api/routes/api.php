@@ -2,6 +2,7 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\TicketMessageController;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,6 +19,17 @@ Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     return $request->user();
 });
 
+Route::middleware(['auth:sanctum'])->group( function() {
+    Route::get(
+       "/ticket/{ticket_id}/messages", 
+       [TicketMessageController::class, "index"]
+    );
+});
+
+Route::middleware(['auth:sanctum'])->group(function() {
+    Route::resource('ticket', App\Http\Controllers\TicketController::class);
+});
+
 Route::middleware(['auth:sanctum'])->get(
     "/ticket-types", 
     [App\Http\Controllers\UserController::class, "ticketTypes"]
@@ -28,9 +40,7 @@ Route::middleware(['auth:sanctum'])->get(
     [App\Http\Controllers\TicketTypeController::class, "getWebForm"]
 );
 
-Route::middleware(['auth:sanctum'])->group(function() {
-    Route::resource('ticket', App\Http\Controllers\TicketController::class);
-});
+
 
 Route::post(
     "/upload-file", 

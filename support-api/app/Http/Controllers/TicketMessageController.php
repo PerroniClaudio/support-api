@@ -3,23 +3,19 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ticket;
-use App\Models\TicketMesage;
+use App\Models\TicketMessage;
 use Illuminate\Http\Request;
 
-class TicketMesageController extends Controller
+class TicketMessageController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index($ticket_id, Request $request)
     {
         //
 
-        $fields = $request->validate([
-            'ticket_id' => 'required|integer',
-        ]);
-
-        $ticket = Ticket::where('ticket_id', $fields['ticket_id'])->get();
+        $ticket = Ticket::where('id', $ticket_id)->with(['messages'])->get()->first();
 
         if(!$ticket) {
             return response([
@@ -27,10 +23,8 @@ class TicketMesageController extends Controller
             ], 404);
         }
 
-        $ticket_messages = TicketMesage::where('ticket_id', $fields['ticket_id'])->get();
-
         return response([
-            'ticket_messages' => $ticket_messages,
+            'ticket_messages' => $ticket->messages,
         ], 200);
 
     }
@@ -60,7 +54,7 @@ class TicketMesageController extends Controller
             'ticket_id' => 'required|integer',
         ]);
 
-        $ticket_message = TicketMesage::create([
+        $ticket_message = TicketMessage::create([
             'message' => $fields['message'],
             'ticket_id' => $fields['ticket_id'],
             'user_id' => auth()->id(),
@@ -74,7 +68,7 @@ class TicketMesageController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(TicketMesage $ticketMesage)
+    public function show(TicketMessage $ticketMesage)
     {
         //Not allowed 
 
@@ -88,7 +82,7 @@ class TicketMesageController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(TicketMesage $ticketMesage)
+    public function edit(TicketMessage $ticketMesage)
     {
         //
 
@@ -101,7 +95,7 @@ class TicketMesageController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, TicketMesage $ticketMesage)
+    public function update(Request $request, TicketMessage $ticketMesage)
     {
         //
 
@@ -109,7 +103,7 @@ class TicketMesageController extends Controller
             'is_read' => 'required|boolean',
         ]);
 
-        $ticket_message = TicketMesage::where('id', $ticketMesage->id)->first();
+        $ticket_message = TicketMessage::where('id', $ticketMesage->id)->first();
 
         if(!$ticket_message) {
             return response([
@@ -130,11 +124,11 @@ class TicketMesageController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(TicketMesage $ticketMesage)
+    public function destroy(TicketMessage $ticketMesage)
     {
         //
 
-        $ticket_message = TicketMesage::where('id', $ticketMesage->id)->where('user_id', auth()->id())->first();
+        $ticket_message = TicketMessage::where('id', $ticketMesage->id)->where('user_id', auth()->id())->first();
 
         if(!$ticket_message) {
             return response([

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Ticket;
-use App\Models\TicketMesage;
+use App\Models\TicketMessage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache; // Otherwise no redis connection :)
@@ -72,14 +72,14 @@ class TicketController extends Controller
 
         cache()->forget('user_' . $user->id . '_tickets');
 
-        $ticketMessage = TicketMesage::create([
+        $ticketMessage = TicketMessage::create([
             'ticket_id' => $ticket->id,
             'user_id' => $user->id,
             'message' => json_encode($request['messageData']),
             'is_read' => 0
         ]);
 
-        $ticketMessage = TicketMesage::create([
+        $ticketMessage = TicketMessage::create([
             'ticket_id' => $ticket->id,
             'user_id' => $user->id,
             'message' => $fields['description'],
@@ -95,19 +95,23 @@ class TicketController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Ticket $ticket)
+    public function show($id, Request $request)
     {
 
         $user = $request->user();
-        $cacheKey = 'user_' . $user->id . '_tickets_show:' . $ticket->id;
+        $cacheKey = 'user_' . $user->id . '_tickets_show:' . $id;
 
-        $tickets = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($user) {
-            return Ticket::where('id', $ticket->id)->where('user_id', $user->id)->first();
+
+        $ticket = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($user, $id) {
+            $item = Ticket::where('id', $id)->where('user_id', $user->id)->with(['ticketType','company', 'user'])->first();
+
+            return [
+                'ticket' => $item,
+                'from' => time(),
+            ];
         });
 
-        return response([
-            'ticket' => $ticket,
-        ], 200);
+        return response($ticket, 200);
     }
 
     /**

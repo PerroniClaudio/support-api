@@ -45,6 +45,10 @@ class Ticket extends Model
     }
 
     public function ticketType() {
-        return $this->belongsTo(TicketType::class);
+        return $this->belongsTo(TicketType::class, 'type_id');
+    }
+
+    public function company() {
+        return $this->belongsTo(Company::class);
     }
 }
