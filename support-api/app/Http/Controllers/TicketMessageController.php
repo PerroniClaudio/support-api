@@ -15,7 +15,7 @@ class TicketMessageController extends Controller
     {
         //
 
-        $ticket = Ticket::where('id', $ticket_id)->with(['messages'])->get()->first();
+        $ticket = Ticket::where('id', $ticket_id)->get()->first();
 
         if(!$ticket) {
             return response([
@@ -23,8 +23,10 @@ class TicketMessageController extends Controller
             ], 404);
         }
 
+        $tickemessages = TicketMessage::where('ticket_id', $ticket_id)->with(['user'])->get();
+
         return response([
-            'ticket_messages' => $ticket->messages,
+            'ticket_messages' => $tickemessages,
         ], 200);
 
     }
@@ -45,19 +47,20 @@ class TicketMessageController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store($id, Request $request)
     {
         //
 
+        $user = $request->user();
+
         $fields = $request->validate([
             'message' => 'required|string',
-            'ticket_id' => 'required|integer',
         ]);
 
         $ticket_message = TicketMessage::create([
             'message' => $fields['message'],
-            'ticket_id' => $fields['ticket_id'],
-            'user_id' => auth()->id(),
+            'ticket_id' => $id,
+            'user_id' => $user->id,
         ]);
 
         return response([

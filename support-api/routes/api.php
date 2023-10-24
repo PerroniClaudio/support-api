@@ -20,10 +20,17 @@ Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
 });
 
 Route::middleware(['auth:sanctum'])->group( function() {
-    Route::get(
-       "/ticket/{ticket_id}/messages", 
-       [TicketMessageController::class, "index"]
+   
+
+    Route::post(
+        "/ticket/{ticket_id}/message", 
+        [TicketMessageController::class, "store"]
     );
+
+    Route::get(
+        "/ticket/{ticket_id}/messages", 
+        [TicketMessageController::class, "index"]
+     );
 });
 
 Route::middleware(['auth:sanctum'])->group(function() {
