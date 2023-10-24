@@ -23,4 +23,9 @@ class Company extends Model
     {
         return $this->hasMany(Ticket::class);
     }
+
+    public function offices()
+    {
+        return $this->hasMany(Office::class);
+    }
 }
