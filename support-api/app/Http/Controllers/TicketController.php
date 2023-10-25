@@ -58,21 +58,25 @@ class TicketController extends Controller
             'type_id' => 'required|int',
         ]);
 
-        if($request->file('file') != null) {
-            $file = $request->file('file');
-            $file_name = time() . '_' . $file->getClientOriginalName();
-            $storeFile = $file->storeAs("test", $file_name, "gcs");  
-        }
-
+        
         $ticket = Ticket::create([
             'description' => $fields['description'],
             'type_id' => $fields['type_id'],
             'user_id' => $user->id,
             'status' => '0',
             'company_id' => $user->company_id,
-            'file' =>  $request->file('file') != null  ? $file_name : null,
+            'file' => null,
             'duration' => 0
         ]);
+
+        if($request->file('file') != null) {
+            $file = $request->file('file');
+            $file_name = time() . '_' . $file->getClientOriginalName();
+            $storeFile = $file->storeAs("tickets/" . $ticket->id . "/", $file_name, "gcs");  
+            $ticket->update([
+                'file' => $file_name,
+            ]);
+        }
 
         cache()->forget('user_' . $user->id . '_tickets');
 
