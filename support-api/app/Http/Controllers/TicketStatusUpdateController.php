@@ -10,9 +10,12 @@ class TicketStatusUpdateController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index($id)
     {
-        //
+        $ticketStatusUpdates = TicketStatusUpdate::where('ticket_id', $id)->with(['user'])->get();
+        return response([
+            'statusUpdates' => $ticketStatusUpdates,
+        ], 200);
     }
 
     /**
@@ -26,9 +29,25 @@ class TicketStatusUpdateController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
+    public function store($id, Request $request)
     {
-        //
+        
+        $user = $request->user();
+
+        $fields = $request->validate([
+            'status' => 'required|string',
+        ]);
+
+        $ticketStatusUpdate = TicketStatusUpdate::create([
+            'ticket_id' => $id,
+            'user_id' => $user->id,
+            'content' => $fields['status'],
+        ]);
+
+        return response([
+            'ticketStatusUpdate' => $ticketStatusUpdate,
+        ], 200);
+
     }
 
     /**

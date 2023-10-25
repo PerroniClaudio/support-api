@@ -12,7 +12,7 @@ class TicketStatusUpdate extends Model
     protected $fillable = [
         'ticket_id',
         'user_id',
-        'status',
+        'content',
     ];
 
     /* get the owner */
