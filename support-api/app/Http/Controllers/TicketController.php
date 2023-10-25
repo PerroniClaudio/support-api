@@ -4,10 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Ticket;
 use App\Models\TicketMessage;
+use App\Models\TicketStatusUpdate;
+use App\Models\Group;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache; // Otherwise no redis connection :)
 use Illuminate\Support\Facades\Storage;
+
 
 class TicketController extends Controller
 {
@@ -168,5 +171,43 @@ class TicketController extends Controller
         $ticket->update([
             'status' => '5',
         ]);
+    }
+
+    public function updateStatus(Ticket $ticket, Request $request) {
+
+        $ticket->update([
+            'status' => $request->status,
+        ]);
+
+        TicketStatusUpdate::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $request->user()->id,
+            'content' => "Stato del ticket modificato in " . $request->status,
+        ]);
+
+        return response([
+            'ticket' => $ticket,
+        ], 200);
+
+    }
+
+    public function assignToGroup(Ticket $ticket, Request $request) {
+
+        $ticket->update([
+            'group_id' => $request->group_id,
+        ]);
+
+        $group = Group::where('id', $request->group_id)->first();
+
+        TicketStatusUpdate::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $request->user()->id,
+            'content' => "Ticket assegnato al gruppo " . $group->name,
+        ]);
+
+        return response([
+            'ticket' => $ticket,
+        ], 200);
+
     }
 }
