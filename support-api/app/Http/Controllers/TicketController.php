@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\TicketStatusUpdate;
+use App\Models\User;
 use App\Models\Group;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -203,6 +204,26 @@ class TicketController extends Controller
             'ticket_id' => $ticket->id,
             'user_id' => $request->user()->id,
             'content' => "Ticket assegnato al gruppo " . $group->name,
+        ]);
+
+        return response([
+            'ticket' => $ticket,
+        ], 200);
+
+    }
+
+    public function assignToAdminUser(Ticket $ticket, Request $request) {
+
+        $ticket->update([
+            'admin_user_id' => $request->admin_user_id,
+        ]);
+
+        $adminUser = User::where('id', $request->admin_user_id)->first();
+
+        TicketStatusUpdate::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $request->user()->id,
+            'content' => "Ticket assegnato all'utente " . $adminUser->name . " " . $adminUser->surname,
         ]);
 
         return response([
