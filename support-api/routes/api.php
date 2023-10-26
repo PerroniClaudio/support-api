@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TicketMessageController;
 use App\Http\Controllers\TicketStatusUpdateController;
+use App\Http\Controllers\CompanyController;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,6 +43,20 @@ Route::middleware(['auth:sanctum'])->group( function() {
         "/ticket/{ticket_id}/status-updates", 
         [TicketStatusUpdateController::class, "index"]
      );
+});
+
+Route::middleware(['auth:sanctum'])->group( function() {
+
+    Route::get(
+        "/companies/{company}/offices", 
+        [CompanyController::class, "offices"]
+    );
+
+    Route::get(
+        "/companies/{company}/admins", 
+        [CompanyController::class, "admins"]
+    );
+
 });
 
 Route::middleware(['auth:sanctum'])->group(function() {

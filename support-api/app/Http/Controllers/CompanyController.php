@@ -62,4 +62,20 @@ class CompanyController extends Controller
     {
         //
     }
+
+    public function offices(Company $company) {
+        $offices = $company->offices()->get();
+
+        return response([
+            'offices' => $offices,
+        ], 200);
+    }
+
+    public function admins(Company $company) {
+        $users = $company->users()->where('is_company_admin', 1)->get();
+
+        return response([
+            'users' => $users,
+        ], 200);
+    }
 }
