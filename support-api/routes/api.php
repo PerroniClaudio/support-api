@@ -21,6 +21,9 @@ Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
     return $request->user();
 });
 
+Route::middleware(['auth:sanctum'])->get('/user-test', [App\Http\Controllers\UserController::class, "ticketTypes"]);
+
+
 Route::middleware(['auth:sanctum'])->group( function() {
     Route::post(
         "/ticket/{ticket_id}/message", 

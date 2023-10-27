@@ -16,6 +16,10 @@ Route::post('/login', [AuthenticatedSessionController::class, 'store'])
                 ->middleware('guest')
                 ->name('login');
 
+Route::post('/login-microsoft', [AuthenticatedSessionController::class, 'storeMicrosoft'])
+                ->middleware('guest')
+                ->name('login-microsoft');
+
 Route::post('/forgot-password', [PasswordResetLinkController::class, 'store'])
                 ->middleware('guest')
                 ->name('password.email');

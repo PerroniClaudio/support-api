@@ -29,6 +29,7 @@ class User extends Authenticatable
         'is_admin',
         'company_id',
         'is_company_admin',
+        'microsoft_token'
     ];
 
     /**

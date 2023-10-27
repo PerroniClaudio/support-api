@@ -31,5 +31,13 @@ class UserController extends Controller
 
     }
 
+    public function test(Request $request) {
+
+        return response([
+            'test' => $request,
+        ], 200);
+
+    }
+
 
 }
