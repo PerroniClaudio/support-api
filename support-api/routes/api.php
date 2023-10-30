@@ -6,6 +6,7 @@ use App\Http\Controllers\TicketMessageController;
 use App\Http\Controllers\TicketStatusUpdateController;
 use App\Http\Controllers\CompanyController;
 
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -66,6 +67,10 @@ Route::middleware(['auth:sanctum'])->group(function() {
     Route::resource('ticket', App\Http\Controllers\TicketController::class);
 });
 
+Route::middleware(['auth:sanctum'])->group(function() {
+    Route::resource('attendance', App\Http\Controllers\AttendanceController::class);
+});
+
 Route::middleware(['auth:sanctum'])->get(
     "/ticket-types", 
     [App\Http\Controllers\UserController::class, "ticketTypes"]
@@ -75,8 +80,6 @@ Route::middleware(['auth:sanctum'])->get(
     "/ticket-type-webform/{ticketType}", 
     [App\Http\Controllers\TicketTypeController::class, "getWebForm"]
 );
-
-
 
 Route::post(
     "/upload-file", 

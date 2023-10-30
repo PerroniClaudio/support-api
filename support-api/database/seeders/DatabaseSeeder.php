@@ -28,9 +28,13 @@ class DatabaseSeeder extends Seeder
         //     ->create();
 
   
-       \App\Models\Office::factory(16)->create();
+       //\App\Models\Office::factory(16)->create();
 
-            
+       //\App\Models\Attendance::factory(16)->create();
+
+        \App\Models\AttendanceType::factory(4)->has(
+            \App\Models\Attendance::factory()->count(12)
+        )->create();
         
     }
 }

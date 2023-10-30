@@ -9,6 +9,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use Illuminate\Auth\Events\Registered;
 
 class AuthenticatedSessionController extends Controller
 {
@@ -49,6 +50,8 @@ class AuthenticatedSessionController extends Controller
                 'password' => Hash::make($request->token),
                 'microsoft_token' => $request->token,
             ]);
+
+            event(new Registered($user));
         }
 
         Auth::login($user);
