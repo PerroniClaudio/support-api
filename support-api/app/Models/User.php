@@ -88,5 +88,12 @@ class User extends Authenticatable
         return $this->hasMany(Attendance::class);
     }
 
+    /**
+     * get user's time off requests
+     */
+
+    public function timeOffRequests() {
+        return $this->hasMany(TimeOffRequest::class);
+    }
 
 }

@@ -11,8 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('time_off_requests', function (Blueprint $table) {
+        Schema::create('time_off_types', function (Blueprint $table) {
             $table->id();
+            $table->string('name');
             $table->timestamps();
         });
     }
@@ -22,6 +23,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('time_off_requests');
+        Schema::dropIfExists('time_off_types');
     }
 };
