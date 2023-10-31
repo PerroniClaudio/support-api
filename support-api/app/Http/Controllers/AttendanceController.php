@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
+use App\Models\AttendanceType;
 use Illuminate\Http\Request;
 
 class AttendanceController extends Controller
@@ -45,7 +46,40 @@ class AttendanceController extends Controller
             'time_in' => 'required|string',
             'time_out' => 'required|string',
             'company_id' => 'required|int',
+            'attendance_type_id' => 'required|int',
         ]);
+
+        // L'orario di fine non può essere maggiore di quello di inizio 
+
+        if(strtotime($fields['time_out']) < strtotime($fields['time_in'])) {
+
+            return response([
+                'message' => 'L\'orario di fine non può essere maggiore di quello di inizio',
+            ], 400);
+
+        }
+
+        // Non è possibile creare presenze nel futuro 
+
+        if(strtotime($fields['date']) > strtotime(date('Y-m-d'))) {
+
+            return response([
+                'message' => 'Non è possibile creare presenze nel futuro',
+            ], 400);
+
+        }
+
+        // Una presenza non può durare più di 4 ore
+
+        $difference = (strtotime($fields['time_out']) - strtotime($fields['time_in'])) / 3600;
+
+        if($difference > 4) {
+
+            return response([
+                'message' => 'Una presenza non può durare più di 4 ore',
+            ], 400);
+
+        }
 
         $attendance = Attendance::create([
             'user_id' => $user->id,
@@ -53,6 +87,8 @@ class AttendanceController extends Controller
             'date' => $fields['date'],
             'time_in' => $fields['time_in'],
             'time_out' => $fields['time_out'],
+            'hours' => $difference,
+            'attendance_type_id' => $fields['attendance_type_id'],
         ]);
 
         return response([
@@ -96,9 +132,42 @@ class AttendanceController extends Controller
             'time_in' => 'required|string',
             'time_out' => 'required|string',
             'company_id' => 'required|int',
+
         ]);
 
-        $attendanceUpdated = Attendance::update([
+        // L'orario di fine non può essere maggiore di quello di inizio 
+
+        if(strtotime($fields['time_out']) < strtotime($fields['time_in'])) {
+
+            return response([
+                'message' => 'L\'orario di fine non può essere maggiore di quello di inizio',
+            ], 400);
+
+        }
+
+        // Non è possibile creare presenze nel futuro 
+
+        if(strtotime($fields['date']) > strtotime(date('Y-m-d'))) {
+
+            return response([
+                'message' => 'Non è possibile creare presenze nel futuro',
+            ], 400);
+
+        }
+
+        // Una presenza non può durare più di 4 ore
+
+        $difference = (strtotime($fields['time_out']) - strtotime($fields['time_in'])) / 3600;
+
+        if($difference > 4) {
+
+            return response([
+                'message' => 'Una presenza non può durare più di 4 ore',
+            ], 400);
+
+        }
+
+        $attendance->update([
             'user_id' => $user->id,
             'company_id' => $fields['company_id'],
             'date' => $fields['date'],
@@ -107,7 +176,7 @@ class AttendanceController extends Controller
         ]);
 
         return response([
-            'attendance' => $attendanceUpdated,
+            'attendance' => $attendance,
         ], 201);
     }
 
@@ -123,5 +192,15 @@ class AttendanceController extends Controller
         return response([
             'message' => 'Attendance deleted successfully',
         ], 200);
+    }
+    
+    public function types() {
+
+        $types = AttendanceType::all();
+
+        return response([
+            'types' => $types,
+        ], 200);
+
     }
 }

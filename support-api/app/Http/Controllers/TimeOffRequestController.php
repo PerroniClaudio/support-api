@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Company;
+use App\Models\TimeOffRequest;
 use Illuminate\Http\Request;
 
-class CompanyController extends Controller
+class TimeOffRequestController extends Controller
 {
     /**
      * Display a listing of the resource.
@@ -13,12 +13,6 @@ class CompanyController extends Controller
     public function index()
     {
         //
-
-        $companies = Company::all();
-
-        return response([
-            'companies' => $companies,
-        ], 200);
     }
 
     /**
@@ -40,7 +34,7 @@ class CompanyController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Company $company)
+    public function show(TimeOffRequest $timeOffRequest)
     {
         //
     }
@@ -48,7 +42,7 @@ class CompanyController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Company $company)
+    public function edit(TimeOffRequest $timeOffRequest)
     {
         //
     }
@@ -56,7 +50,7 @@ class CompanyController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Company $company)
+    public function update(Request $request, TimeOffRequest $timeOffRequest)
     {
         //
     }
@@ -64,24 +58,8 @@ class CompanyController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Company $company)
+    public function destroy(TimeOffRequest $timeOffRequest)
     {
         //
-    }
-
-    public function offices(Company $company) {
-        $offices = $company->offices()->get();
-
-        return response([
-            'offices' => $offices,
-        ], 200);
-    }
-
-    public function admins(Company $company) {
-        $users = $company->users()->where('is_company_admin', 1)->get();
-
-        return response([
-            'users' => $users,
-        ], 200);
     }
 }

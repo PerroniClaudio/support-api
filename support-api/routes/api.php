@@ -7,6 +7,7 @@ use App\Http\Controllers\TicketStatusUpdateController;
 use App\Http\Controllers\CompanyController;
 
 
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -52,6 +53,11 @@ Route::middleware(['auth:sanctum'])->group( function() {
 Route::middleware(['auth:sanctum'])->group( function() {
 
     Route::get(
+        "/companies", 
+        [CompanyController::class, "index"]
+    );
+
+    Route::get(
         "/companies/{company}/offices", 
         [CompanyController::class, "offices"]
     );
@@ -69,7 +75,10 @@ Route::middleware(['auth:sanctum'])->group(function() {
 
 Route::middleware(['auth:sanctum'])->group(function() {
     Route::resource('attendance', App\Http\Controllers\AttendanceController::class);
+    Route::get('presenze-type', [App\Http\Controllers\AttendanceController::class, "types"]);
 });
+
+
 
 Route::middleware(['auth:sanctum'])->get(
     "/ticket-types", 
