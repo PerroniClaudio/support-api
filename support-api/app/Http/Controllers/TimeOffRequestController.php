@@ -26,7 +26,6 @@ class TimeOffRequestController extends Controller
 
                 if($currentRequest) {
                     $currentRequest['date_to'] = $req->date_to;
-
                     if(isset($requests[$key + 1])) {
                         $nextBatchId = $requests[$key + 1]['batch_id'];
                         $currentBatchId = $req->batch_id;
@@ -37,16 +36,12 @@ class TimeOffRequestController extends Controller
                             $currentRequest = null;
                         }
                     } else {
-                      
                         $formattedRequests[] = $currentRequest;
                         $currentRequest = null;
                     }
-                    
-
                 } else {
                     $currentRequest = $req;
                 }
-
             } else {
                 $formattedRequests[] = $req;
                 $currentRequest = null;
