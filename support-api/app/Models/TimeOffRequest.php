@@ -16,7 +16,7 @@ class TimeOffRequest extends Model
         'date_from',
         'date_to',
         'status',
-
+        'batch_id'
     ];
 
     public function type() {

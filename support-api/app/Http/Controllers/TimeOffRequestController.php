@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\TimeOffRequest;
+use App\Models\TimeOffType;
 use Illuminate\Http\Request;
 
 class TimeOffRequestController extends Controller
@@ -14,10 +15,48 @@ class TimeOffRequestController extends Controller
     {
         //
 
-        $requests = TimeOffRequest::with(['type', 'user'])->where('status', '<>', '4')->orderBy('id', 'desc')->get();
+        $requests = TimeOffRequest::with(['type', 'user'])->where('status', '<>', '4')->orderBy('id', 'asc')->get();
+        
+        $formattedRequests = [];
+        $currentRequest = null;
+
+        foreach( $requests as $key => $req ) {
+
+            if($req->time_off_type_id == 11) {
+
+                if($currentRequest) {
+                    $currentRequest['date_to'] = $req->date_to;
+
+                    if(isset($requests[$key + 1])) {
+                        $nextBatchId = $requests[$key + 1]['batch_id'];
+                        $currentBatchId = $req->batch_id;
+
+                        if($nextBatchId != $currentBatchId) {
+                            
+                            $formattedRequests[] = $currentRequest;
+                            $currentRequest = null;
+                        }
+                    } else {
+                      
+                        $formattedRequests[] = $currentRequest;
+                        $currentRequest = null;
+                    }
+                    
+
+                } else {
+                    $currentRequest = $req;
+                }
+
+            } else {
+                $formattedRequests[] = $req;
+                $currentRequest = null;
+            }
+
+        }
 
         return response([
-            'requests' => $requests
+            'requests' => $formattedRequests,
+           
         ]);
 
     }
@@ -74,17 +113,19 @@ class TimeOffRequestController extends Controller
 
         $requests = json_decode($request->requests);
 
+        $batch_id = uniqid();
+
         foreach( $requests as $time_off_request ) {
 
             $fields = [
                 'date_from' => $time_off_request->date_from,
                 'date_to' => $time_off_request->date_to,
-                'company_id' => $time_off_request->company_id,
                 'time_off_type_id' => $time_off_request->time_off_type_id,
-                'description' => $time_off_request->description,
             ];
 
             $fields['user_id'] = $user->id;
+            $fields['company_id'] = $user->company_id;
+            $fields['batch_id'] = $batch_id;
 
             $request = TimeOffRequest::create($fields);
 

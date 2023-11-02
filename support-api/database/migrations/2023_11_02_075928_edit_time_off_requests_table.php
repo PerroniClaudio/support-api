@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::table('time_off_requests', function (Blueprint $table) {
             $table->dateTime('date_from')->change();
             $table->dateTime('date_to')->change();
+            $table->string('batch_id')->nullable()->after('status');
         });
     }
 
