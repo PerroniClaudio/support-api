@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\TimeOffRequest;
 use App\Models\TimeOffType;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class TimeOffRequestController extends Controller
 {
@@ -110,6 +111,8 @@ class TimeOffRequestController extends Controller
 
         $batch_id = uniqid();
 
+        DB::beginTransaction();
+
         foreach( $requests as $time_off_request ) {
 
             $fields = [
@@ -122,9 +125,25 @@ class TimeOffRequestController extends Controller
             $fields['company_id'] = $user->company_id;
             $fields['batch_id'] = $batch_id;
 
+            $existingRequest = TimeOffRequest::where('user_id', $user->id)
+                ->where(function ($query) use ($fields) {
+                    $query->whereBetween('date_from', [$fields['date_from'], $fields['date_to']])
+                        ->orWhereBetween('date_to', [$fields['date_from'], $fields['date_to']]);
+                })
+                ->first();
+
+            if ($existingRequest) {
+                DB::rollBack();
+                return response([
+                    'message' => 'Hai già una richiesta di permesso in questo periodo',
+                ], 400);
+            }
+
             $request = TimeOffRequest::create($fields);
 
         }
+
+        DB::commit();
 
         return response([
             'message' => 'Richieste di permesso create con successo'
