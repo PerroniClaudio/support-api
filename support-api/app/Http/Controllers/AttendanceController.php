@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\AttendanceType;
+use App\Models\TimeOffRequest;
 use Illuminate\Http\Request;
 
 class AttendanceController extends Controller
@@ -77,6 +78,18 @@ class AttendanceController extends Controller
 
             return response([
                 'message' => 'Una presenza non può durare più di 4 ore',
+            ], 400);
+
+        }
+
+        // Non ci devono essere richieste di ferie in quella presenza
+
+        $timeOffRequests = TimeOffRequest::where('user_id', $user->id)->where('company_id', $fields['company_id'])->where('date_from', '<=', $fields['date'])->where('date_to', '>=', $fields['date'])->get();
+
+        if(count($timeOffRequests) > 0) {
+
+            return response([
+                'message' => 'Non ci devono essere richieste di ferie o permesso nella presenza',
             ], 400);
 
         }

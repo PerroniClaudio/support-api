@@ -157,6 +157,12 @@ class TimeOffRequestController extends Controller
     public function show(TimeOffRequest $timeOffRequest)
     {
         //
+
+        $requests = TimeOffRequest::with(['type', 'user'])->where('batch_id', $timeOffRequest->batch_id)->orderBy('id', 'asc')->get();
+
+        return response([
+            'requests' => $requests,
+        ]);
     }
 
     /**
@@ -181,7 +187,6 @@ class TimeOffRequestController extends Controller
             'date_to' => 'required|string',
             'company_id' => 'required|int',
             'time_off_type_id' => 'required|int',
-            'description' => 'required|string',
         ]);
 
         $timeOffRequest->update($fields);
@@ -189,6 +194,51 @@ class TimeOffRequestController extends Controller
         return response([
             'message' => 'Richiesta di permesso aggiornata con successo'
         ], 201);
+    }
+
+    public function updateBatch(Request $request) {
+
+        $user = $request->user();
+        $requests = json_decode($request->requests);
+
+        DB::beginTransaction();
+
+
+        foreach( $requests as $time_off_request ) {
+
+            $fields = [
+                'date_from' => $time_off_request->date_from,
+                'date_to' => $time_off_request->date_to,
+                'id' => $time_off_request->id,
+            ];
+
+            $existingRequest = TimeOffRequest::where('user_id', $user->id)->where('id', '<>', $time_off_request->id)
+                ->where(function ($query) use ($fields) {
+                    $query
+                        ->whereBetween('date_from', [$fields['date_from'], $fields['date_to']])
+                        ->orWhereBetween('date_to', [$fields['date_from'], $fields['date_to']]);
+                })
+                ->first();
+
+            if ($existingRequest) {
+                DB::rollBack();
+                return response([
+                    'message' => 'Hai già una richiesta di permesso in questo periodo',
+                    'matching' => $existingRequest,
+                    'id' => $time_off_request->id
+                ], 400);
+            }
+
+            $request = TimeOffRequest::where('id', $time_off_request->id)->update($fields);
+
+        }
+
+        DB::commit();
+
+        return response([
+            'message' => 'Richieste di permesso modificate con successo'
+        ], 200);
+
     }
 
     /**

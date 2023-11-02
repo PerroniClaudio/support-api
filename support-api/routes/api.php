@@ -80,6 +80,7 @@ Route::middleware(['auth:sanctum'])->group(function() {
 
 Route::middleware(['auth:sanctum'])->group(function() {
     Route::post('time-off-request/batch', [App\Http\Controllers\TimeOffRequestController::class, "storeBatch"]);
+    Route::patch('time-off-request/batch', [App\Http\Controllers\TimeOffRequestController::class, "updateBatch"]);
 
     Route::resource('time-off-request', App\Http\Controllers\TimeOffRequestController::class);
     Route::get('time-off-type', [App\Http\Controllers\TimeOffRequestController::class, "types"]);
