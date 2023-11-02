@@ -152,4 +152,14 @@ class TimeOffRequestController extends Controller
         ], 200);
 
     }
+
+    public function types() {
+
+        $types = TimeOffType::all();
+
+        return response([
+            'types' => $types
+        ]);
+
+    }
 }

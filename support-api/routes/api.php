@@ -78,6 +78,10 @@ Route::middleware(['auth:sanctum'])->group(function() {
     Route::get('presenze-type', [App\Http\Controllers\AttendanceController::class, "types"]);
 });
 
+Route::middleware(['auth:sanctum'])->group(function() {
+    Route::resource('time-off-request', App\Http\Controllers\TimeOffRequestController::class);
+    Route::get('time-off-type', [App\Http\Controllers\TimeOffRequestController::class, "types"]);
+});
 
 
 Route::middleware(['auth:sanctum'])->get(

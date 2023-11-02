@@ -32,9 +32,13 @@ class DatabaseSeeder extends Seeder
 
        //\App\Models\Attendance::factory(16)->create();
 
-        \App\Models\AttendanceType::factory(4)->has(
-            \App\Models\Attendance::factory()->count(12)
-        )->create();
+        // \App\Models\AttendanceType::factory(4)->has(
+        //     \App\Models\Attendance::factory()->count(12)
+        // )->create();
+
+        // \App\Models\TimeOffType::factory(5)->has(
+        //     \App\Models\TimeOffRequest::factory()->count(3)
+        // )->create();
         
     }
 }
