@@ -84,4 +84,12 @@ class CompanyController extends Controller
             'users' => $users,
         ], 200);
     }
+    
+    public function allusers(Company $company) {
+        $users = $company->users()->get();
+
+        return response([
+            'users' => $users,
+        ], 200);
+    }
 }

@@ -66,6 +66,11 @@ Route::middleware(['auth:sanctum'])->group( function() {
         "/companies/{company}/admins", 
         [CompanyController::class, "admins"]
     );
+    
+    Route::get(
+        "/companies/{company}/allusers", 
+        [CompanyController::class, "allusers"]
+    );
 
 });
 
