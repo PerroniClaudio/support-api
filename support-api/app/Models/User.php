@@ -96,4 +96,8 @@ class User extends Authenticatable
         return $this->hasMany(TimeOffRequest::class);
     }
 
+    public function businessTrips() {
+        return $this->hasMany(BusinessTrip::class);
+    }
+
 }

@@ -39,6 +39,8 @@ class DatabaseSeeder extends Seeder
         // \App\Models\TimeOffType::factory(5)->has(
         //     \App\Models\TimeOffRequest::factory()->count(3)
         // )->create();
+
+        \App\Models\BusinessTrip::factory(10)->create();
         
     }
 }

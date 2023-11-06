@@ -86,6 +86,11 @@ Route::middleware(['auth:sanctum'])->group(function() {
     Route::get('time-off-type', [App\Http\Controllers\TimeOffRequestController::class, "types"]);
 });
 
+Route::middleware(['auth:sanctum'])->group(function() {
+    Route::resource('business-trip', App\Http\Controllers\BusinessTripController::class);
+    Route::post('business-trip/{business_trip}/expense', [App\Http\Controllers\BusinessTripController::class, "storeExpense"]);
+    Route::post('business-trip/{business_trip}/transfer', [App\Http\Controllers\BusinessTripController::class, "storeTransfer"]);
+});
 
 Route::middleware(['auth:sanctum'])->get(
     "/ticket-types", 
