@@ -28,4 +28,12 @@ class Company extends Model
     {
         return $this->hasMany(Office::class);
     }
+
+    public function expenses() {
+        return $this->hasMany(BusinessTripExpense::class);
+    }
+
+    public function transfers() {
+        return $this->hasMany(BusinessTripTransfer::class);
+    }
 }

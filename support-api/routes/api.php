@@ -93,7 +93,9 @@ Route::middleware(['auth:sanctum'])->group(function() {
 
 Route::middleware(['auth:sanctum'])->group(function() {
     Route::resource('business-trip', App\Http\Controllers\BusinessTripController::class);
+    Route::get('business-trip/{business_trip}/expense', [App\Http\Controllers\BusinessTripController::class, "getExpenses"]);
     Route::post('business-trip/{business_trip}/expense', [App\Http\Controllers\BusinessTripController::class, "storeExpense"]);
+    Route::get('business-trip/{business_trip}/transfer', [App\Http\Controllers\BusinessTripController::class, "getTransfers"]);
     Route::post('business-trip/{business_trip}/transfer', [App\Http\Controllers\BusinessTripController::class, "storeTransfer"]);
 });
 

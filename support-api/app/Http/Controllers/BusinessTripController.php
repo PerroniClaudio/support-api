@@ -112,7 +112,7 @@ class BusinessTripController extends Controller
 
     public function getExpenses(BusinessTrip $businessTrip)
     {
-        $expenses = BusinessTripExpense::where('business_trip_id', $businessTrip->id)->get();
+        $expenses = BusinessTripExpense::where('business_trip_id', $businessTrip->id)->with(['company'])->get();
 
         return response([
             'expenses' => $expenses,
@@ -124,11 +124,11 @@ class BusinessTripController extends Controller
 
         $expense = BusinessTripExpense::create([
             'business_trip_id' => $businessTrip->id,
-            'company_id' => $user->company_id,
+            'company_id' => $request->company_id,
             'payment_type' => $request->payment_type,
             'expense_type' => $request->expense_type,
             'amount' => $request->amount,
-            'date' => $request->date,
+            'date' => $request->datetime,
             'address' => $request->address,
             'city' => $request->city,
             'province' => $request->province,
@@ -144,7 +144,7 @@ class BusinessTripController extends Controller
 
     public function getTransfers(BusinessTrip $businessTrip)
     {
-        $transfers = BusinessTripTransfer::where('business_trip_id', $businessTrip->id)->get();
+        $transfers = BusinessTripTransfer::where('business_trip_id', $businessTrip->id)->with(['company'])->get();
 
         return response([
             'transfers' => $transfers,
@@ -156,8 +156,8 @@ class BusinessTripController extends Controller
   
         $transfer = BusinessTripTransfer::create([
             'business_trip_id' => $businessTrip->id,
-            'company_id' => $user->company_id,
-            'date' => $request->date,
+            'company_id' => $request->company_id,
+            'date' => $request->datetime,
             'address' => $request->address,
             'city' => $request->city,
             'province' => $request->province,

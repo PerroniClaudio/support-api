@@ -31,4 +31,8 @@ class BusinessTripExpense extends Model
     public function businessTrip() {
         return $this->belongsTo(BusinessTrip::class);
     }
+
+    public function company() {
+        return $this->belongsTo(Company::class);
+    }
 }

@@ -29,4 +29,8 @@ class BusinessTripTransfer extends Model
         return $this->belongsTo(BusinessTrip::class);
     }
 
+    public function company() {
+        return $this->belongsTo(Company::class);
+    }
+
 }
