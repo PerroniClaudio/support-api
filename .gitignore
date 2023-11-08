@@ -1,3 +1,4 @@
 frontend
 /sslcert/private.key
+usr
 .env
