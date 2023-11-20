@@ -35,7 +35,13 @@ Route::middleware(['auth:sanctum'])->group( function() {
     Route::get(
         "/ticket/{ticket_id}/messages", 
         [TicketMessageController::class, "index"]
-     );
+    );
+
+
+    Route::post(
+        "/ticket/{ticket_id}/file", 
+        [TicketMessageController::class, "storeFile"]
+    );
 });
 
 Route::middleware(['auth:sanctum'])->group( function() {

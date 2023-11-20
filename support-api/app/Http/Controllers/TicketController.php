@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\TicketStatusUpdate;
+use App\Models\TicketFile;
 use App\Models\User;
 use App\Models\Group;
 use Illuminate\Http\Request;
@@ -113,7 +114,7 @@ class TicketController extends Controller
         $ticket = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($user, $id) {
             $item = Ticket::where('id', $id)->where('user_id', $user->id) ->with(['ticketType' => function ($query) {
                 $query->with('category');
-            }, 'company', 'user'])->first();
+            }, 'company', 'user', 'files'])->first();
 
             return [
                 'ticket' => $item,
@@ -235,6 +236,28 @@ class TicketController extends Controller
         return response([
             'ticket' => $ticket,
         ], 200);
+
+    }
+
+    public function storeFile($id, Request $request) {
+
+        if($request->file('file') != null) {
+            $file = $request->file('file');
+            $file_name = time() . '_' . $file->getClientOriginalName();
+            $storeFile = $file->storeAs("tickets/" . $id . "/", $file_name, "gcs");  
+            $ticketFile = TicketFile::create([
+                'ticket_id' => $id,
+                'filename' => $file_name,
+                'path' => $storeFile,
+                'extension' => $file->getClientOriginalExtension(),
+                'mime_type' => $file->getMimeType(),
+                'size' => $file->getSize(),
+            ]);
+
+            return response([
+                'ticketFile' => $ticketFile,
+            ], 200);
+        }
 
     }
 }
