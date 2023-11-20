@@ -34,7 +34,9 @@ Route::middleware(['auth:sanctum'])->group( function() {
     Route::get(
         "/ticket/{ticket_id}/messages", 
         [TicketMessageController::class, "index"]
-     );
+    );
+
+
 });
 
 Route::middleware(['auth:sanctum'])->group( function() {
@@ -80,6 +82,20 @@ Route::middleware(['auth:sanctum'])->group( function() {
 
 Route::middleware(['auth:sanctum'])->group(function() {
     Route::resource('ticket', App\Http\Controllers\TicketController::class);
+    Route::get(
+        "/ticket/{ticket}/files", 
+        [App\Http\Controllers\TicketController::class, "files"]
+    );
+
+    Route::post(
+        "/ticket/{ticket}/file", 
+        [App\Http\Controllers\TicketController::class, "storeFile"]
+    );
+
+    Route::get(
+        "/ticket/file/{id}/temporary_url",
+        [App\Http\Controllers\TicketController::class, "generatedSignedUrlForFile"]
+    );
 });
 
 Route::middleware(['auth:sanctum'])->group(function() {

@@ -51,4 +51,8 @@ class Ticket extends Model
     public function company() {
         return $this->belongsTo(Company::class);
     }
+
+    public function files() {
+        return $this->hasMany(TicketFile::class);
+    }
 }

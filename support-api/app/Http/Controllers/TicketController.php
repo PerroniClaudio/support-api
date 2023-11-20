@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\TicketStatusUpdate;
+use App\Models\TicketFile;
 use App\Models\User;
 use App\Models\Group;
 use Illuminate\Http\Request;
@@ -108,10 +109,12 @@ class TicketController extends Controller
 
         $user = $request->user();
         $cacheKey = 'user_' . $user->id . '_tickets_show:' . $id;
-
+        cache()->forget($cacheKey);
 
         $ticket = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($user, $id) {
-            $item = Ticket::where('id', $id)->where('user_id', $user->id)->with(['ticketType','company', 'user'])->first();
+            $item = Ticket::where('id', $id)->where('user_id', $user->id) ->with(['ticketType' => function ($query) {
+                $query->with('category');
+            }, 'company', 'user', 'files'])->first();
 
             return [
                 'ticket' => $item,
@@ -232,6 +235,54 @@ class TicketController extends Controller
 
         return response([
             'ticket' => $ticket,
+        ], 200);
+
+    }
+
+    public function files(Ticket $ticket, Request $request) {
+
+        $files = TicketFile::where('ticket_id', $ticket->id)->get();
+
+        return response([
+            'files' => $files,
+        ], 200);
+
+    }
+
+    public function storeFile($id, Request $request) {
+
+        if($request->file('file') != null) {
+            $file = $request->file('file');
+            $file_name = time() . '_' . $file->getClientOriginalName();
+            $path = "tickets/" . $id . "/". $file_name;
+            $storeFile = $file->storeAs("tickets/" . $id . "/", $file_name, "gcs");  
+            $ticketFile = TicketFile::create([
+                'ticket_id' => $id,
+                'filename' => $file->getClientOriginalName(),
+                'path' => $path,
+                'extension' => $file->getClientOriginalExtension(),
+                'mime_type' => $file->getMimeType(),
+                'size' => $file->getSize(),
+            ]);
+
+            return response([
+                'ticketFile' => $ticketFile,
+            ], 200);
+        }
+
+    }
+
+    public function generatedSignedUrlForFile($id) {
+
+        $ticketFile = TicketFile::where('id', $id)->first();
+
+        $url = Storage::disk('gcs')->temporaryUrl(
+            $ticketFile->path,
+            now()->addMinutes(5)
+        );
+
+        return response([
+            'url' => $url,
         ], 200);
 
     }
