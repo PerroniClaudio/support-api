@@ -239,16 +239,27 @@ class TicketController extends Controller
 
     }
 
+    public function files(Ticket $ticket, Request $request) {
+
+        $files = TicketFile::where('ticket_id', $ticket->id)->get();
+
+        return response([
+            'files' => $files,
+        ], 200);
+
+    }
+
     public function storeFile($id, Request $request) {
 
         if($request->file('file') != null) {
             $file = $request->file('file');
             $file_name = time() . '_' . $file->getClientOriginalName();
+            $path = "tickets/" . $id . "/". $file_name;
             $storeFile = $file->storeAs("tickets/" . $id . "/", $file_name, "gcs");  
             $ticketFile = TicketFile::create([
                 'ticket_id' => $id,
-                'filename' => $file_name,
-                'path' => $storeFile,
+                'filename' => $file->getClientOriginalName(),
+                'path' => $path,
                 'extension' => $file->getClientOriginalExtension(),
                 'mime_type' => $file->getMimeType(),
                 'size' => $file->getSize(),
@@ -258,6 +269,21 @@ class TicketController extends Controller
                 'ticketFile' => $ticketFile,
             ], 200);
         }
+
+    }
+
+    public function generatedSignedUrlForFile($id) {
+
+        $ticketFile = TicketFile::where('id', $id)->first();
+
+        $url = Storage::disk('gcs')->temporaryUrl(
+            $ticketFile->path,
+            now()->addMinutes(5)
+        );
+
+        return response([
+            'url' => $url,
+        ], 200);
 
     }
 }
