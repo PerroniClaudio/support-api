@@ -5,8 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TicketMessageController;
 use App\Http\Controllers\TicketStatusUpdateController;
 use App\Http\Controllers\CompanyController;
-
-
+use App\Http\Controllers\GroupController;
 
 /*
 |--------------------------------------------------------------------------
@@ -71,6 +70,11 @@ Route::middleware(['auth:sanctum'])->group( function() {
         "/companies/{company}/allusers", 
         [CompanyController::class, "allusers"]
     );
+    
+    Route::get(
+        "/companies/{company}/ticket-types", 
+        [CompanyController::class, "ticketTypes"]
+    );
 
 });
 
@@ -104,12 +108,42 @@ Route::middleware(['auth:sanctum'])->get(
     [App\Http\Controllers\UserController::class, "ticketTypes"]
 );
 
-Route::middleware(['auth:sanctum'])->get(
-    "/ticket-type-webform/{ticketType}", 
-    [App\Http\Controllers\TicketTypeController::class, "getWebForm"]
-);
+Route::middleware(['auth:sanctum'])->group( function() {
+
+
+    
+    Route::get(
+        "/ticket-type-groups/{ticketType}", 
+        [App\Http\Controllers\TicketTypeController::class, "getGroups"]
+    );
+
+    Route::get(
+        "/ticket-type-webform/{ticketType}", 
+        [App\Http\Controllers\TicketTypeController::class, "getWebForm"]
+    );
+
+});
+
+// Route::middleware(['auth:sanctum'])->get(
+//     "/ticket-type-webform/{ticketType}", 
+//     [App\Http\Controllers\TicketTypeController::class, "getWebForm"]
+// );
 
 Route::post(
     "/upload-file", 
     [App\Http\Controllers\FileUploadController::class, "uploadFileToCloud"]
 );
+
+Route::middleware(['auth:sanctum'])->group( function() {
+
+    Route::get(
+        "/groups", 
+        [GroupController::class, "index"]
+    );
+    
+    Route::get(
+        "/groups/{group}/ticket-types", 
+        [GroupController::class, "ticketTypes"]
+    );
+
+});

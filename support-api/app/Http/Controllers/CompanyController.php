@@ -92,4 +92,12 @@ class CompanyController extends Controller
             'users' => $users,
         ], 200);
     }
+    
+    public function ticketTypes(Company $company) {
+        $ticketTypes = $company->ticketTypes()->with('category')->get();
+
+        return response([
+            'companyTicketTypes' => $ticketTypes,
+        ], 200);
+    }
 }

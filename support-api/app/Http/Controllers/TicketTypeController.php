@@ -62,15 +62,23 @@ class TicketTypeController extends Controller
     {
         //
     }
-
+    
     public function getWebForm(TicketType $ticketType)
     {   
-
-
+        
         return response([
             'webform' => $ticketType->typeFormField,
         ], 200);
-
+        
     }
-
+    
+    public function getGroups(TicketType $ticketType)
+    {   
+        $groups = $ticketType->groups()->get();
+    
+        return response([
+            'ticketTypeGroups' => $groups,
+        ], 200);
+    
+    }
 }

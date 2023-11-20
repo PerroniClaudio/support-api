@@ -13,6 +13,11 @@ class GroupController extends Controller
     public function index()
     {
         //
+        $groups = Group::all();
+
+        return response([
+            'groups' => $groups,
+        ], 200);
     }
 
     /**
@@ -61,5 +66,13 @@ class GroupController extends Controller
     public function destroy(Group $group)
     {
         //
+    }
+
+    public function ticketTypes(Group $group) {
+        $ticketTypes = $group->ticketTypes()->get();
+
+        return response([
+            'groupTicketTypes' => $ticketTypes,
+        ], 200);
     }
 }
