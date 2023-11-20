@@ -108,10 +108,12 @@ class TicketController extends Controller
 
         $user = $request->user();
         $cacheKey = 'user_' . $user->id . '_tickets_show:' . $id;
-
+        cache()->forget($cacheKey);
 
         $ticket = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($user, $id) {
-            $item = Ticket::where('id', $id)->where('user_id', $user->id)->with(['ticketType','company', 'user'])->first();
+            $item = Ticket::where('id', $id)->where('user_id', $user->id) ->with(['ticketType' => function ($query) {
+                $query->with('category');
+            }, 'company', 'user'])->first();
 
             return [
                 'ticket' => $item,

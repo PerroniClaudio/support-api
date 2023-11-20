@@ -1,4 +1,6 @@
 frontend
+supporto
 /sslcert/private.key
-usr
+/usr
+erp
 .env
