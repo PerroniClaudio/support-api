@@ -96,6 +96,12 @@ Route::middleware(['auth:sanctum'])->group(function() {
         "/ticket/file/{id}/temporary_url",
         [App\Http\Controllers\TicketController::class, "generatedSignedUrlForFile"]
     );
+    
+    Route::get(
+        "/ticket/admin",
+        [App\Http\Controllers\TicketController::class, "adminGroupsTickets"]
+    );
+
 });
 
 Route::middleware(['auth:sanctum'])->group(function() {

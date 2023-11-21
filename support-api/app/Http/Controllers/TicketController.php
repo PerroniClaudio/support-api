@@ -29,7 +29,7 @@ class TicketController extends Controller
         $tickets = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($user) {
             return Ticket::where('user_id', $user->id)->get();
         });
-    
+        
         return response([
             'tickets' => $tickets,
         ], 200);
@@ -65,7 +65,7 @@ class TicketController extends Controller
             'type_id' => $fields['type_id'],
             'user_id' => $user->id,
             'status' => '0',
-            'company_id' => $user->company_id,
+            'company_id' => isset($request['company']) && $user["is_admin"] == 1 ? $request['company'] : $user->company_id,
             'file' => null,
             'duration' => 0
         ]);
@@ -285,5 +285,31 @@ class TicketController extends Controller
             'url' => $url,
         ], 200);
 
+    }
+    
+    
+    /**
+     * Display a listing of the resource in the authenticated admin's group.
+     */
+    public function adminGroupsTickets(Request $request) {
+        // Show only the tickets belonging to the authenticated admin groups
+    
+        $user = $request->user();
+        $cacheKey = 'user_' . $user->id . '_tickets';
+    
+        $tickets = Cache::remember($cacheKey, now()->addMinutes(2), function () use ($user) {
+            if($user["is_admin"] == 1){
+                // Get the group IDs associated with the user
+                $groupIds = $user->groups->pluck('id');
+    
+                // Retrieve tickets where the group_id is in the groupIds array
+                return Ticket::whereIn('group_id', $groupIds)->get();
+            }
+        });
+    
+    
+        return response([
+            'tickets' => $tickets,
+        ], 200);
     }
 }

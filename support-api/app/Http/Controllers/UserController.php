@@ -23,13 +23,37 @@ class UserController extends Controller
 
         $user = $request->user();
 
-        $ticketTypes = $user->company->ticketTypes()->with('category')->get();
+        if($user["is_admin"] == 1){
+            $ticketTypes = collect();
+            foreach ($user->groups as $group) {
+                $ticketTypes = $ticketTypes->concat($group->ticketTypes()->with('category')->get());
+            }
+        } else {
+            $ticketTypes = $user->company->ticketTypes()->with('category')->get();
+        }
 
         return response([
             'ticketTypes' => $ticketTypes,
         ], 200);
 
     }
+
+    // public function adminTicketTypes(Request $request) {
+
+    //     $user = $request->user();
+
+    //     if($user["is_admin"] == 1){
+    //         $ticketTypes = collect();
+    //         foreach ($user->groups as $group) {
+    //             $ticketTypes = $ticketTypes->concat($group->ticketTypes()->with('category')->get());
+    //         }
+    //     }
+
+    //     return response([
+    //         'ticketTypes' => $ticketTypes || [],
+    //     ], 200);
+
+    // }
 
     public function test(Request $request) {
 
