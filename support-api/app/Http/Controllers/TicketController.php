@@ -203,6 +203,57 @@ class TicketController extends Controller
         ], 200);
 
     }
+    
+    public function addNote(Ticket $ticket, Request $request) {
+
+        // $ticket->update([
+        //     'status' => $request->status,
+        // ]);
+        $fields = $request->validate([
+            'message' => 'required|string',
+        ]);
+
+        TicketStatusUpdate::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $request->user()->id,
+            'content' => $request->message,
+        ]);
+
+        return response([
+            'new-note' => $request->message,
+        ], 200);
+
+    }
+    
+    public function closeTicket(Ticket $ticket, Request $request) {
+
+        $fields = $request->validate([
+            'message' => 'required|string',
+        ]);
+
+        $ticket->update([
+            'status' => 3, // Si può imposrtare l'array di stati e prendere l'indice di "Chiuso" da lì
+        ]);
+
+        TicketStatusUpdate::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $request->user()->id,
+            'content' => "----CHIUSURA TICKET----\n" . $fields['message'],
+        ]);
+
+        // Controllare se si deve inviare la mail
+        if($request->sendMail == true) {
+            // Invio mail al cliente
+            // sendMail($dafeultMail, $fields['message']);
+        }
+
+        return response([
+            'ticket' => $ticket,
+        ], 200);
+
+    }
+
+    
 
     public function assignToGroup(Ticket $ticket, Request $request) {
 
@@ -294,10 +345,9 @@ class TicketController extends Controller
     
     
     /**
-     * Display a listing of the resource in the authenticated admin's group.
+     * Show only the tickets belonging to the authenticated admin groups.
      */
     public function adminGroupsTickets(Request $request) {
-        // Show only the tickets belonging to the authenticated admin groups
     
         $user = $request->user();
         $cacheKey = 'user_' . $user->id . '_tickets';

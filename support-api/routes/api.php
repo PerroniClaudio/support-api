@@ -91,6 +91,21 @@ Route::middleware(['auth:sanctum'])->group(function() {
         "/ticket/{ticket}/file", 
         [App\Http\Controllers\TicketController::class, "storeFile"]
     );
+    
+    Route::post(
+        "/ticket/{ticket}/status-update", 
+        [App\Http\Controllers\TicketController::class, "updateStatus"]
+    );
+    
+    Route::post(
+        "/ticket/{ticket}/add-note", 
+        [App\Http\Controllers\TicketController::class, "addNote"]
+    );
+    
+    Route::post(
+        "/ticket/{ticket}/close", 
+        [App\Http\Controllers\TicketController::class, "closeTicket"]
+    );
 
     Route::get(
         "/ticket/file/{id}/temporary_url",
