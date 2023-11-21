@@ -6,6 +6,7 @@ use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\TicketStatusUpdate;
 use App\Models\TicketFile;
+use App\Models\TicketType;
 use App\Models\User;
 use App\Models\Group;
 use Illuminate\Http\Request;
@@ -59,10 +60,14 @@ class TicketController extends Controller
             'type_id' => 'required|int',
         ]);
 
+        $ticketType = TicketType::find($fields['type_id']);
+        $group = $ticketType->groups->first();
+        $groupId = $group ? $group->id : null;
         
         $ticket = Ticket::create([
             'description' => $fields['description'],
             'type_id' => $fields['type_id'],
+            'group_id' => $groupId,
             'user_id' => $user->id,
             'status' => '0',
             'company_id' => isset($request['company']) && $user["is_admin"] == 1 ? $request['company'] : $user->company_id,
