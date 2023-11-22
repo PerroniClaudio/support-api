@@ -10,7 +10,7 @@ class TypeFormFields extends Model
     use HasFactory;
 
     protected $fillable = [
-        'type_id',
+        'ticket_type_id',
         'field_name',
         'field_type',
         'field_label',

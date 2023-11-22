@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\TicketType;
+use App\Models\TypeFormFields;
 use Illuminate\Http\Request;
 
 class TicketTypeController extends Controller
@@ -12,7 +13,13 @@ class TicketTypeController extends Controller
      */
     public function index()
     {
-        //
+        
+        $ticketTypes = TicketType::with('category')->get();
+        
+        return response([
+            'ticketTypes' => $ticketTypes,
+        ], 200);
+        
     }
 
     /**
@@ -63,9 +70,17 @@ class TicketTypeController extends Controller
         //
     }
     
-    public function getWebForm(TicketType $ticketType)
+    public function getWebForm($id)
     {   
-        
+
+        if($id == 0) {
+            return response([
+                'webform' => [],
+            ], 200);
+        }
+
+        $ticketType = TicketType::where('id', $id)->first();
+
         return response([
             'webform' => $ticketType->typeFormField,
         ], 200);
@@ -78,6 +93,26 @@ class TicketTypeController extends Controller
     
         return response([
             'ticketTypeGroups' => $groups,
+        ], 200);
+    
+    }
+
+    public function createFormField(Request $request)
+    {   
+        
+        $validated = $request->validate([
+            'ticket_type_id' => 'required',
+            'field_name' => 'required',
+            'field_type' => 'required',
+            'field_label' => 'required',
+            'required' => 'required',
+            'placeholder' => 'required',
+        ]);
+
+        $formField = TypeFormFields::create($validated);
+    
+        return response([
+            'formField' => $formField,
         ], 200);
     
     }
