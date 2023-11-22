@@ -159,7 +159,10 @@ Route::middleware(['auth:sanctum'])->get(
 
 Route::middleware(['auth:sanctum'])->group( function() {
 
-
+    Route::get(
+        "/ticket-type/all", 
+        [App\Http\Controllers\TicketTypeController::class, "index"]
+    );
     
     Route::get(
         "/ticket-type-groups/{ticketType}", 
@@ -169,6 +172,11 @@ Route::middleware(['auth:sanctum'])->group( function() {
     Route::get(
         "/ticket-type-webform/{ticketType}", 
         [App\Http\Controllers\TicketTypeController::class, "getWebForm"]
+    );
+
+    Route::post(
+        "/ticket-type-webform", 
+        [App\Http\Controllers\TicketTypeController::class, "createFormField"]
     );
 
 });
