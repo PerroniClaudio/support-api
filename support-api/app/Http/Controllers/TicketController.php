@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache; // Otherwise no redis connection :)
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Auth;
 
 
 class TicketController extends Controller
@@ -187,6 +188,17 @@ class TicketController extends Controller
     }
 
     public function updateStatus(Ticket $ticket, Request $request) {
+
+        $request->validate([
+            'status' => 'required|int',
+            'is_admin' => [
+                function ($attribute, $value, $fail) {
+                    if (!Auth::user()['is_admin']) {
+                        $fail('The user must be an admin.');
+                    }
+                },
+            ],
+        ]);
 
         $ticket->update([
             'status' => $request->status,
