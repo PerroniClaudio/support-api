@@ -63,9 +63,17 @@ class TicketTypeController extends Controller
         //
     }
     
-    public function getWebForm(TicketType $ticketType)
+    public function getWebForm($id)
     {   
-        
+
+        if($id == 0) {
+            return response([
+                'webform' => [],
+            ], 200);
+        }
+
+        $ticketType = TicketType::where('id', $id)->first();
+
         return response([
             'webform' => $ticketType->typeFormField,
         ], 200);
