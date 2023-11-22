@@ -63,5 +63,25 @@ class UserController extends Controller
 
     }
 
+    // Restituisce gli id degli admin (serve per vedere se un messaggio va mostrato come admin o meno).
+    // Controlla se l'utente che fa la richiesta è admin, se lo è restituisce gli id degli admin, altrimenti restituisce null.
+    public function adminsIds  (Request $request) {
+        $isAdminRequest = $request->user()["is_admin"] == 1;
+
+        if($isAdminRequest){
+            $users = User::where('is_admin', 1)->get();
+            $ids = $users->map(function($user) {
+                return $user->id;
+            });
+        } else {
+            $ids = null;
+        }
+
+        return response([
+            'ids' => $ids,
+        ], 200);
+
+    }
+
 
 }

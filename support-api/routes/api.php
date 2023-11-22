@@ -18,8 +18,20 @@ use App\Http\Controllers\GroupController;
 |
 */
 
-Route::middleware(['auth:sanctum'])->get('/user', function (Request $request) {
-    return $request->user();
+Route::middleware(['auth:sanctum'])->group( function() {
+
+    Route::get(
+        '/user', function (Request $request) {
+        return $request->user();
+    });
+    
+    Route::get(
+        '/user/alladmins-ids', 
+        [App\Http\Controllers\UserController::class, "adminsIds"]
+    );
+
+
+
 });
 
 Route::middleware(['auth:sanctum'])->get('/user-test', [App\Http\Controllers\UserController::class, "ticketTypes"]);
