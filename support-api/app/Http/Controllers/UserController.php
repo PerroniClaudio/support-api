@@ -82,6 +82,21 @@ class UserController extends Controller
         ], 200);
 
     }
+    
+    public function allAdmins  (Request $request) {
+        $isAdminRequest = $request->user()["is_admin"] == 1;
+
+        if($isAdminRequest){
+            $users = User::where('is_admin', 1)->get();
+        } else {
+            $users = null;
+        }
+
+        return response([
+            'admins' => $users,
+        ], 200);
+
+    }
 
 
 }

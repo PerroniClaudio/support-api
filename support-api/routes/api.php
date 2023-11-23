@@ -29,6 +29,11 @@ Route::middleware(['auth:sanctum'])->group( function() {
         '/user/alladmins-ids', 
         [App\Http\Controllers\UserController::class, "adminsIds"]
     );
+    
+    Route::get(
+        '/user/alladmins', 
+        [App\Http\Controllers\UserController::class, "allAdmins"]
+    );
 
 
 
@@ -127,6 +132,11 @@ Route::middleware(['auth:sanctum'])->group(function() {
     Route::get(
         "/ticket/admin",
         [App\Http\Controllers\TicketController::class, "adminGroupsTickets"]
+    );
+    
+    Route::post(
+        "/ticket/{ticket}/assign-to-admin",
+        [App\Http\Controllers\TicketController::class, "assignToAdminUser"]
     );
 
 });

@@ -191,14 +191,14 @@ class TicketController extends Controller
 
         $request->validate([
             'status' => 'required|int',
-            'is_admin' => [
-                function ($attribute, $value, $fail) {
-                    if (!Auth::user()['is_admin']) {
-                        $fail('The user must be an admin.');
-                    }
-                },
-            ],
         ]);
+        $isAdminRequest = $request->user()["is_admin"] == 1;
+
+        if(!$isAdminRequest) {
+            return response([
+                'message' => 'The user must be an admin.',
+            ], 401);
+        }
 
         $ticket->update([
             'status' => $request->status,
@@ -288,6 +288,25 @@ class TicketController extends Controller
     }
 
     public function assignToAdminUser(Ticket $ticket, Request $request) {
+
+        $request->validate([
+            'admin_user_id' => 'required|int',
+            // Il controllo dell'autorizzazione così non funziona.
+            // 'is_admin' => [
+            //     function ($attribute, $value, $fail) {
+            //         if (!Auth::user()['is_admin']) {
+            //             $fail('The user must be an admin.');
+            //         }
+            //     },
+            // ],
+        ]);
+        $isAdminRequest = $request->user()["is_admin"] == 1;
+
+        if(!$isAdminRequest) {
+            return response([
+                'message' => 'The user must be an admin.',
+            ], 401);
+        }
 
         $ticket->update([
             'admin_user_id' => $request->admin_user_id,
