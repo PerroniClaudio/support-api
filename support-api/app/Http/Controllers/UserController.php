@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+
 
 class UserController extends Controller
 {
@@ -25,7 +28,6 @@ class UserController extends Controller
             'company_id' => 'required|int',
             'name' => 'required|string',
             'email' => 'required|string',
-            'password' => 'required|string',
             'surname' => 'required|string',
         ]);
 
@@ -37,7 +39,7 @@ class UserController extends Controller
                 'company_id' => $fields['company_id'],
                 'name' => $fields['name'],
                 'email' => $fields['email'],
-                'password' => $fields['password'],
+                'password' => Hash::make(Str::password()),
                 'surname' => $fields['surname'],
                 'phone' => $request['phone'] ?? null,
                 'city' => $request['city'] ?? null,
@@ -76,18 +78,6 @@ class UserController extends Controller
                     'message' => 'User not found',
                 ], 404);
             }
-    
-            // $userFields = $user->getFillable();
-            // 'company_id' => $fields['company_id'],
-            // 'name' => $fields['name'],
-            // 'email' => $fields['email'],
-            // 'password' => $fields['password'],
-            // 'surname' => $fields['surname'],
-            // 'phone' => $request['phone'] ?? null,
-            // 'city' => $request['city'] ?? null,
-            // 'zip_code' => $request['zip_code'] ?? null,
-            // 'address' => $request['address'] ?? null,
-            // 'is_company_admin' => $request['is_company_admin'] ?? 0,
     
             $updatedFields = [];
     
