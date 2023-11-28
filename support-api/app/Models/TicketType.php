@@ -5,12 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class TicketType extends Model
-{
+class TicketType extends Model {
     use HasFactory;
 
     protected $fillable = [
-        'name'
+        'name',
+        'ticket_type_category_id',
     ];
 
     public function tickets() {
@@ -22,15 +22,14 @@ class TicketType extends Model
     }
 
     public function companies() {
-        return $this->belongsToMany(Company::class, 'company_ticket_types');
+        return $this->belongsToMany(Company::class, 'company_ticket_types')->withPivot('sla_taking_charge', 'sla_resolving');
     }
 
     public function category() {
         return $this->belongsTo(TicketTypeCategory::class, 'ticket_type_category_id');
     }
 
-    public function groups()
-    {
+    public function groups() {
         return $this->belongsToMany(Group::class, 'ticket_type_group', 'ticket_type_id', 'group_id');
     }
 }
