@@ -18,109 +18,105 @@ use App\Http\Controllers\GroupController;
 |
 */
 
-Route::middleware(['auth:sanctum'])->group( function() {
+Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get(
-        '/user', function (Request $request) {
-        return $request->user();
-    });
-    
-    Route::get(
-        '/user/alladmins-ids', 
-        [App\Http\Controllers\UserController::class, "adminsIds"]
+        '/user',
+        function (Request $request) {
+            return $request->user();
+        }
     );
-    
+
     Route::get(
-        '/user/alladmins', 
+        '/user/alladmins',
         [App\Http\Controllers\UserController::class, "allAdmins"]
     );
 
-
-
+    Route::get(
+        '/user/alladmins-ids',
+        [App\Http\Controllers\UserController::class, "adminsIds"]
+    );
 });
 
 Route::middleware(['auth:sanctum'])->get('/user-test', [App\Http\Controllers\UserController::class, "ticketTypes"]);
 
 
-Route::middleware(['auth:sanctum'])->group( function() {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::post(
-        "/ticket/{ticket_id}/message", 
+        "/ticket/{ticket_id}/message",
         [TicketMessageController::class, "store"]
     );
 
     Route::get(
-        "/ticket/{ticket_id}/messages", 
+        "/ticket/{ticket_id}/messages",
         [TicketMessageController::class, "index"]
     );
-
-
 });
 
-Route::middleware(['auth:sanctum'])->group( function() {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::post(
-        "/ticket/{ticket_id}/status-updates", 
+        "/ticket/{ticket_id}/status-updates",
         [TicketStatusUpdateController::class, "store"]
     );
 
     Route::get(
-        "/ticket/{ticket_id}/status-updates", 
+        "/ticket/{ticket_id}/status-updates",
         [TicketStatusUpdateController::class, "index"]
-     );
+    );
 });
 
-Route::middleware(['auth:sanctum'])->group( function() {
+Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get(
-        "/companies", 
+        "/companies",
         [CompanyController::class, "index"]
     );
 
     Route::get(
-        "/companies/{company}/offices", 
+        "/companies/{company}/offices",
         [CompanyController::class, "offices"]
     );
 
     Route::get(
-        "/companies/{company}/admins", 
+        "/companies/{company}/admins",
         [CompanyController::class, "admins"]
     );
-    
+
     Route::get(
-        "/companies/{company}/allusers", 
+        "/companies/{company}/allusers",
         [CompanyController::class, "allusers"]
     );
-    
+
     Route::get(
-        "/companies/{company}/ticket-types", 
+        "/companies/{company}/ticket-types",
         [CompanyController::class, "ticketTypes"]
     );
-
 });
 
-Route::middleware(['auth:sanctum'])->group(function() {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('ticket', App\Http\Controllers\TicketController::class);
     Route::get(
-        "/ticket/{ticket}/files", 
+        "/ticket/{ticket}/files",
         [App\Http\Controllers\TicketController::class, "files"]
     );
 
     Route::post(
-        "/ticket/{ticket}/file", 
+        "/ticket/{ticket}/file",
         [App\Http\Controllers\TicketController::class, "storeFile"]
     );
-    
+
     Route::post(
-        "/ticket/{ticket}/status-update", 
+        "/ticket/{ticket}/status-update",
         [App\Http\Controllers\TicketController::class, "updateStatus"]
     );
-    
+
     Route::post(
-        "/ticket/{ticket}/add-note", 
+        "/ticket/{ticket}/add-note",
         [App\Http\Controllers\TicketController::class, "addNote"]
     );
-    
+
     Route::post(
-        "/ticket/{ticket}/close", 
+        "/ticket/{ticket}/close",
         [App\Http\Controllers\TicketController::class, "closeTicket"]
     );
 
@@ -128,25 +124,24 @@ Route::middleware(['auth:sanctum'])->group(function() {
         "/ticket/file/{id}/temporary_url",
         [App\Http\Controllers\TicketController::class, "generatedSignedUrlForFile"]
     );
-    
+
     Route::get(
         "/ticket/admin",
         [App\Http\Controllers\TicketController::class, "adminGroupsTickets"]
     );
-    
+
     Route::post(
         "/ticket/{ticket}/assign-to-admin",
         [App\Http\Controllers\TicketController::class, "assignToAdminUser"]
     );
-
 });
 
-Route::middleware(['auth:sanctum'])->group(function() {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('attendance', App\Http\Controllers\AttendanceController::class);
     Route::get('presenze-type', [App\Http\Controllers\AttendanceController::class, "types"]);
 });
 
-Route::middleware(['auth:sanctum'])->group(function() {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('time-off-request/batch', [App\Http\Controllers\TimeOffRequestController::class, "storeBatch"]);
     Route::patch('time-off-request/batch', [App\Http\Controllers\TimeOffRequestController::class, "updateBatch"]);
 
@@ -154,7 +149,7 @@ Route::middleware(['auth:sanctum'])->group(function() {
     Route::get('time-off-type', [App\Http\Controllers\TimeOffRequestController::class, "types"]);
 });
 
-Route::middleware(['auth:sanctum'])->group(function() {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('business-trip', App\Http\Controllers\BusinessTripController::class);
     Route::get('business-trip/{business_trip}/expense', [App\Http\Controllers\BusinessTripController::class, "getExpenses"]);
     Route::post('business-trip/{business_trip}/expense', [App\Http\Controllers\BusinessTripController::class, "storeExpense"]);
@@ -163,32 +158,78 @@ Route::middleware(['auth:sanctum'])->group(function() {
 });
 
 Route::middleware(['auth:sanctum'])->get(
-    "/ticket-types", 
+    "/ticket-types",
     [App\Http\Controllers\UserController::class, "ticketTypes"]
 );
 
-Route::middleware(['auth:sanctum'])->group( function() {
+Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get(
-        "/ticket-type/all", 
+        "/ticket-type/all",
         [App\Http\Controllers\TicketTypeController::class, "index"]
     );
-    
+
     Route::get(
-        "/ticket-type-groups/{ticketType}", 
+        "/ticket-type/{ticketType}",
+        [App\Http\Controllers\TicketTypeController::class, "show"]
+    );
+
+
+
+    Route::get(
+        "/ticket-type-categories",
+        [App\Http\Controllers\TicketTypeController::class, "categories"]
+    );
+
+    Route::get(
+        "/ticket-type-groups/{ticketType}",
         [App\Http\Controllers\TicketTypeController::class, "getGroups"]
     );
 
     Route::get(
-        "/ticket-type-webform/{ticketType}", 
+        "/ticket-type-webform/{ticketType}",
         [App\Http\Controllers\TicketTypeController::class, "getWebForm"]
     );
 
+    Route::get(
+        "/ticket-type-companies/{ticketType}",
+        [App\Http\Controllers\TicketTypeController::class, "getCompanies"]
+    );
+
+    Route::patch(
+        "/ticket-type/update-sla",
+        [App\Http\Controllers\TicketTypeController::class, "updateSla"]
+    );
+
+    Route::patch(
+        "/ticket-type/{ticketType}",
+        [App\Http\Controllers\TicketTypeController::class, "update"]
+    );
+
     Route::post(
-        "/ticket-type-webform", 
+        "/ticket-type",
+        [App\Http\Controllers\TicketTypeController::class, "store"]
+    );
+
+    Route::post(
+        "/ticket-type-category",
+        [App\Http\Controllers\TicketTypeController::class, "storeCategory"]
+    );
+
+    Route::post(
+        "/ticket-type-webform",
         [App\Http\Controllers\TicketTypeController::class, "createFormField"]
     );
 
+    Route::post(
+        "/ticket-type-companies",
+        [App\Http\Controllers\TicketTypeController::class, "updateCompanies"]
+    );
+
+    Route::post(
+        "/ticket-type-companies",
+        [App\Http\Controllers\TicketTypeController::class, "deleteCompany"]
+    );
 });
 
 // Route::middleware(['auth:sanctum'])->get(
@@ -197,20 +238,19 @@ Route::middleware(['auth:sanctum'])->group( function() {
 // );
 
 Route::post(
-    "/upload-file", 
+    "/upload-file",
     [App\Http\Controllers\FileUploadController::class, "uploadFileToCloud"]
 );
 
-Route::middleware(['auth:sanctum'])->group( function() {
+Route::middleware(['auth:sanctum'])->group(function () {
 
     Route::get(
-        "/groups", 
+        "/groups",
         [GroupController::class, "index"]
     );
-    
+
     Route::get(
-        "/groups/{group}/ticket-types", 
+        "/groups/{group}/ticket-types",
         [GroupController::class, "ticketTypes"]
     );
-
 });

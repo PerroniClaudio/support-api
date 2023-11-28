@@ -5,12 +5,13 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class TicketTypeCategory extends Model
-{
+class TicketTypeCategory extends Model {
     use HasFactory;
 
     protected $fillable = [
-        'name'
+        'name',
+        'is_problem',
+        'is_request',
     ];
 
     public function ticketTypes() {
