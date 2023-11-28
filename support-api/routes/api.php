@@ -19,12 +19,27 @@ use App\Http\Controllers\GroupController;
 */
 
 Route::middleware(['auth:sanctum'])->group( function() {
-
+    
     Route::get(
         '/user', function (Request $request) {
-        return $request->user();
+            return $request->user();
     });
+
+    Route::get(
+        '/user/all',
+        [App\Http\Controllers\UserController::class, "allUsers"]
+    );
     
+    Route::post(
+        '/user', 
+        [App\Http\Controllers\UserController::class, "store"]
+    );
+    
+    Route::patch(
+        '/user', 
+        [App\Http\Controllers\UserController::class, "update"]
+    );
+
     Route::get(
         '/user/alladmins-ids', 
         [App\Http\Controllers\UserController::class, "adminsIds"]
@@ -35,9 +50,8 @@ Route::middleware(['auth:sanctum'])->group( function() {
         [App\Http\Controllers\UserController::class, "allAdmins"]
     );
 
-
-
 });
+
 
 Route::middleware(['auth:sanctum'])->get('/user-test', [App\Http\Controllers\UserController::class, "ticketTypes"]);
 
