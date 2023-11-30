@@ -133,7 +133,7 @@ class TicketTypeController extends Controller {
         $groups = $ticketType->groups()->get();
 
         return response([
-            'ticketTypeGroups' => $groups,
+            'groups' => $groups,
         ], 200);
     }
 
@@ -218,6 +218,24 @@ class TicketTypeController extends Controller {
 
         return response([
             'ticketType' => $ticketType,
+        ], 200);
+    }
+
+    public function deleteGroups(Request $request) {
+
+        $validated = $request->validate([
+            'ticket_type_id' => 'required',
+            'group_id' => 'required',
+        ]);
+
+        $ticketType = TicketType::where('id', $validated['ticket_type_id'])->first();
+
+        $ticketType->groups()->detach($validated['group_id']);
+
+        $groups = $ticketType->groups()->get();
+
+        return response([
+            'groups' => $groups,
         ], 200);
     }
 

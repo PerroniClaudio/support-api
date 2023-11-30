@@ -18,25 +18,27 @@ use App\Http\Controllers\GroupController;
 |
 */
 
-Route::middleware(['auth:sanctum'])->group( function() {
-    
+Route::middleware(['auth:sanctum'])->group(function () {
+
     Route::get(
-        '/user', function (Request $request) {
+        '/user',
+        function (Request $request) {
             return $request->user();
-    });
+        }
+    );
 
     Route::get(
         '/user/all',
         [App\Http\Controllers\UserController::class, "allUsers"]
     );
-    
+
     Route::post(
-        '/user', 
+        '/user',
         [App\Http\Controllers\UserController::class, "store"]
     );
-    
+
     Route::patch(
-        '/user', 
+        '/user',
         [App\Http\Controllers\UserController::class, "update"]
     );
     
@@ -46,7 +48,7 @@ Route::middleware(['auth:sanctum'])->group( function() {
     );
 
     Route::get(
-        '/user/alladmins-ids', 
+        '/user/alladmins-ids',
         [App\Http\Controllers\UserController::class, "adminsIds"]
     );
 
@@ -264,12 +266,22 @@ Route::middleware(['auth:sanctum'])->group(function () {
     );
 
     Route::post(
+        "/ticket-type-groups",
+        [App\Http\Controllers\TicketTypeController::class, "updateGroups"]
+    );
+
+    Route::post(
+        "/ticket-type-groups/delete",
+        [App\Http\Controllers\TicketTypeController::class, "deleteGroups"]
+    );
+
+    Route::post(
         "/ticket-type-companies",
         [App\Http\Controllers\TicketTypeController::class, "updateCompanies"]
     );
 
     Route::post(
-        "/ticket-type-companies",
+        "/ticket-type-companies/delete",
         [App\Http\Controllers\TicketTypeController::class, "deleteCompany"]
     );
 });

@@ -8,8 +8,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 
-class UserController extends Controller
-{
+class UserController extends Controller {
     //
 
     public function me() {
@@ -19,11 +18,9 @@ class UserController extends Controller
         return response([
             'user' => $user,
         ], 200);
-
     }
 
-    public function store(Request $request)
-    {
+    public function store(Request $request) {
         $fields = $request->validate([
             'company_id' => 'required|int',
             'name' => 'required|string',
@@ -33,8 +30,8 @@ class UserController extends Controller
 
         $requestUser = $request->user();
 
-        if($requestUser["is_admin"] == 1){
-            
+        if ($requestUser["is_admin"] == 1) {
+
             $newUser = User::create([
                 'company_id' => $fields['company_id'],
                 'name' => $fields['name'],
@@ -47,7 +44,6 @@ class UserController extends Controller
                 'address' => $request['address'] ?? null,
                 'is_company_admin' => $request['is_company_admin'] ?? 0,
             ]);
-        
         }
 
         return response([
@@ -58,8 +54,7 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request)
-    {
+    public function update(Request $request) {
         $fields = $request->validate([
             'id' => 'required|int|exists:users,id', // TODO: 'id' => 'required|int|exists:users,id
             'company_id' => 'required|int',
@@ -70,25 +65,25 @@ class UserController extends Controller
 
         $req_user = $request->user();
 
-        if($req_user["is_admin"] == 1){
+        if ($req_user["is_admin"] == 1) {
             $user = User::where('id', $request['id'])->first();
-    
-            if(!$user){
+
+            if (!$user) {
                 return response([
                     'message' => 'User not found',
                 ], 404);
             }
-    
+
             $updatedFields = [];
-    
+
             $userFields = $user->getFillable();
-    
+
             foreach ($request->all() as $fieldName => $fieldValue) {
                 if (in_array($fieldName, $userFields)) {
                     $updatedFields[$fieldName] = $fieldValue;
                 }
             }
-    
+
             $user->update([
                 'is_company_admin' => $updatedFields['is_company_admin'],
                 'company_id' => $updatedFields['company_id'],
@@ -134,7 +129,7 @@ class UserController extends Controller
 
         $user = $request->user();
 
-        if($user["is_admin"] == 1){
+        if ($user["is_admin"] == 1) {
             $ticketTypes = collect();
             foreach ($user->groups as $group) {
                 $ticketTypes = $ticketTypes->concat($group->ticketTypes()->with('category')->get());
@@ -146,7 +141,6 @@ class UserController extends Controller
         return response([
             'ticketTypes' => $ticketTypes,
         ], 200);
-
     }
 
     // public function adminTicketTypes(Request $request) {
@@ -171,33 +165,31 @@ class UserController extends Controller
         return response([
             'test' => $request,
         ], 200);
-
     }
 
     // Restituisce gli id degli admin (serve per vedere se un messaggio va mostrato come admin o meno).
-    // Controlla se l'utente che fa la richiesta è admin, se lo è restituisce gli id degli admin, altrimenti restituisce null.
-    public function adminsIds  (Request $request) {
+    // Controlla se l'utente che fa la richiesta è admin, se lo è restituisce gli id degli admin, altrimenti restituisce [].
+    public function adminsIds(Request $request) {
         $isAdminRequest = $request->user()["is_admin"] == 1;
 
-        if($isAdminRequest){
+        if ($isAdminRequest) {
             $users = User::where('is_admin', 1)->get();
-            $ids = $users->map(function($user) {
+            $ids = $users->map(function ($user) {
                 return $user->id;
             });
         } else {
-            $ids = null;
+            $ids = [];
         }
 
         return response([
             'ids' => $ids,
         ], 200);
-
     }
-    
-    public function allAdmins  (Request $request) {
+
+    public function allAdmins(Request $request) {
         $isAdminRequest = $request->user()["is_admin"] == 1;
 
-        if($isAdminRequest){
+        if ($isAdminRequest) {
             $users = User::where('is_admin', 1)->get();
         } else {
             $users = null;
@@ -206,13 +198,12 @@ class UserController extends Controller
         return response([
             'admins' => $users,
         ], 200);
-
     }
 
-    public function allUsers  (Request $request) {
+    public function allUsers(Request $request) {
         $isAdminRequest = $request->user()["is_admin"] == 1;
 
-        if($isAdminRequest){
+        if ($isAdminRequest) {
             $users = User::all();
         } else {
             $users = null;
@@ -221,8 +212,5 @@ class UserController extends Controller
         return response([
             'users' => $users,
         ], 200);
-
     }
-
-
 }
