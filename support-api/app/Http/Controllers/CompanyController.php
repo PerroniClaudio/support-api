@@ -27,6 +27,9 @@ class CompanyController extends Controller
     public function create()
     {
         //
+        return response([
+            'message' => 'Please use /api/store to create a new company',
+        ], 404);
     }
 
     /**
@@ -35,6 +38,27 @@ class CompanyController extends Controller
     public function store(Request $request)
     {
         //
+        $fields = $request->validate([
+            'name' => 'required|string',
+        ]);
+
+        $user = $request->user();
+
+        if($user["is_admin"] != 1){
+            return response([
+                'message' => "Unauthorized",
+            ], 401);
+        }
+            
+        // Il campo sla non serve più. Quando si modificherà il database, togliere anche il campo da qui
+        $newCompany = Company::create([
+            'name' => $fields['name'],
+            'sla' => 'vuoto',
+        ]);
+        
+        return response([
+            'company' => $newCompany,
+        ], 201);
     }
 
     /**
@@ -51,22 +75,78 @@ class CompanyController extends Controller
     public function edit(Company $company)
     {
         //
+        return response([
+            'message' => 'Please use /api/update to update an existing company',
+        ], 404);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Company $company)
+    public function update(Request $request)
     {
-        //
+        $fields = $request->validate([
+            'id' => 'required|int|exists:companies,id', // TODO: 'id' => 'required|int|exists:companies,id
+            'name' => 'required|string',
+        ]);
+
+        $user = $request->user();
+
+        if($user["is_admin"] != 1){
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+        
+        $company = Company::where('id', $request['id'])->first();
+
+        if(!$company){
+            return response([
+                'message' => 'Company not found',
+            ], 404);
+        }
+
+        $updatedFields = [];
+
+        $companyFields = $company->getFillable();
+
+        foreach ($request->all() as $fieldName => $fieldValue) {
+            if (in_array($fieldName, $companyFields)) {
+                $updatedFields[$fieldName] = $fieldValue;
+            }
+        }
+
+        $company->update($updatedFields);
+
+        return response([
+            'company' => $company,
+        ], 200);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Company $company)
+    public function destroy(Request $request, $id)
     {
-        //
+        $user = $request->user();
+
+        if($user["is_admin"] != 1 ){
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
+        $deleted_company = Company::destroy($id);
+
+        if(!$deleted_company){
+            return response([
+                'message' => 'Error',
+            ], 404);
+        }
+
+        return response([
+            'deleted_company' => $id,
+        ], 200);
     }
 
     public function offices(Company $company) {

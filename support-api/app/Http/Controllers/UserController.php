@@ -90,22 +90,43 @@ class UserController extends Controller
             }
     
             $user->update([
-                'company_id' => $updatedFields['company_id'] ?? $user->company_id,
-                'name' => $updatedFields['name'] ?? $user->name,
-                'email' => $updatedFields['email'] ?? $user->email,
-                'password' => $updatedFields['password'] ?? $user->password,
-                'surname' => $updatedFields['surname'] ?? $user->surname,
-                'phone' => $updatedFields['phone'] ?? $user->phone,
-                'city' => $updatedFields['city'] ?? $user->city,
-                'zip_code' => $updatedFields['zip_code'] ?? $user->zip_code,
-                'address' => $updatedFields['address'] ?? $user->address,
-                'is_company_admin' => $updatedFields['is_company_admin'] ?? $user->is_company_admin,
+                'is_company_admin' => $updatedFields['is_company_admin'],
+                'company_id' => $updatedFields['company_id'],
+                'name' => $updatedFields['name'],
+                'surname' => $updatedFields['surname'],
+                'email' => $updatedFields['email'],
+                'phone' => $updatedFields['phone'],
+                'address' => $updatedFields['address'],
+                'city' => $updatedFields['city'],
+                'zip_code' => $updatedFields['zip_code'],
+                // 'password' => $updatedFields['password'] ?? $user->password,
             ]);
         }
 
-
         return response([
             'user' => $user,
+        ], 200);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy($id, Request $request)
+    {
+        //
+        $user = $request->user();
+
+        if($user["is_admin"] == 1 && $id){
+            $deleted_user = User::destroy($id);
+        }
+
+        if($deleted_user  == 0){
+            return response([
+                'message' => 'Error',
+            ], 404);
+        }
+        return response([
+            'deleted_user' => $id,
         ], 200);
     }
 

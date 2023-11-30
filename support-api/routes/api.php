@@ -39,6 +39,11 @@ Route::middleware(['auth:sanctum'])->group( function() {
         '/user', 
         [App\Http\Controllers\UserController::class, "update"]
     );
+    
+    Route::delete(
+        '/user/{id}', 
+        [App\Http\Controllers\UserController::class, "destroy"]
+    );
 
     Route::get(
         '/user/alladmins-ids', 
@@ -48,11 +53,6 @@ Route::middleware(['auth:sanctum'])->group( function() {
     Route::get(
         '/user/alladmins',
         [App\Http\Controllers\UserController::class, "allAdmins"]
-    );
-
-    Route::get(
-        '/user/alladmins-ids',
-        [App\Http\Controllers\UserController::class, "adminsIds"]
     );
 });
 
@@ -85,12 +85,27 @@ Route::middleware(['auth:sanctum'])->group(function () {
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {
-
+    // Route::resource('companies', App\Http\Controllers\CompanyController::class);
     Route::get(
         "/companies",
         [CompanyController::class, "index"]
     );
-
+    
+    Route::post(
+        "/companies",
+        [CompanyController::class, "store"]
+    );
+    
+    Route::delete(
+        "/companies/{id}",
+        [CompanyController::class, "destroy"]
+    );
+    
+    Route::patch(
+        "/companies",
+        [CompanyController::class, "update"]
+    );
+    
     Route::get(
         "/companies/{company}/offices",
         [CompanyController::class, "offices"]
@@ -110,6 +125,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
         "/companies/{company}/ticket-types",
         [CompanyController::class, "ticketTypes"]
     );
+});
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::resource('offices', App\Http\Controllers\OfficeController::class);
+    // Route::get(
+    //     "/offices/{company}/all-offices",
+    //     [App\Http\Controllers\OfficeController::class, "companyOffices"]
+    // );
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {
