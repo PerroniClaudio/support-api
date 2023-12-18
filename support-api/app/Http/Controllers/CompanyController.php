@@ -70,9 +70,27 @@ class CompanyController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Company $company)
+    public function show($id, Request $request)
     {
-        //
+        $user = $request->user();
+
+        if($user["is_admin"] != 1){
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
+        $company = Company::where('id', $id)->first();
+
+        if(!$company){
+            return response([
+                'message' => 'Company not found',
+            ], 404);
+        }
+
+        return response([
+            'company' => $company,
+        ], 200);
     }
 
     /**
@@ -94,6 +112,7 @@ class CompanyController extends Controller
         $fields = $request->validate([
             'id' => 'required|int|exists:companies,id', // TODO: 'id' => 'required|int|exists:companies,id
             'name' => 'required|string',
+            'note' => 'nullable|string',
         ]);
 
         $user = $request->user();
@@ -171,7 +190,16 @@ class CompanyController extends Controller
         ], 200);
     }
     
-    public function allusers(Company $company) {
+    public function allusers(Company $company, Request $request) {
+        $user = $request->user();
+
+        // Se non è admin o non è della compagnia e company_admin allora non è autorizzato
+        if(!($user["is_admin"] == 1 || ($user["company_id"] == $company["id"] && $user["is_company_admin"] == 1))){
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
         $users = $company->users()->get();
 
         return response([

@@ -28,23 +28,27 @@ class UserController extends Controller {
             'surname' => 'required|string',
         ]);
 
-        $requestUser = $request->user();
+        $req_user = $request->user();
 
-        if ($requestUser["is_admin"] == 1) {
-
-            $newUser = User::create([
-                'company_id' => $fields['company_id'],
-                'name' => $fields['name'],
-                'email' => $fields['email'],
-                'password' => Hash::make(Str::password()),
-                'surname' => $fields['surname'],
-                'phone' => $request['phone'] ?? null,
-                'city' => $request['city'] ?? null,
-                'zip_code' => $request['zip_code'] ?? null,
-                'address' => $request['address'] ?? null,
-                'is_company_admin' => $request['is_company_admin'] ?? 0,
-            ]);
+        // Se non è admin o non è della compagnia e company_admin allora non è autorizzato
+        if(!($req_user["is_admin"] == 1 || ($req_user["company_id"] == $fields["company_id"] && $req_user["is_company_admin"] == 1))){
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
         }
+
+        $newUser = User::create([
+            'company_id' => $fields['company_id'],
+            'name' => $fields['name'],
+            'email' => $fields['email'],
+            'password' => Hash::make(Str::password()),
+            'surname' => $fields['surname'],
+            'phone' => $request['phone'] ?? null,
+            'city' => $request['city'] ?? null,
+            'zip_code' => $request['zip_code'] ?? null,
+            'address' => $request['address'] ?? null,
+            'is_company_admin' => $request['is_company_admin'] ?? 0,
+        ]);
 
         return response([
             'user' => $newUser,
@@ -65,38 +69,43 @@ class UserController extends Controller {
 
         $req_user = $request->user();
 
-        if ($req_user["is_admin"] == 1) {
-            $user = User::where('id', $request['id'])->first();
-
-            if (!$user) {
-                return response([
-                    'message' => 'User not found',
-                ], 404);
-            }
-
-            $updatedFields = [];
-
-            $userFields = $user->getFillable();
-
-            foreach ($request->all() as $fieldName => $fieldValue) {
-                if (in_array($fieldName, $userFields)) {
-                    $updatedFields[$fieldName] = $fieldValue;
-                }
-            }
-
-            $user->update([
-                'is_company_admin' => $updatedFields['is_company_admin'],
-                'company_id' => $updatedFields['company_id'],
-                'name' => $updatedFields['name'],
-                'surname' => $updatedFields['surname'],
-                'email' => $updatedFields['email'],
-                'phone' => $updatedFields['phone'],
-                'address' => $updatedFields['address'],
-                'city' => $updatedFields['city'],
-                'zip_code' => $updatedFields['zip_code'],
-                // 'password' => $updatedFields['password'] ?? $user->password,
-            ]);
+        // Se non è admin o non è della compagnia e company_admin allora non è autorizzato
+        if(!($req_user["is_admin"] == 1 || ($req_user["company_id"] == $fields["company_id"] && $req_user["is_company_admin"] == 1))){
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
         }
+
+        $user = User::where('id', $request['id'])->first();
+
+        if (!$user) {
+            return response([
+                'message' => 'User not found',
+            ], 404);
+        }
+
+        $updatedFields = [];
+
+        $userFields = $user->getFillable();
+
+        foreach ($request->all() as $fieldName => $fieldValue) {
+            if (in_array($fieldName, $userFields)) {
+                $updatedFields[$fieldName] = $fieldValue;
+            }
+        }
+
+        $user->update([
+            'is_company_admin' => $updatedFields['is_company_admin'],
+            'company_id' => $updatedFields['company_id'],
+            'name' => $updatedFields['name'],
+            'surname' => $updatedFields['surname'],
+            'email' => $updatedFields['email'],
+            'phone' => $updatedFields['phone'],
+            'address' => $updatedFields['address'],
+            'city' => $updatedFields['city'],
+            'zip_code' => $updatedFields['zip_code'],
+            // 'password' => $updatedFields['password'] ?? $user->password,
+        ]);
 
         return response([
             'user' => $user,

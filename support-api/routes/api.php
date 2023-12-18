@@ -93,6 +93,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         [CompanyController::class, "index"]
     );
     
+    Route::get(
+        "/companies/{id}",
+        [CompanyController::class, "show"]
+    );
+    
     Route::post(
         "/companies",
         [CompanyController::class, "store"]
