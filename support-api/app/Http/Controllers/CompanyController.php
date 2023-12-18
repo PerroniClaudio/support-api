@@ -10,11 +10,17 @@ class CompanyController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
-    {
-        //
+    public function index(Request $request) {
+        $isAdminRequest = $request->user()["is_admin"] == 1;
 
-        $companies = Company::all();
+        if($isAdminRequest){
+            $companies = Company::all();
+            if(!$companies){
+                $companies = [];
+            }
+        } else {
+            $companies = [];
+        }
 
         return response([
             'companies' => $companies,

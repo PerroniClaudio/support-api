@@ -208,6 +208,7 @@ class TicketController extends Controller
             'ticket_id' => $ticket->id,
             'user_id' => $request->user()->id,
             'content' => "Stato del ticket modificato in " . $request->status,
+            'type' => 'status',
         ]);
 
         return response([
@@ -229,6 +230,7 @@ class TicketController extends Controller
             'ticket_id' => $ticket->id,
             'user_id' => $request->user()->id,
             'content' => $request->message,
+            'type' => 'note',
         ]);
 
         return response([
@@ -250,7 +252,8 @@ class TicketController extends Controller
         TicketStatusUpdate::create([
             'ticket_id' => $ticket->id,
             'user_id' => $request->user()->id,
-            'content' => "----CHIUSURA TICKET----\n" . $fields['message'],
+            'content' => $fields['message'],
+            'type' => 'closing',
         ]);
 
         // Controllare se si deve inviare la mail
@@ -279,6 +282,7 @@ class TicketController extends Controller
             'ticket_id' => $ticket->id,
             'user_id' => $request->user()->id,
             'content' => "Ticket assegnato al gruppo " . $group->name,
+            'type' => 'group_assign',
         ]);
 
         return response([
@@ -318,6 +322,7 @@ class TicketController extends Controller
             'ticket_id' => $ticket->id,
             'user_id' => $request->user()->id,
             'content' => "Ticket assegnato all'utente " . $adminUser->name . " " . $adminUser->surname,
+            'type' => 'assign',
         ]);
 
         return response([

@@ -42,6 +42,7 @@ class TicketStatusUpdateController extends Controller
             'ticket_id' => $id,
             'user_id' => $user->id,
             'content' => $fields['status'],
+            'type' => 'status',
         ]);
 
         return response([

@@ -205,8 +205,11 @@ class UserController extends Controller {
 
         if ($isAdminRequest) {
             $users = User::all();
+            if(!$users) {
+                $users = [];
+            }
         } else {
-            $users = null;
+            $users = [];
         }
 
         return response([

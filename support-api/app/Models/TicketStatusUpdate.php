@@ -13,6 +13,7 @@ class TicketStatusUpdate extends Model
         'ticket_id',
         'user_id',
         'content',
+        'type',
     ];
 
     /* get the owner */
