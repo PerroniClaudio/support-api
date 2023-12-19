@@ -6,9 +6,9 @@ services:
     ports:
       - 80:80
       - 443:443
-      - 5173:5173
     volumes:
       - ./support-api:/var/www/html
+      - ./frontend/dist:/var/www/frontend/dist
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
       - ./sslcert:/sslcert
     links:
@@ -28,6 +28,9 @@ services:
       - redis
     networks:
       - supportapi
+    ports:
+      - 9000:9000
+      - 587:587
 
   redis:
     platform: linux/arm64

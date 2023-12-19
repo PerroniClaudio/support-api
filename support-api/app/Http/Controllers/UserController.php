@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendWelcomeEmail;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -30,11 +31,22 @@ class UserController extends Controller {
 
         $req_user = $request->user();
 
-        // Se non è admin o non è della compagnia e company_admin allora non è autorizzato
-        if(!($req_user["is_admin"] == 1 || ($req_user["company_id"] == $fields["company_id"] && $req_user["is_company_admin"] == 1))){
-            return response([
-                'message' => 'Unauthorized',
-            ], 401);
+        if ($requestUser["is_admin"] == 1) {
+
+            $newUser = User::create([
+                'company_id' => $fields['company_id'],
+                'name' => $fields['name'],
+                'email' => $fields['email'],
+                'password' => Hash::make(Str::password()),
+                'surname' => $fields['surname'],
+                'phone' => $request['phone'] ?? null,
+                'city' => $request['city'] ?? null,
+                'zip_code' => $request['zip_code'] ?? null,
+                'address' => $request['address'] ?? null,
+                'is_company_admin' => $request['is_company_admin'] ?? 0,
+            ]);
+
+            dispatch(new SendWelcomeEmail($newUser));
         }
 
         $newUser = User::create([
@@ -115,16 +127,15 @@ class UserController extends Controller {
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy($id, Request $request)
-    {
+    public function destroy($id, Request $request) {
         //
         $user = $request->user();
 
-        if($user["is_admin"] == 1 && $id){
+        if ($user["is_admin"] == 1 && $id) {
             $deleted_user = User::destroy($id);
         }
 
-        if($deleted_user  == 0){
+        if ($deleted_user  == 0) {
             return response([
                 'message' => 'Error',
             ], 404);

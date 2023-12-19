@@ -1,6 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\WelcomeEmail;
+use App\Models\User;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,8 +21,12 @@ Route::get('/', function () {
 });
 
 Route::get('/info', function () {
-    echo "1";
     phpinfo();
 });
 
-require __DIR__.'/auth.php';
+Route::get('/testmail', function () {
+    $user = User::where('email', 'c.perroni@ifortech.com')->first();
+    Mail::to($user->email)->send(new WelcomeEmail($user));
+});
+
+require __DIR__ . '/auth.php';

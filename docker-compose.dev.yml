@@ -25,6 +25,8 @@ services:
       - redis
     networks:
       - supportapi
+    command: >
+      sh -c "php artisan migrate && php artisan queue:work"
 
   redis:
     image: redis:7.2.1-bookworm
