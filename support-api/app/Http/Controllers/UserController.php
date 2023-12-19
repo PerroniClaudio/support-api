@@ -33,22 +33,10 @@ class UserController extends Controller {
 
         $req_user = $request->user();
 
-        if ($req_user["is_admin"] == 1) {
-
-            $newUser = User::create([
-                'company_id' => $fields['company_id'],
-                'name' => $fields['name'],
-                'email' => $fields['email'],
-                'password' => Hash::make(Str::password()),
-                'surname' => $fields['surname'],
-                'phone' => $request['phone'] ?? null,
-                'city' => $request['city'] ?? null,
-                'zip_code' => $request['zip_code'] ?? null,
-                'address' => $request['address'] ?? null,
-                'is_company_admin' => $request['is_company_admin'] ?? 0,
-            ]);
-
-            dispatch(new SendWelcomeEmail($newUser));
+        if (!($req_user["is_admin"] == 1 || ($req_user["company_id"] == $fields["company_id"] && $req_user["is_company_admin"] == 1))) {
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
         }
 
         $newUser = User::create([
@@ -65,12 +53,15 @@ class UserController extends Controller {
         ]);
 
         $activation_token = ActivationToken::create([
-            'token' => Str::random(32),
+            // 'token' => Hash::make(Str::random(32)),
+            'token' => Str::random(20).time(),
             'uid' => $newUser['id'],
             'status' => 0,
         ]);
 
         // Inviare mail con url: frontendBaseUrl + /support/set-password/ + activation_token['token]
+        $url = env('FRONTEND_URL') . '/support/set-password/' . $activation_token['token'];
+        dispatch(new SendWelcomeEmail($newUser, $url));
 
         return response([
             'user' => $newUser,

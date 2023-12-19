@@ -2,6 +2,7 @@
 
 namespace App\Mail;
 
+use App\Models\ActivationToken;
 use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -16,7 +17,7 @@ class WelcomeEmail extends Mailable {
     /**
      * Create a new message instance.
      */
-    public function __construct(public User $user) {
+    public function __construct(public User $user, public String $url) {
         //
     }
 

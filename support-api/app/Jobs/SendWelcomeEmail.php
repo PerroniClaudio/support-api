@@ -15,14 +15,17 @@ class SendWelcomeEmail implements ShouldQueue {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected $user;
+    // protected $activation_token;
+    protected $url;
 
 
     /**
      * Create a new job instance.
      */
-    public function __construct($user) {
+    public function __construct($user, $url) {
         //
         $this->user = $user;
+        $this->url = $url;
     }
 
     /**
@@ -30,6 +33,6 @@ class SendWelcomeEmail implements ShouldQueue {
      */
     public function handle(): void {
         //
-        Mail::to($this->user->email)->send(new WelcomeEmail($this->user));
+        Mail::to($this->user->email)->send(new WelcomeEmail($this->user, $this->url));
     }
 }
