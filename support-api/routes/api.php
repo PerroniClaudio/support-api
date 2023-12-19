@@ -1,4 +1,7 @@
 <?php
+ini_set ('display_errors', 1);
+ini_set ('display_startup_errors', 1);
+error_reporting (E_ALL);
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -56,6 +59,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
         '/user/alladmins',
         [App\Http\Controllers\UserController::class, "allAdmins"]
     );
+
+    
 });
 
 

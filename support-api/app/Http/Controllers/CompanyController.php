@@ -194,7 +194,7 @@ class CompanyController extends Controller
         $user = $request->user();
 
         // Se non è admin o non è della compagnia e company_admin allora non è autorizzato
-        if(!($user["is_admin"] == 1 || ($user["company_id"] == $company["id"] && $user["is_company_admin"] == 1))){
+        if(!($user["is_admin"] == 1 || $user["company_id"] == $company["id"])){
             return response([
                 'message' => 'Unauthorized',
             ], 401);

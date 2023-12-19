@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivationToken;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 
 
 class UserController extends Controller {
@@ -50,9 +52,77 @@ class UserController extends Controller {
             'is_company_admin' => $request['is_company_admin'] ?? 0,
         ]);
 
+        $activation_token = ActivationToken::create([
+            'token' => Str::random(32),
+            'uid' => $newUser['id'],
+            'status' => 0,
+        ]);
+
+        // Inviare mail con url: frontendBaseUrl + /support/set-password/ + activation_token['token]
+
         return response([
             'user' => $newUser,
         ], 201);
+    }
+
+
+    /**
+     * Attiva l'utenza assegnandogli la password scelta.
+     */
+    public function activateUser(Request $request) {
+        $fields = $request->validate([
+            'token' => 'required|string|exists:activation_tokens,token',
+            'email' => 'required|string|exists:users,email',
+            'password'  => 'required|string',
+        ]);
+
+        $user = User::where('email', $request['email'])->first();
+
+        // Per non far sapere che l'utente esiste si può modificare in unauthorized
+        if (!$user) {
+            return response([
+                // 'message' => 'User not found',
+                'message' => 'Unauthorized',
+            ], 404);
+        }
+
+        // l'activation token nel db deve avere token, uid, status = 0
+        $token = ActivationToken::where('token', $request['token'])->first();
+        if ($token['uid'] != $user['id'] || $token['used'] != 0) {
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
+        // Controllare se la password rispetta i requisiti e poi aggiornare la password dell'utente
+        $password = $fields['password'];
+        $pattern = "/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&.])[A-Za-z\d@$!%*?&.]{10,}$/";
+
+        if (!preg_match($pattern, $password)) {
+            return response([
+                'message' => 'Invalid password',
+            ], 400);
+        }
+
+        $updated = $user->update([
+            'password' => Hash::make($fields['password']),
+        ]);
+
+        if(!$updated){
+            return response([
+                'message' => 'Error',
+            ], 404);
+        }
+
+        $token->update([
+            'used' => 1,
+        ]);
+
+        Auth::login($user);
+
+        return response([
+            'user' => $user,
+        ], 200);
     }
 
     /**
