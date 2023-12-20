@@ -2,6 +2,8 @@
 
 namespace App\Mail;
 
+use App\Models\Ticket;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -16,7 +18,7 @@ class StatusUpdateMail extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct()
+    public function __construct(public Ticket $ticket, public Int $status_id, public User $user)
     {
         //
     }
@@ -27,7 +29,7 @@ class StatusUpdateMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Status Update Mail',
+            subject: 'Aggiornamento stato ticket #' . $this->ticket->id . ' - ' . $this->ticket->ticketType->name,
         );
     }
 
@@ -37,7 +39,7 @@ class StatusUpdateMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'view.name',
+            markdown: 'emails.statusupdate',
         );
     }
 

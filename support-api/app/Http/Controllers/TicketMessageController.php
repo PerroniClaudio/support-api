@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\TicketMessageMail;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class TicketMessageController extends Controller
 {
@@ -62,6 +64,17 @@ class TicketMessageController extends Controller
             'ticket_id' => $id,
             'user_id' => $user->id,
         ]);
+
+        $ticket = Ticket::where('id', 1)->with(['ticketType' => function ($query) {
+            $query->with('category');
+        }])->first();
+
+        if($user['is_admin'] == 1) {
+            $ticket_message->is_read = 1;
+            $ticket_message->save();
+        } else {
+            Mail::to('support@ifortech.com')->send(new TicketMessageMail($ticket, $user, $ticket_message));
+        }
 
         return response([
             'ticket_message' => $ticket_message,
