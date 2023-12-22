@@ -106,7 +106,7 @@ class TicketTypeController extends Controller {
         ]);
 
         // controllo ticket della compagnia precedente. se non ce ne sono si può modificare la compagnia, altrimenti no.
-        if ($ticketType->company_id != $validated['company_id'] && $ticketType->hasRelatedTickets()) {
+        if ($ticketType->company_id != $validated['company_id'] && $ticketType->countRelatedTickets()) {
             return response([
                 'message' => 'Non è possibile modificare il tipo di ticket perché ci sono ticket associati con l\'attuale azienda',
             ], 400);
@@ -277,5 +277,55 @@ class TicketTypeController extends Controller {
         return response([
             'formField' => $formField,
         ], 200);
+    }
+
+    public function countTicketsInCompany($ticketTypeId) {
+        $count = TicketType::where('id', $ticketTypeId)->first()->countRelatedTickets();
+        return response([
+            'count' => $count,
+        ], 200);
+    }
+
+    public function duplicateTicketType(Request $request) {
+
+        $fields = $request->validate([
+            'new_company_id' => 'required|numeric',
+            'ticket_type_id' => 'required|numeric',
+        ]);
+
+        $user = $request->user();
+        if (!$user['is_admin']) {
+            return response(['message' => 'Unauthorized'], 401);
+        }
+
+        $ticketType = TicketType::where('id', $fields['ticket_type_id'])->first();
+        $newTicketType = $ticketType->replicate();
+        $newTicketType->company_id = $fields['new_company_id'];
+        $success = $newTicketType->save();
+
+        if(!$success){
+            return response([
+                'message' => 'Error while duplicating ticket type',
+            ], 500);
+        }
+
+        $newTicketType = TicketType::where('id', $newTicketType["id"])->with("category")->first();
+
+
+        // Deve duplicare anche il webform e i gruppi
+        TypeFormFields::where('ticket_type_id', $ticketType->id)->get()->each(function ($formField) use ($newTicketType) {
+            $newFormField = $formField->replicate();
+            $newFormField->ticket_type_id = $newTicketType->id;
+            $newFormField->save();
+        });
+
+        $ticketType->groups()->get()->each(function ($group) use ($newTicketType) {
+            $newTicketType->groups()->attach($group->id);
+        });
+
+        return response([
+            'ticketType' => $newTicketType
+        ], 200);
+        
     }
 }

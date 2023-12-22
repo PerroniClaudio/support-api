@@ -263,6 +263,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
     //     [App\Http\Controllers\TicketTypeController::class, "updateSla"]
     // );
 
+    // Restituisce il numero di ticket del tipo indicato per l'azienda assegnata al tipo
+    Route::get(
+        "/ticket-type/{ticketTypeId}/count-company",
+        [App\Http\Controllers\TicketTypeController::class, "countTicketsInCompany"]
+    );
+
     Route::patch(
         "/ticket-type/{ticketType}",
         [App\Http\Controllers\TicketTypeController::class, "update"]
@@ -302,6 +308,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     //     "/ticket-type-companies/delete",
     //     [App\Http\Controllers\TicketTypeController::class, "deleteCompany"]
     // );
+
+    Route::post(
+        "/ticket-type/duplicate",
+        [App\Http\Controllers\TicketTypeController::class, "duplicateTicketType"]
+    );
 });
 
 // Route::middleware(['auth:sanctum'])->get(

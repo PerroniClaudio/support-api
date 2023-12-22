@@ -20,6 +20,12 @@ class TicketType extends Model {
     public function tickets() {
         return $this->hasMany(Ticket::class);
     }
+    
+    // Restituisce il numero di ticket di questo tipo e con questa compagnia
+    public function countRelatedTickets()
+    {
+        return $this->company->tickets()->where('type_id', $this->id)->count();
+    }
 
     public function typeFormField() {
         return $this->hasMany(TypeFormFields::class, 'ticket_type_id');
@@ -33,10 +39,6 @@ class TicketType extends Model {
         return $this->belongsTo(Company::class, 'company_id');
     }
 
-    public function hasRelatedTickets()
-    {
-        return $this->company->tickets()->where('type_id', $this->id)->exists();
-    }
     
     public function category() {
         return $this->belongsTo(TicketTypeCategory::class, 'ticket_type_category_id');
