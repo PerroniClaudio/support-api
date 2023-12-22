@@ -107,45 +107,25 @@ class CompanyController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request)
-    {
-        $fields = $request->validate([
-            'id' => 'required|int|exists:companies,id', // TODO: 'id' => 'required|int|exists:companies,id
+    public function update(Request $request) {
+        $request->validate([
+            'id' => 'required|int|exists:companies,id',
             'name' => 'required|string',
             'note' => 'nullable|string',
         ]);
 
         $user = $request->user();
 
-        if($user["is_admin"] != 1){
-            return response([
-                'message' => 'Unauthorized',
-            ], 401);
-        }
-        
-        $company = Company::where('id', $request['id'])->first();
-
-        if(!$company){
-            return response([
-                'message' => 'Company not found',
-            ], 404);
+        if (!$user['is_admin']) {
+            return response(['message' => 'Unauthorized'], 401);
         }
 
-        $updatedFields = [];
+        $company = Company::findOrFail($request->id);
 
-        $companyFields = $company->getFillable();
-
-        foreach ($request->all() as $fieldName => $fieldValue) {
-            if (in_array($fieldName, $companyFields)) {
-                $updatedFields[$fieldName] = $fieldValue;
-            }
-        }
-
+        $updatedFields = $request->only($company->getFillable());
         $company->update($updatedFields);
 
-        return response([
-            'company' => $company,
-        ], 200);
+        return response(['company' => $company], 200);
     }
 
     /**
@@ -155,10 +135,8 @@ class CompanyController extends Controller
     {
         $user = $request->user();
 
-        if($user["is_admin"] != 1 ){
-            return response([
-                'message' => 'Unauthorized',
-            ], 401);
+        if(!$user["is_admin"]){
+            return response(['message' => 'Unauthorized',], 401);
         }
 
         $deleted_company = Company::destroy($id);

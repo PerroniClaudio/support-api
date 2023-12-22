@@ -20,7 +20,10 @@ class Ticket extends Model
         'admin_user_id',
         'group_id',
         'due_date',
-        'type_id'
+        'type_id',
+        'sla_take',
+        'sla_solve',
+        'priority',
     ];
 
     /* get the owner */
@@ -55,4 +58,37 @@ class Ticket extends Model
     public function files() {
         return $this->hasMany(TicketFile::class);
     }
+
+    // public function calculateRemainingTime() {
+        
+    //     // $statusUpdatesGo = $this->statusUpdates()->where('type', 'status')->where(function ($query) {
+    //     //     $query->where('content', 'not like', '%in attesa%')
+    //     //         ->orWhere('content', 'not like', '%risolto%')
+    //     //         ->orWhere('content', 'not like', '%chiuso%');
+    //     // })->get();
+
+    //     // $statusUpdatesStops = $this->statusUpdates()->where('type', 'status')->where(function ($query) {
+    //     //     $query->where('content', 'like', '%in attesa%')
+    //     //         ->orWhere('content', 'like', '%risolto%')
+    //     //         ->orWhere('content', 'like', '%chiuso%');
+    //     // })->get();
+
+    //     // Prende tutti gli staus update di tipo status, in ordine cronologico 
+    //     // Crea l'array vuoto $time_frames (conterrà elementi di questo tipo: {type: go/pause, start: 0, end: 0})
+    //     // Crea la variabile $now_going = true
+
+
+    //     $totalTime = $this->sla; // Total available time to solve the ticket
+    //     $timeToSubtract = 0; // Time to subtract from the total available time
+
+    //     foreach ($statusUpdates as $update) {
+    //         // Calculate the time between status updates
+    //         // You may need to adjust this part based on your specific requirements and the format of your timestamps
+    //         $timeDiff = $update->created_at->diffInMinutes($this->created_at);
+
+    //         $totalTime -= $timeDiff;
+    //     }
+
+    //     return $totalTime;
+    // }
 }

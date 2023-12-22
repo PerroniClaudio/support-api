@@ -73,7 +73,10 @@ class TicketController extends Controller
             'status' => '0',
             'company_id' => isset($request['company']) && $user["is_admin"] == 1 ? $request['company'] : $user->company_id,
             'file' => null,
-            'duration' => 0
+            'duration' => 0,
+            'sla_take' => $ticketType['default_sla_take'],
+            'sla_solve' => $ticketType['default_sla_solve'],
+            'priority' => $ticketType['default_priority'],
         ]);
 
         if($request->file('file') != null) {
@@ -87,14 +90,14 @@ class TicketController extends Controller
 
         cache()->forget('user_' . $user->id . '_tickets');
 
-        $ticketMessage = TicketMessage::create([
+        TicketMessage::create([
             'ticket_id' => $ticket->id,
             'user_id' => $user->id,
             'message' => json_encode($request['messageData']),
             'is_read' => 0
         ]);
 
-        $ticketMessage = TicketMessage::create([
+        TicketMessage::create([
             'ticket_id' => $ticket->id,
             'user_id' => $user->id,
             'message' => $fields['description'],
@@ -239,6 +242,57 @@ class TicketController extends Controller
 
     }
     
+    public function updateTicketPriority(Ticket $ticket, Request $request) {
+        $fields = $request->validate([
+            'priority' => 'required|string',
+        ]);
+
+        if($request->user()["is_admin"] != 1) {
+            return response([
+                'message' => 'The user must be an admin.',
+            ], 401);
+        }
+
+        $priorities = ['low', 'medium', 'high', 'critical']; // Define the priorities array
+
+        if (!in_array($fields['priority'], $priorities)) {
+            return response([
+                'message' => 'Invalid priority value.',
+            ], 400);
+        }
+
+        $company = $ticket->company;
+        $sla_take_key = "sla_take_" . $fields['priority'];
+        $sla_solve_key = "sla_solve_" . $fields['priority'];
+        $new_sla_take = $company[$sla_take_key];
+        $new_sla_solve = $company[$sla_solve_key];
+
+        if($new_sla_take == null || $new_sla_solve == null) {
+            return response([
+                'message' => 'Company sla for ' . $fields['priority'] . ' priority must be set.',
+            ], 400);
+        }
+
+        $old_priority = (isset($ticket['priority']) &&  strlen($ticket['priority']) > 0) ? $ticket['priority'] : "not set";
+
+        $ticket->update([
+            'priority' => $fields['priority'],
+            'sla_take' => $new_sla_take,
+            'sla_solve' => $new_sla_solve,
+        ]);
+
+        TicketStatusUpdate::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $request->user()->id,
+            'content' => "Priorità del ticket modificata da " . $old_priority . " a " . $fields['priority'] . ". SLA aggiornata di conseguenza.",
+            'type' => 'sla',
+        ]);
+
+        return response([
+            'ticket' => $ticket,
+        ], 200);
+    }
+    
     public function closeTicket(Ticket $ticket, Request $request) {
 
         $fields = $request->validate([
@@ -295,14 +349,6 @@ class TicketController extends Controller
 
         $request->validate([
             'admin_user_id' => 'required|int',
-            // Il controllo dell'autorizzazione così non funziona.
-            // 'is_admin' => [
-            //     function ($attribute, $value, $fail) {
-            //         if (!Auth::user()['is_admin']) {
-            //             $fail('The user must be an admin.');
-            //         }
-            //     },
-            // ],
         ]);
         $isAdminRequest = $request->user()["is_admin"] == 1;
 

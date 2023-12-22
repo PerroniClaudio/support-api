@@ -158,6 +158,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         "/ticket/{ticket}/file",
         [App\Http\Controllers\TicketController::class, "storeFile"]
     );
+    
+    Route::post(
+        "/ticket/{ticket}/priority-update",
+        [App\Http\Controllers\TicketController::class, "updateTicketPriority"]
+    );
 
     Route::post(
         "/ticket/{ticket}/status-update",
@@ -245,15 +250,20 @@ Route::middleware(['auth:sanctum'])->group(function () {
         [App\Http\Controllers\TicketTypeController::class, "getWebForm"]
     );
 
+    // Route::get(
+    //     "/ticket-type-companies/{ticketType}",
+    //     [App\Http\Controllers\TicketTypeController::class, "getCompanies"]
+    // );
+    
     Route::get(
-        "/ticket-type-companies/{ticketType}",
-        [App\Http\Controllers\TicketTypeController::class, "getCompanies"]
+        "/ticket-type-company/{ticketType}",
+        [App\Http\Controllers\TicketTypeController::class, "getCompany"]
     );
 
-    Route::patch(
-        "/ticket-type/update-sla",
-        [App\Http\Controllers\TicketTypeController::class, "updateSla"]
-    );
+    // Route::patch(
+    //     "/ticket-type/update-sla",
+    //     [App\Http\Controllers\TicketTypeController::class, "updateSla"]
+    // );
 
     Route::patch(
         "/ticket-type/{ticketType}",
@@ -290,10 +300,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         [App\Http\Controllers\TicketTypeController::class, "updateCompanies"]
     );
 
-    Route::post(
-        "/ticket-type-companies/delete",
-        [App\Http\Controllers\TicketTypeController::class, "deleteCompany"]
-    );
+    // Route::post(
+    //     "/ticket-type-companies/delete",
+    //     [App\Http\Controllers\TicketTypeController::class, "deleteCompany"]
+    // );
 });
 
 // Route::middleware(['auth:sanctum'])->get(

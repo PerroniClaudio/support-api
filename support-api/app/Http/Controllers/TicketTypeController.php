@@ -40,11 +40,14 @@ class TicketTypeController extends Controller {
      * Store a newly created resource in storage.
      */
     public function store(Request $request) {
-        //
 
         $validated = $request->validate([
             'name' => 'required',
             'ticket_type_category_id' => 'required',
+            'company_id' => 'required|numeric',
+            'default_priority' => 'required|string',
+            'default_sla_solve' => 'required|numeric',
+            'default_sla_take' => 'required|numeric'
         ]);
 
         $ticketType = TicketType::create($validated);
@@ -93,10 +96,14 @@ class TicketTypeController extends Controller {
      */
     public function update(Request $request, TicketType $ticketType) {
 
-        $validated = [
-            'name' => $request->name,
-            'ticket_type_category_id' => $request->ticket_type_category_id,
-        ];
+        $validated = $request->validate([
+            'name' => 'required|string',
+            'ticket_type_category_id' => 'required|numeric',
+            'default_priority' => 'required|string',
+            'default_sla_take' => 'required|numeric',
+            'default_sla_solve' => 'required|numeric',
+            'company_id' => 'required|numeric',
+        ]);
 
         $ticketType->update($validated);
 
@@ -137,11 +144,19 @@ class TicketTypeController extends Controller {
         ], 200);
     }
 
-    public function getCompanies(TicketType $ticketType) {
-        $companies = $ticketType->companies()->get();
+    // public function getCompanies(TicketType $ticketType) {
+    //     $companies = $ticketType->companies()->get();
+
+    //     return response([
+    //         'companies' => $companies,
+    //     ], 200);
+    // }
+    
+    public function getCompany(TicketType $ticketType) {
+        $company = $ticketType->company()->get();
 
         return response([
-            'companies' => $companies,
+            'company' => $company,
         ], 200);
     }
 
@@ -161,49 +176,49 @@ class TicketTypeController extends Controller {
         ], 200);
     }
 
-    public function deleteCompany(Request $request) {
+    // public function deleteCompany(Request $request) {
 
-        $validated = $request->validate([
-            'ticket_type_id' => 'required',
-            'company_id' => 'required',
-        ]);
+    //     $validated = $request->validate([
+    //         'ticket_type_id' => 'required',
+    //         'company_id' => 'required',
+    //     ]);
 
-        $ticketType = TicketType::where('id', $validated['ticket_type_id'])->first();
+    //     $ticketType = TicketType::where('id', $validated['ticket_type_id'])->first();
 
-        $ticketType->companies()->detach($validated['company_id']);
+    //     $ticketType->companies()->detach($validated['company_id']);
 
-        $companies = $ticketType->companies()->get();
+    //     $companies = $ticketType->companies()->get();
 
-        return response([
-            'companies' => $companies,
-        ], 200);
-    }
+    //     return response([
+    //         'companies' => $companies,
+    //     ], 200);
+    // }
 
-    public function updateSla(Request $request) {
+    // public function updateSla(Request $request) {
 
-        $validated = $request->validate([
-            'ticket_type_id' => 'required',
-            'company_id' => 'required',
-            'sla_taking_charge' => 'required',
-            'sla_resolving' => 'required',
-        ]);
+    //     $validated = $request->validate([
+    //         'ticket_type_id' => 'required',
+    //         'company_id' => 'required',
+    //         'sla_taking_charge' => 'required',
+    //         'sla_resolving' => 'required',
+    //     ]);
 
-        $ticketType = TicketType::where('id', $validated['ticket_type_id'])->first();
+    //     $ticketType = TicketType::where('id', $validated['ticket_type_id'])->first();
 
-        $ticketType->companies()->updateExistingPivot(
-            $validated['company_id'],
-            [
-                'sla_taking_charge' => $validated['sla_taking_charge'],
-                'sla_resolving' => $validated['sla_resolving'],
-            ]
-        );
+    //     $ticketType->companies()->updateExistingPivot(
+    //         $validated['company_id'],
+    //         [
+    //             'sla_taking_charge' => $validated['sla_taking_charge'],
+    //             'sla_resolving' => $validated['sla_resolving'],
+    //         ]
+    //     );
 
-        $companies = $ticketType->companies()->get();
+    //     $companies = $ticketType->companies()->get();
 
-        return response([
-            'companies' => $companies,
-        ], 200);
-    }
+    //     return response([
+    //         'companies' => $companies,
+    //     ], 200);
+    // }
 
     public function updateGroups(Request $request) {
 

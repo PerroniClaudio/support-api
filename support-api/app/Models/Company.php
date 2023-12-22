@@ -17,14 +17,26 @@ class Company extends Model {
         'name',
         'sla',
         'note',
+        'sla_take_low',
+        'sla_take_medium',
+        'sla_take_high',
+        'sla_take_critical',
+        'sla_solve_low',
+        'sla_solve_medium',
+        'sla_solve_high',
+        'sla_solve_critical',
     ];
 
     public function users() {
         return $this->hasMany(User::class);
     }
 
+    // public function ticketTypes() {
+    //     return $this->belongsToMany(TicketType::class, 'company_ticket_types')->withPivot('sla_taking_charge', 'sla_resolving');;
+    // }
+    
     public function ticketTypes() {
-        return $this->belongsToMany(TicketType::class, 'company_ticket_types')->withPivot('sla_taking_charge', 'sla_resolving');;
+        return $this->hasMany(TicketType::class);
     }
 
     public function tickets() {

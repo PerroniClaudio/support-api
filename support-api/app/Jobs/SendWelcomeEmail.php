@@ -15,7 +15,6 @@ class SendWelcomeEmail implements ShouldQueue {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected $user;
-    // protected $activation_token;
     protected $url;
 
 
