@@ -33,6 +33,11 @@ class TicketType extends Model {
         return $this->belongsTo(Company::class, 'company_id');
     }
 
+    public function hasRelatedTickets()
+    {
+        return $this->company->tickets()->where('type_id', $this->id)->exists();
+    }
+    
     public function category() {
         return $this->belongsTo(TicketTypeCategory::class, 'ticket_type_category_id');
     }
@@ -40,4 +45,5 @@ class TicketType extends Model {
     public function groups() {
         return $this->belongsToMany(Group::class, 'ticket_type_group', 'ticket_type_id', 'group_id');
     }
+
 }

@@ -105,6 +105,13 @@ class TicketTypeController extends Controller {
             'company_id' => 'required|numeric',
         ]);
 
+        // controllo ticket della compagnia precedente. se non ce ne sono si può modificare la compagnia, altrimenti no.
+        if ($ticketType->company_id != $validated['company_id'] && $ticketType->hasRelatedTickets()) {
+            return response([
+                'message' => 'Non è possibile modificare il tipo di ticket perché ci sono ticket associati con l\'attuale azienda',
+            ], 400);
+        }
+
         $ticketType->update($validated);
 
         $tt = TicketType::where('id', $ticketType->id)->with('category')->first();
