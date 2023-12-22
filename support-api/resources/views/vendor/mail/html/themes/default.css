@@ -40,21 +40,21 @@ a img {
 h1 {
     color: #3d4852;
     font-size: 18px;
-    font-weight: bold;
+    font-weight: 600;
     margin-top: 0;
     text-align: left;
 }
 
 h2 {
     font-size: 16px;
-    font-weight: bold;
+    font-weight: 600;
     margin-top: 0;
     text-align: left;
 }
 
 h3 {
     font-size: 14px;
-    font-weight: bold;
+    font-weight: 600;
     margin-top: 0;
     text-align: left;
 }
@@ -301,4 +301,43 @@ img {
 
 .break-all {
     word-break: break-all;
+}
+
+/* Status */
+
+.status-label {
+    border-radius: 4px;
+    padding: 4px 8px;
+    border: 1px solid black;
+}
+
+.status-0-box {
+    border-color: #22c55e
+}
+.status-0-circle{
+    color: #22c55e
+}
+.status-1-box {
+    border-color: #facc15
+}
+.status-1-circle{
+    color: #facc15
+}
+.status-2-box {
+    border-color: #f97316
+}
+.status-2-circle{
+    color: #f97316
+}
+.status-3-box {
+    border-color: #ef4444
+}
+.status-3-circle{
+    color: #ef4444
+}
+.status-4-box {
+    border-color: #3b82f6
+}
+.status-4-circle{
+    color: #3b82f6
 }

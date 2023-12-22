@@ -4,3 +4,4 @@ supporto
 /usr
 erp
 .env
+/redis/dump.rdb

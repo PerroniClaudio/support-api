@@ -16,13 +16,11 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
 
-class TicketController extends Controller
-{
+class TicketController extends Controller {
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request)
-    {
+    public function index(Request $request) {
         // Show only the tickets belonging to the authenticated user
 
         $user = $request->user();
@@ -31,7 +29,7 @@ class TicketController extends Controller
         $tickets = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($user) {
             return Ticket::where('user_id', $user->id)->get();
         });
-        
+
         return response([
             'tickets' => $tickets,
         ], 200);
@@ -40,7 +38,7 @@ class TicketController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create(){
+    public function create() {
         //
 
         return response([
@@ -51,8 +49,7 @@ class TicketController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-    {
+    public function store(Request $request) {
 
         $user = $request->user();
 
@@ -64,7 +61,7 @@ class TicketController extends Controller
         $ticketType = TicketType::find($fields['type_id']);
         $group = $ticketType->groups->first();
         $groupId = $group ? $group->id : null;
-        
+
         $ticket = Ticket::create([
             'description' => $fields['description'],
             'type_id' => $fields['type_id'],
@@ -79,10 +76,10 @@ class TicketController extends Controller
             'priority' => $ticketType['default_priority'],
         ]);
 
-        if($request->file('file') != null) {
+        if ($request->file('file') != null) {
             $file = $request->file('file');
             $file_name = time() . '_' . $file->getClientOriginalName();
-            $storeFile = $file->storeAs("tickets/" . $ticket->id . "/", $file_name, "gcs");  
+            $storeFile = $file->storeAs("tickets/" . $ticket->id . "/", $file_name, "gcs");
             $ticket->update([
                 'file' => $file_name,
             ]);
@@ -107,21 +104,19 @@ class TicketController extends Controller
         return response([
             'ticket' => $ticket,
         ], 201);
-
     }
 
     /**
      * Display the specified resource.
      */
-    public function show($id, Request $request)
-    {
+    public function show($id, Request $request) {
 
         $user = $request->user();
         $cacheKey = 'user_' . $user->id . '_tickets_show:' . $id;
         cache()->forget($cacheKey);
 
         $ticket = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($user, $id) {
-            $item = Ticket::where('id', $id)->where('user_id', $user->id) ->with(['ticketType' => function ($query) {
+            $item = Ticket::where('id', $id)->where('user_id', $user->id)->with(['ticketType' => function ($query) {
                 $query->with('category');
             }, 'company', 'user', 'files'])->first();
 
@@ -142,14 +137,12 @@ class TicketController extends Controller
         return response([
             'message' => 'Please use /api/update to update an existing ticket',
         ], 404);
-
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Ticket $ticket)
-    {
+    public function update(Request $request, Ticket $ticket) {
         //
 
         $user = $request->user();
@@ -177,8 +170,7 @@ class TicketController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Ticket $ticket, Request $request)
-    {
+    public function destroy(Ticket $ticket, Request $request) {
         //
         $user = $request->user();
 
@@ -197,7 +189,7 @@ class TicketController extends Controller
         ]);
         $isAdminRequest = $request->user()["is_admin"] == 1;
 
-        if(!$isAdminRequest) {
+        if (!$isAdminRequest) {
             return response([
                 'message' => 'The user must be an admin.',
             ], 401);
@@ -217,9 +209,8 @@ class TicketController extends Controller
         return response([
             'ticket' => $ticket,
         ], 200);
-
     }
-    
+
     public function addNote(Ticket $ticket, Request $request) {
 
         // $ticket->update([
@@ -239,7 +230,6 @@ class TicketController extends Controller
         return response([
             'new-note' => $request->message,
         ], 200);
-
     }
     
     public function updateTicketPriority(Ticket $ticket, Request $request) {
@@ -311,7 +301,7 @@ class TicketController extends Controller
         ]);
 
         // Controllare se si deve inviare la mail
-        if($request->sendMail == true) {
+        if ($request->sendMail == true) {
             // Invio mail al cliente
             // sendMail($dafeultMail, $fields['message']);
         }
@@ -319,10 +309,9 @@ class TicketController extends Controller
         return response([
             'ticket' => $ticket,
         ], 200);
-
     }
 
-    
+
 
     public function assignToGroup(Ticket $ticket, Request $request) {
 
@@ -342,7 +331,6 @@ class TicketController extends Controller
         return response([
             'ticket' => $ticket,
         ], 200);
-
     }
 
     public function assignToAdminUser(Ticket $ticket, Request $request) {
@@ -352,7 +340,7 @@ class TicketController extends Controller
         ]);
         $isAdminRequest = $request->user()["is_admin"] == 1;
 
-        if(!$isAdminRequest) {
+        if (!$isAdminRequest) {
             return response([
                 'message' => 'The user must be an admin.',
             ], 401);
@@ -374,7 +362,6 @@ class TicketController extends Controller
         return response([
             'ticket' => $ticket,
         ], 200);
-
     }
 
     public function files(Ticket $ticket, Request $request) {
@@ -384,16 +371,15 @@ class TicketController extends Controller
         return response([
             'files' => $files,
         ], 200);
-
     }
 
     public function storeFile($id, Request $request) {
 
-        if($request->file('file') != null) {
+        if ($request->file('file') != null) {
             $file = $request->file('file');
             $file_name = time() . '_' . $file->getClientOriginalName();
-            $path = "tickets/" . $id . "/". $file_name;
-            $storeFile = $file->storeAs("tickets/" . $id . "/", $file_name, "gcs");  
+            $path = "tickets/" . $id . "/" . $file_name;
+            $storeFile = $file->storeAs("tickets/" . $id . "/", $file_name, "gcs");
             $ticketFile = TicketFile::create([
                 'ticket_id' => $id,
                 'filename' => $file->getClientOriginalName(),
@@ -407,7 +393,6 @@ class TicketController extends Controller
                 'ticketFile' => $ticketFile,
             ], 200);
         }
-
     }
 
     public function generatedSignedUrlForFile($id) {
@@ -422,29 +407,28 @@ class TicketController extends Controller
         return response([
             'url' => $url,
         ], 200);
-
     }
-    
-    
+
+
     /**
      * Show only the tickets belonging to the authenticated admin groups.
      */
     public function adminGroupsTickets(Request $request) {
-    
+
         $user = $request->user();
         $cacheKey = 'user_' . $user->id . '_tickets';
-    
+
         $tickets = Cache::remember($cacheKey, now()->addMinutes(2), function () use ($user) {
-            if($user["is_admin"] == 1){
+            if ($user["is_admin"] == 1) {
                 // Get the group IDs associated with the user
                 $groupIds = $user->groups->pluck('id');
-    
+
                 // Retrieve tickets where the group_id is in the groupIds array
                 return Ticket::whereIn('group_id', $groupIds)->get();
             }
         });
-    
-    
+
+
         return response([
             'tickets' => $tickets,
         ], 200);

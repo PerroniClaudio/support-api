@@ -1,7 +1,7 @@
 <?php
-ini_set ('display_errors', 1);
-ini_set ('display_startup_errors', 1);
-error_reporting (E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -44,9 +44,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
         '/user',
         [App\Http\Controllers\UserController::class, "update"]
     );
-    
+
     Route::delete(
-        '/user/{id}', 
+        '/user/{id}',
         [App\Http\Controllers\UserController::class, "destroy"]
     );
 
@@ -59,8 +59,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
         '/user/alladmins',
         [App\Http\Controllers\UserController::class, "allAdmins"]
     );
-
-    
 });
 
 
@@ -97,27 +95,27 @@ Route::middleware(['auth:sanctum'])->group(function () {
         "/companies",
         [CompanyController::class, "index"]
     );
-    
+
     Route::get(
         "/companies/{id}",
         [CompanyController::class, "show"]
     );
-    
+
     Route::post(
         "/companies",
         [CompanyController::class, "store"]
     );
-    
+
     Route::delete(
         "/companies/{id}",
         [CompanyController::class, "destroy"]
     );
-    
+
     Route::patch(
         "/companies",
         [CompanyController::class, "update"]
     );
-    
+
     Route::get(
         "/companies/{company}/offices",
         [CompanyController::class, "offices"]
@@ -324,7 +322,31 @@ Route::middleware(['auth:sanctum'])->group(function () {
     );
 
     Route::get(
+        "/groups/{group}",
+        [GroupController::class, "show"]
+    );
+
+    Route::get(
         "/groups/{group}/ticket-types",
         [GroupController::class, "ticketTypes"]
+    );
+
+    Route::get(
+        "/groups/{group}/users",
+        [GroupController::class, "users"]
+    );
+
+    Route::post(
+        "/groups",
+        [GroupController::class, "store"]
+    );
+
+    Route::post(
+        "/groups-users",
+        [GroupController::class, "updateUsers"]
+    );
+    Route::post(
+        "/groups-types",
+        [GroupController::class, "updateTypes"]
     );
 });
