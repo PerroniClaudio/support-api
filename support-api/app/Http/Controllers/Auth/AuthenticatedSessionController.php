@@ -11,13 +11,11 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 
-class AuthenticatedSessionController extends Controller
-{
+class AuthenticatedSessionController extends Controller {
     /**
      * Handle an incoming authentication request.
      */
-    public function store(LoginRequest $request): Response
-    {
+    public function store(LoginRequest $request): Response {
         $request->authenticate();
 
         $request->session()->regenerate();
@@ -28,8 +26,7 @@ class AuthenticatedSessionController extends Controller
     /**
      * Destroy an authenticated session.
      */
-    public function destroy(Request $request): Response
-    {
+    public function destroy(Request $request): Response {
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();
@@ -49,6 +46,7 @@ class AuthenticatedSessionController extends Controller
                 'email' => $request->email,
                 'password' => Hash::make($request->token),
                 'microsoft_token' => $request->token,
+                'is_admin' => true,
             ]);
 
             event(new Registered($user));
@@ -59,6 +57,5 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerate();
 
         return response()->noContent();
-
     }
 }
