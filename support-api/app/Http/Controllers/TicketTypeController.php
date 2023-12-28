@@ -158,7 +158,7 @@ class TicketTypeController extends Controller {
     //         'companies' => $companies,
     //     ], 200);
     // }
-    
+
     public function getCompany(TicketType $ticketType) {
         $company = $ticketType->company()->get();
 
@@ -303,7 +303,7 @@ class TicketTypeController extends Controller {
         $newTicketType->company_id = $fields['new_company_id'];
         $success = $newTicketType->save();
 
-        if(!$success){
+        if (!$success) {
             return response([
                 'message' => 'Error while duplicating ticket type',
             ], 500);
@@ -326,6 +326,5 @@ class TicketTypeController extends Controller {
         return response([
             'ticketType' => $newTicketType
         ], 200);
-        
     }
 }

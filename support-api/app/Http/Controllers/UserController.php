@@ -33,7 +33,7 @@ class UserController extends Controller {
 
         $requestUser = $request->user();
 
-        if (!($req_user["is_admin"] == 1 || ($req_user["company_id"] == $fields["company_id"] && $req_user["is_company_admin"] == 1))) {
+        if (!($requestUser["is_admin"] == 1 || ($requestUser["company_id"] == $fields["company_id"] && $requestUser["is_company_admin"] == 1))) {
             return response([
                 'message' => 'Unauthorized',
             ], 401);
@@ -54,7 +54,7 @@ class UserController extends Controller {
 
         $activation_token = ActivationToken::create([
             // 'token' => Hash::make(Str::random(32)),
-            'token' => Str::random(20).time(),
+            'token' => Str::random(20) . time(),
             'uid' => $newUser['id'],
             'status' => 0,
         ]);
@@ -111,7 +111,7 @@ class UserController extends Controller {
             'password' => Hash::make($fields['password']),
         ]);
 
-        if(!$updated){
+        if (!$updated) {
             return response([
                 'message' => 'Error',
             ], 404);

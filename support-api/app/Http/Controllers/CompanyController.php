@@ -5,17 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\Company;
 use Illuminate\Http\Request;
 
-class CompanyController extends Controller
-{
+class CompanyController extends Controller {
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request) {
         $isAdminRequest = $request->user()["is_admin"] == 1;
 
-        if($isAdminRequest){
+        if ($isAdminRequest) {
             $companies = Company::all();
-            if(!$companies){
+            if (!$companies) {
                 $companies = [];
             }
         } else {
@@ -30,8 +29,7 @@ class CompanyController extends Controller
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
-    {
+    public function create() {
         //
         return response([
             'message' => 'Please use /api/store to create a new company',
@@ -41,8 +39,7 @@ class CompanyController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(Request $request)
-    {
+    public function store(Request $request) {
         //
         $fields = $request->validate([
             'name' => 'required|string',
@@ -50,18 +47,18 @@ class CompanyController extends Controller
 
         $user = $request->user();
 
-        if($user["is_admin"] != 1){
+        if ($user["is_admin"] != 1) {
             return response([
                 'message' => "Unauthorized",
             ], 401);
         }
-            
+
         // Il campo sla non serve più. Quando si modificherà il database, togliere anche il campo da qui
         $newCompany = Company::create([
             'name' => $fields['name'],
             'sla' => 'vuoto',
         ]);
-        
+
         return response([
             'company' => $newCompany,
         ], 201);
@@ -70,11 +67,10 @@ class CompanyController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show($id, Request $request)
-    {
+    public function show($id, Request $request) {
         $user = $request->user();
 
-        if($user["is_admin"] != 1){
+        if ($user["is_admin"] != 1) {
             return response([
                 'message' => 'Unauthorized',
             ], 401);
@@ -82,7 +78,7 @@ class CompanyController extends Controller
 
         $company = Company::where('id', $id)->first();
 
-        if(!$company){
+        if (!$company) {
             return response([
                 'message' => 'Company not found',
             ], 404);
@@ -96,8 +92,7 @@ class CompanyController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Company $company)
-    {
+    public function edit(Company $company) {
         //
         return response([
             'message' => 'Please use /api/update to update an existing company',
@@ -131,17 +126,24 @@ class CompanyController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Request $request, $id)
-    {
+    public function destroy(Request $request, $id) {
         $user = $request->user();
 
-        if(!$user["is_admin"]){
+        if (!$user["is_admin"]) {
             return response(['message' => 'Unauthorized',], 401);
+        }
+
+        // If it has users throw an error 
+
+        if (Company::findOrFail($id)->users()->count() > 0) {
+            return response([
+                'message' => 'users',
+            ], 400);
         }
 
         $deleted_company = Company::destroy($id);
 
-        if(!$deleted_company){
+        if (!$deleted_company) {
             return response([
                 'message' => 'Error',
             ], 404);
@@ -167,12 +169,12 @@ class CompanyController extends Controller
             'users' => $users,
         ], 200);
     }
-    
+
     public function allusers(Company $company, Request $request) {
         $user = $request->user();
 
         // Se non è admin o non è della compagnia e company_admin allora non è autorizzato
-        if(!($user["is_admin"] == 1 || $user["company_id"] == $company["id"])){
+        if (!($user["is_admin"] == 1 || $user["company_id"] == $company["id"])) {
             return response([
                 'message' => 'Unauthorized',
             ], 401);
@@ -184,7 +186,7 @@ class CompanyController extends Controller
             'users' => $users,
         ], 200);
     }
-    
+
     public function ticketTypes(Company $company) {
         $ticketTypes = $company->ticketTypes()->with('category')->get();
 
