@@ -156,7 +156,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         "/ticket/{ticket}/file",
         [App\Http\Controllers\TicketController::class, "storeFile"]
     );
-    
+
     Route::post(
         "/ticket/{ticket}/priority-update",
         [App\Http\Controllers\TicketController::class, "updateTicketPriority"]
@@ -238,6 +238,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
         [App\Http\Controllers\TicketTypeController::class, "categories"]
     );
 
+    Route::patch(
+        "/ticket-type-category/{ticketTypeCategory}",
+        [App\Http\Controllers\TicketTypeController::class, "updateCategory"]
+    );
+
+
     Route::get(
         "/ticket-type-groups/{ticketType}",
         [App\Http\Controllers\TicketTypeController::class, "getGroups"]
@@ -252,7 +258,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     //     "/ticket-type-companies/{ticketType}",
     //     [App\Http\Controllers\TicketTypeController::class, "getCompanies"]
     // );
-    
+
     Route::get(
         "/ticket-type-company/{ticketType}",
         [App\Http\Controllers\TicketTypeController::class, "getCompany"]

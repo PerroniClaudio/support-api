@@ -231,13 +231,13 @@ class TicketController extends Controller {
             'new-note' => $request->message,
         ], 200);
     }
-    
+
     public function updateTicketPriority(Ticket $ticket, Request $request) {
         $fields = $request->validate([
             'priority' => 'required|string',
         ]);
 
-        if($request->user()["is_admin"] != 1) {
+        if ($request->user()["is_admin"] != 1) {
             return response([
                 'message' => 'The user must be an admin.',
             ], 401);
@@ -257,7 +257,7 @@ class TicketController extends Controller {
         $new_sla_take = $company[$sla_take_key];
         $new_sla_solve = $company[$sla_solve_key];
 
-        if($new_sla_take == null || $new_sla_solve == null) {
+        if ($new_sla_take == null || $new_sla_solve == null) {
             return response([
                 'message' => 'Company sla for ' . $fields['priority'] . ' priority must be set.',
             ], 400);
@@ -282,7 +282,7 @@ class TicketController extends Controller {
             'ticket' => $ticket,
         ], 200);
     }
-    
+
     public function closeTicket(Ticket $ticket, Request $request) {
 
         $fields = $request->validate([
@@ -290,7 +290,7 @@ class TicketController extends Controller {
         ]);
 
         $ticket->update([
-            'status' => 3, // Si può imposrtare l'array di stati e prendere l'indice di "Chiuso" da lì
+            'status' => 5, // Si può imposrtare l'array di stati e prendere l'indice di "Chiuso" da lì
         ]);
 
         TicketStatusUpdate::create([

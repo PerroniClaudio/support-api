@@ -29,6 +29,21 @@ class TicketTypeController extends Controller {
         ], 200);
     }
 
+    public function updateCategory(Request $request, TicketTypeCategory $ticketTypeCategory) {
+
+        $validated = $request->validate([
+            'name' => 'required',
+            'is_problem' => 'required',
+            'is_request' => 'required',
+        ]);
+
+        $ticketTypeCategory->update($validated);
+
+        return response([
+            'ticketTypeCategory' => $ticketTypeCategory,
+        ], 200);
+    }
+
     /**
      * Show the form for creating a new resource.
      */
