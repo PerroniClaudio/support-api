@@ -19,4 +19,13 @@ class Group extends Model {
     public function ticketTypes() {
         return $this->belongsToMany(TicketType::class, 'ticket_type_group', 'group_id', 'ticket_type_id');
     }
+
+    public function tickets() {
+        return $this->hasMany(Ticket::class);
+    }
+
+    // public function allTickets()
+    // {
+    //     return $this->tickets()->where('group_id', $this->id);
+    // }
 }

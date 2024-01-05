@@ -2,6 +2,10 @@
 
 namespace App\Http\Controllers;
 
+ini_set ('display_errors', 1);
+ini_set ('display_startup_errors', 1);
+error_reporting (E_ALL);
+
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\TicketStatusUpdate;
@@ -26,9 +30,21 @@ class TicketController extends Controller {
         $user = $request->user();
         $cacheKey = 'user_' . $user->id . '_tickets';
 
-        $tickets = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($user) {
-            return Ticket::where('user_id', $user->id)->get();
-        });
+        // $tickets = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($user) {
+        //     if ($user["is_company_admin"] != 1) {
+        //         return $user->company->tickets;
+        //     } else {
+        //         // return Ticket::where('user_id', $user->id)->get();
+        //         return $user->tickets;
+        //     }
+        // });
+        
+        if ($user["is_company_admin"] == 1) {
+            $tickets =  $user->company->tickets;
+        } else {
+            // return Ticket::where('user_id', $user->id)->get();
+            $tickets =  $user->tickets;
+        }
 
         return response([
             'tickets' => $tickets,
@@ -290,7 +306,7 @@ class TicketController extends Controller {
         ]);
 
         $ticket->update([
-            'status' => 5, // Si può imposrtare l'array di stati e prendere l'indice di "Chiuso" da lì
+            'status' => 5, // Si può impostare l'array di stati e prendere l'indice di "Chiuso" da lì
         ]);
 
         TicketStatusUpdate::create([
@@ -412,22 +428,24 @@ class TicketController extends Controller {
 
     /**
      * Show only the tickets belonging to the authenticated admin groups.
-     */
+    */
     public function adminGroupsTickets(Request $request) {
 
         $user = $request->user();
-        $cacheKey = 'user_' . $user->id . '_tickets';
 
-        $tickets = Cache::remember($cacheKey, now()->addMinutes(2), function () use ($user) {
-            if ($user["is_admin"] == 1) {
-                // Get the group IDs associated with the user
-                $groupIds = $user->groups->pluck('id');
+        if ($user["is_admin"] != 1) {
+            return response([
+                'message' => 'The user must be an admin.',
+            ], 401);
+        }
 
-                // Retrieve tickets where the group_id is in the groupIds array
-                return Ticket::whereIn('group_id', $groupIds)->get();
-            }
-        });
+        $groups = $user->groups;
 
+        $tickets = [];
+        foreach ($groups as $group) {
+            $groupTickets = $group->tickets;
+            $tickets = array_merge($tickets, $groupTickets->toArray());
+        }
 
         return response([
             'tickets' => $tickets,

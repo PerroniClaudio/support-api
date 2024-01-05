@@ -183,7 +183,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     );
 
     Route::get(
-        "/ticket/admin",
+        "/ticket-admin",
         [App\Http\Controllers\TicketController::class, "adminGroupsTickets"]
     );
 

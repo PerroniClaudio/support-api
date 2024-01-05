@@ -210,6 +210,7 @@ class UserController extends Controller {
 
         $user = $request->user();
 
+        // Se l'utente è admin allora prende tutti i ticket types di tutti i gruppi associati all'utente, altrimenti solo quelli della sua compagnia
         if ($user["is_admin"] == 1) {
             $ticketTypes = collect();
             foreach ($user->groups as $group) {
@@ -220,7 +221,7 @@ class UserController extends Controller {
         }
 
         return response([
-            'ticketTypes' => $ticketTypes,
+            'ticketTypes' => $ticketTypes
         ], 200);
     }
 
