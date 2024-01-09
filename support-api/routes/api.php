@@ -191,6 +191,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         "/ticket/{ticket}/assign-to-admin",
         [App\Http\Controllers\TicketController::class, "assignToAdminUser"]
     );
+    Route::post(
+        "/ticket/{ticket}/assign-to-group",
+        [App\Http\Controllers\TicketController::class, "assignToGroup"]
+    );
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -230,8 +234,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
         "/ticket-type/{ticketType}",
         [App\Http\Controllers\TicketTypeController::class, "show"]
     );
-
-
+   
+    // Eliminazione di tipo e categoria da rivedere
+    // Route::delete(
+    //     "/ticket-type/{ticketType}/delete",
+    //     [App\Http\Controllers\TicketTypeController::class, "destroy"]
+    // );
+    // TicketTypeCategory spostarli tutti in un gruppo loro e nel controller giusto.
+    // Route::delete(
+    //     "/ticket-type-category/{ticketTypeCategory}/delete",
+    //     [App\Http\Controllers\TicketTypeCategoryController::class, "delete"]
+    // );
 
     Route::get(
         "/ticket-type-categories",
@@ -242,7 +255,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
         "/ticket-type-category/{ticketTypeCategory}",
         [App\Http\Controllers\TicketTypeController::class, "updateCategory"]
     );
-
 
     Route::get(
         "/ticket-type-groups/{ticketType}",
@@ -293,6 +305,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post(
         "/ticket-type-webform",
         [App\Http\Controllers\TicketTypeController::class, "createFormField"]
+    );
+    
+    Route::post(
+        "/ticket-type-webform/{formFieldId}/delete",
+        [App\Http\Controllers\TicketTypeController::class, "deleteFormField"]
     );
 
     Route::post(

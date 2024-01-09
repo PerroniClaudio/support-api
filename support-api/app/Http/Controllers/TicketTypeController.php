@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Company;
 use App\Models\TicketType;
 use App\Models\TypeFormFields;
 use App\Models\TicketTypeCategory;
@@ -139,8 +140,17 @@ class TicketTypeController extends Controller {
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(TicketType $ticketType) {
-        //
+    public function destroy(TicketType $ticketType, Request $request) {
+        $user = $request->user();
+        if(!$user['is_admin']) {
+            return response(['message' => 'Unauthorized'], 401);
+        }
+
+        $ticketType->delete();
+
+        return response([
+            'message' => 'Ticket type deleted successfully',
+        ], 200);
     }
 
     public function getWebForm($id) {
@@ -293,6 +303,25 @@ class TicketTypeController extends Controller {
             'formField' => $formField,
         ], 200);
     }
+
+    public function deleteFormField($formFieldId, Request $request) {
+        $user = $request->user();
+        
+        if (!$user['is_admin']) {
+            return response(['message' => 'Unauthorized'], 401);
+        }
+        
+        $formField = TypeFormFields::find($formFieldId);
+        
+        if (!$formField) {
+            return response(['message' => 'Form field not found'], 404);
+        }
+        
+        $formField->delete();
+        
+        return response(['message' => 'Form field deleted successfully'], 200);
+    }
+
 
     public function countTicketsInCompany($ticketTypeId) {
         $count = TicketType::where('id', $ticketTypeId)->first()->countRelatedTickets();

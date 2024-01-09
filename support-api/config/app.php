@@ -187,4 +187,16 @@ return [
         // 'Example' => App\Facades\Example::class,
     ])->toArray(),
 
+
+    /* 
+        Possibili stati dei ticket
+    */
+    'ticket_stages' => [
+        "Nuovo", 
+        "Assegnato", 
+        "In corso", 
+        "In attesa", 
+        "Risolto", 
+        "Chiuso"
+    ],
 ];

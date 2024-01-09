@@ -12,7 +12,9 @@ class TicketTypeCategoryController extends Controller
      */
     public function index()
     {
-        //
+        $ticketTypeCategories = TicketTypeCategory::all();
+
+        return response($ticketTypeCategories, 200);
     }
 
     /**
@@ -58,8 +60,17 @@ class TicketTypeCategoryController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(TicketTypeCategory $ticketTypeCategory)
+    public function destroy(TicketTypeCategory $ticketTypeCategory, Request $request)
     {
-        //
+        $user = $request->user();
+        if(!$user['is_admin']) {
+            return response(['message' => 'Unauthorized'], 401);
+        }
+
+        $ticketTypeCategory->delete();
+
+        return response([
+            'message' => 'Ticket type category deleted successfully',
+        ], 200);
     }
 }

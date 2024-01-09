@@ -330,6 +330,15 @@ class TicketController extends Controller {
 
 
     public function assignToGroup(Ticket $ticket, Request $request) {
+        $request->validate([
+            'group_id' => 'required|int',
+        ]);
+        $user = $request->user();
+        if ($user["is_admin"] != 1) {
+            return response([
+                'message' => 'The user must be an admin.',
+            ], 401);
+        }
 
         $ticket->update([
             'group_id' => $request->group_id,
@@ -343,6 +352,24 @@ class TicketController extends Controller {
             'content' => "Ticket assegnato al gruppo " . $group->name,
             'type' => 'group_assign',
         ]);
+
+        // Ticket va messo in attesa se si cambia ill gruppo. Comportamento da confermare.
+        // Se deve ripartire da zero allora si può prendere la data della modifica come partenza, senza ulteriori cambi di stato.
+        // $ticketStages = config('app.ticket_stages');
+
+        // $index_in_attesa = array_search("In attesa", $ticketStages);
+        // if ($ticket["status"] != $index_in_attesa){
+        //     $ticket->update([
+        //         'status' => $index_in_attesa
+        //     ]);
+
+        //     TicketStatusUpdate::create([
+        //         'ticket_id' => $ticket->id,
+        //         'user_id' => $request->user()->id,
+        //         'content' => "Stato del ticket modificato in " . $index_in_attesa,
+        //         'type' => 'status',
+        //     ]);
+        // }
 
         return response([
             'ticket' => $ticket,
