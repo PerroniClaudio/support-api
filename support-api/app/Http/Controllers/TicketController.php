@@ -128,21 +128,59 @@ class TicketController extends Controller {
     public function show($id, Request $request) {
 
         $user = $request->user();
-        $cacheKey = 'user_' . $user->id . '_tickets_show:' . $id;
-        cache()->forget($cacheKey);
+        // $cacheKey = 'user_' . $user->id . '_tickets_show:' . $id;
+        // cache()->forget($cacheKey);
 
-        $ticket = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($user, $id) {
-            $item = Ticket::where('id', $id)->where('user_id', $user->id)->with(['ticketType' => function ($query) {
-                $query->with('category');
-            }, 'company', 'user', 'files'])->first();
+        // $ticket = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($user, $id) {
+        //     $item = Ticket::where('id', $id)->where('user_id', $user->id)->with(['ticketType' => function ($query) {
+        //         $query->with('category');
+        //     }, 'company', 'user', 'files'])->first();
 
-            return [
-                'ticket' => $item,
-                'from' => time(),
-            ];
-        });
+        //     return [
+        //         'ticket' => $item,
+        //         'from' => time(),
+        //     ];
+        // });
 
-        return response($ticket, 200);
+        $ticket = Ticket::where('id', $id)->with(['ticketType' => function ($query) {
+            $query->with('category');
+        }, 'company', 'user', 'files'])->first();
+
+        if($ticket == null){
+            return response([
+                'message' => 'Ticket not found',
+            ], 404);
+        }
+
+        $groupIdExists = false;
+
+        foreach ($user->groups as $group) {
+            if ($group->id == $ticket["group_id"]) {
+                $groupIdExists = true;
+                break;
+            }
+        }
+
+        // Può avere il ticket solo se admin e del gruppo associato, company admin e della stessa azienda del ticket, o se è e della stessa azienda del ticket ed il creatore del ticket.
+        $authorized = false;
+        if (
+            ($user["is_admin"] == 1 && $groupIdExists) ||
+            ($ticket->company_id == $user->company_id && $user["is_company_admin"] == 1) ||
+            ($ticket->company_id == $user->company_id && $ticket->user_id == $user->id)
+        ) {
+            $authorized = true;
+        }
+        
+        if (!$authorized) {
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
+        return response([
+            'ticket' => $ticket,
+            'from' => time(),
+        ], 200);
     }
 
     /**
@@ -353,7 +391,7 @@ class TicketController extends Controller {
             'type' => 'group_assign',
         ]);
 
-        // Ticket va messo in attesa se si cambia ill gruppo. Comportamento da confermare.
+        // Ticket va messo in attesa se si cambia il gruppo. Comportamento da confermare.
         // Se deve ripartire da zero allora si può prendere la data della modifica come partenza, senza ulteriori cambi di stato.
         // $ticketStages = config('app.ticket_stages');
 
