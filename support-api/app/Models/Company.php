@@ -25,6 +25,14 @@ class Company extends Model {
         'sla_solve_medium',
         'sla_solve_high',
         'sla_solve_critical',
+        'sla_prob_take_low',
+        'sla_prob_take_medium',
+        'sla_prob_take_high',
+        'sla_prob_take_critical',
+        'sla_prob_solve_low',
+        'sla_prob_solve_medium',
+        'sla_prob_solve_high',
+        'sla_prob_solve_critical',
     ];
 
     public function users() {

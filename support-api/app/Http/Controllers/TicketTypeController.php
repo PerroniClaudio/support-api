@@ -297,7 +297,11 @@ class TicketTypeController extends Controller {
             'placeholder' => 'required',
         ]);
 
-        $formField = TypeFormFields::create($validated);
+        $fillableFields = array_merge(
+            $request->only((new TypeFormFields)->getFillable())
+        );
+    
+        $formField = TypeFormFields::create($fillableFields);
 
         return response([
             'formField' => $formField,

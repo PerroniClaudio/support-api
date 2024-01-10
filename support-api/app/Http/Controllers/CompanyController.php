@@ -105,8 +105,6 @@ class CompanyController extends Controller {
     public function update(Request $request) {
         $request->validate([
             'id' => 'required|int|exists:companies,id',
-            'name' => 'required|string',
-            'note' => 'nullable|string',
         ]);
 
         $user = $request->user();
