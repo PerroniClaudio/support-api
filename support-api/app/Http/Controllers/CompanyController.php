@@ -133,11 +133,30 @@ class CompanyController extends Controller {
 
         // If it has users throw an error 
 
+        if (Company::findOrFail($id)->tickets()->count() > 0) {
+            return response([
+                'message' => 'tickets',
+            ], 400);
+        }
+        
+        if (Company::findOrFail($id)->ticketTypes()->count() > 0) {
+            return response([
+                'message' => 'ticket-types',
+            ], 400);
+        }
+        
         if (Company::findOrFail($id)->users()->count() > 0) {
             return response([
                 'message' => 'users',
             ], 400);
         }
+        
+        if (Company::findOrFail($id)->offices()->count() > 0) {
+            return response([
+                'message' => 'offices',
+            ], 400);
+        }
+        
 
         $deleted_company = Company::destroy($id);
 
@@ -177,8 +196,8 @@ class CompanyController extends Controller {
                 'message' => 'Unauthorized',
             ], 401);
         }
-
-        $users = $company->users()->get();
+        // Esclude gli utenti disabilitati
+        $users = $company->users()->where('is_deleted', false)->get();
 
         return response([
             'users' => $users,

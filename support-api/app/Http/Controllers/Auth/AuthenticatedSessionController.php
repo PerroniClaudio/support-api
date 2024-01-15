@@ -16,6 +16,14 @@ class AuthenticatedSessionController extends Controller {
      * Handle an incoming authentication request.
      */
     public function store(LoginRequest $request): Response {
+        $user = User::where('email', $request->email)->first();
+        
+        if ($user['is_deleted'] == 1) {
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
         $request->authenticate();
 
         $request->session()->regenerate();

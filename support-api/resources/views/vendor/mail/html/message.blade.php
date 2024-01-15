@@ -21,7 +21,6 @@
 {{-- Footer --}}
 <x-slot:footer>
 <x-mail::footer>
-© {{ date('Y') }} {{ config('app.name') }}. <br>
 <p>Le informazioni contenute nella presente comunicazione e i relativi allegati possono essere riservate e sono, comunque, destinate esclusivamente alle persone o alla Società indicate nella mail.
 Se avete ricevuto questo messaggio per errore, vi preghiamo di distruggerlo e di informarci immediatamente inviando un messaggio all’indirizzo e-mail <a href="mailto:info@ifortech.com">info@ifortech.com</a>.
 The information in this communication (which includes any documents with it) is confidential and may also be legally privileged.

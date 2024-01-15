@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivationToken;
 use App\Jobs\SendWelcomeEmail;
+use App\Jobs\SendTestEmail;
 use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
@@ -87,6 +88,12 @@ class UserController extends Controller {
                 // 'message' => 'User not found',
                 'message' => 'Unauthorized',
             ], 404);
+        }
+
+        if ($user['is_deleted'] == 1) {
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
         }
 
         // l'activation token nel db deve avere token, uid, status = 0
@@ -190,9 +197,26 @@ class UserController extends Controller {
      */
     public function destroy($id, Request $request) {
         //
-        $user = $request->user();
+        $req_user = $request->user();
 
-        if ($user["is_admin"] == 1 && $id) {
+        if ($req_user["is_admin"] == 1 && $id) {
+            // Se l'utente ha ticket associati si disabilita l'utente, senza eliminarlo.
+            $user = User::where('id', $id)->first();
+            if($user->tickets()->count() > 0){
+                $disabled = $user->update([
+                    'is_deleted' => true,
+                ]);
+                if($disabled){
+                    return response([
+                        'deleted_user' => $id,
+                        'message' => 'tickets',
+                    ], 200);
+                }
+                return response([
+                    'message' => 'Error',
+                ], 400);
+            }
+
             $deleted_user = User::destroy($id);
         }
 
@@ -203,6 +227,34 @@ class UserController extends Controller {
         }
         return response([
             'deleted_user' => $id,
+        ], 200);
+    }
+
+    public function enable($id, Request $request) {
+        $req_user = $request->user();
+
+        if ($req_user["is_admin"] != 1) {
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+        if (!$id) {
+            return response([
+                'message' => 'Error',
+            ], 404);
+        }
+        
+        $user = User::where('id', $id)->first();
+        $enabled = $user->update([
+            'is_deleted' => null,
+        ]);
+        if (!$enabled) {
+            return response([
+                'message' => 'Error',
+            ], 404);
+        }
+        return response([
+            'enabled_user' => $id,
         ], 200);
     }
 
@@ -297,5 +349,19 @@ class UserController extends Controller {
         return response([
             'users' => $users,
         ], 200);
+    }
+
+    public function testMail(Request $request) {
+
+        $request->validate([
+            'email' => 'required|string',
+        ]);
+
+        $user = $request->user();
+        if (!$user["is_admin"] == 1) {
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
+        }
     }
 }

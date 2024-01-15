@@ -49,6 +49,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         '/user/{id}',
         [App\Http\Controllers\UserController::class, "destroy"]
     );
+    
+    Route::get(
+        '/user/{id}/enable',
+        [App\Http\Controllers\UserController::class, "enable"]
+    );
 
     Route::get(
         '/user/alladmins-ids',
@@ -236,10 +241,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     );
    
     // Eliminazione di tipo e categoria da rivedere
-    // Route::delete(
-    //     "/ticket-type/{ticketType}/delete",
-    //     [App\Http\Controllers\TicketTypeController::class, "destroy"]
-    // );
+    Route::delete(
+        "/ticket-type/{ticketType}/delete",
+        [App\Http\Controllers\TicketTypeController::class, "destroy"]
+    );
     // TicketTypeCategory spostarli tutti in un gruppo loro e nel controller giusto.
     // Route::delete(
     //     "/ticket-type-category/{ticketTypeCategory}/delete",

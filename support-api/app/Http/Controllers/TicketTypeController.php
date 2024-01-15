@@ -14,7 +14,9 @@ class TicketTypeController extends Controller {
      */
     public function index() {
 
-        $ticketTypes = TicketType::with('category')->get();
+        // Si può decidere di non filtrarli prima, nel caso si dovessero vedere in qualche caso nel frontend.
+        $ticketTypes = TicketType::where("is_deleted", false)->with('category')->get();
+        // $ticketTypes = TicketType::with('category')->get();
 
         return response([
             'ticketTypes' => $ticketTypes,
@@ -146,8 +148,23 @@ class TicketTypeController extends Controller {
             return response(['message' => 'Unauthorized'], 401);
         }
 
-        $ticketType->delete();
-
+        $ticketType = TicketType::where('id', $ticketType["id"])->first();
+        if($ticketType->countRelatedTickets() > 0) {
+            $ticketType->update([
+                'is_deleted' => true,
+            ]);
+            return response([
+                'message' => 'Ticket type deleted successfully',
+            ], 200);
+        } else {
+            $deleted = TicketType::destroy($ticketType["id"]);
+            if ($deleted) {
+                return response(['message' => 'Ticket type deleted successfully'], 200);
+            } else {
+                return response(['message' => 'Ticket type not found'], 404);
+            }
+        }
+        
         return response([
             'message' => 'Ticket type deleted successfully',
         ], 200);
@@ -331,6 +348,13 @@ class TicketTypeController extends Controller {
         $count = TicketType::where('id', $ticketTypeId)->first()->countRelatedTickets();
         return response([
             'count' => $count,
+        ], 200);
+    }
+    
+    public function countTicketsInType(TicketType $ticketType) {
+        $tickets = $ticketType->tickets()->get();
+        return response([
+            'tickets' => $tickets,
         ], 200);
     }
 

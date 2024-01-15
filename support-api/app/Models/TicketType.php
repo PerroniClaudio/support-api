@@ -15,13 +15,17 @@ class TicketType extends Model {
         'default_sla_take',
         'default_sla_solve',
         'company_id',
+        'is_deleted'
     ];
 
     public function tickets() {
-        return $this->hasMany(Ticket::class);
+        // Questo non funziona perchè non c'è la foreign key ticket_type_id nella tabella tickets
+        // Essendo ogni tipo collegato ad un'azienda si possono ottenere i ticket di un tipo con una certa azienda
+        // return $this->hasMany(Ticket::class);
+        return Ticket::where('type_id', $this->id)->get();
     }
     
-    // Restituisce il numero di ticket di questo tipo e con questa compagnia
+    // Restituisce il numero di ticket di questo tipo e con questa compagnia (ogni tipo è associato ad una sola compagnia)
     public function countRelatedTickets()
     {
         return $this->company->tickets()->where('type_id', $this->id)->count();
