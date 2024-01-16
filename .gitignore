@@ -5,3 +5,4 @@ supporto
 erp
 .env
 /redis/dump.rdb
+**/.DS_Store
