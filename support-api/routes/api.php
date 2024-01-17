@@ -246,10 +246,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         [App\Http\Controllers\TicketTypeController::class, "destroy"]
     );
     // TicketTypeCategory spostarli tutti in un gruppo loro e nel controller giusto.
-    // Route::delete(
-    //     "/ticket-type-category/{ticketTypeCategory}/delete",
-    //     [App\Http\Controllers\TicketTypeCategoryController::class, "delete"]
-    // );
+    Route::delete(
+        "/ticket-type-category/{ticketTypeCategory}/delete",
+        [App\Http\Controllers\TicketTypeCategoryController::class, "destroy"]
+    );
 
     Route::get(
         "/ticket-type-categories",

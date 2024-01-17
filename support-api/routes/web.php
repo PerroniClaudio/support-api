@@ -55,4 +55,35 @@ Route::get('/testmail', function () {
 
 });
 
+Route::get('/test', function () {
+    return "test";
+    // $types = \App\Models\TicketType::with('category')->get();
+    // $response ="";
+    // foreach ($types as $type) {
+    //     $response .= "<b>ID: </b>" . $type->id 
+    //         . "<b> - Tipo: </b>" . $type->name 
+    //         . "<b> - ID Categoria: </b>" . $type->ticket_type_category_id 
+    //         . "<b> - Categoria: </b>" . $type->category->name 
+    //         . "<b> - ID Compagnia: </b>" . $type->company_id 
+    //         . "<b> - Eliminato: </b>" . $type->is_deleted 
+    //         . "<br>";
+    // }
+    // return $response;
+    
+    // $category = \App\Models\TicketTypeCategory::where('id', 2)->first();
+    // $types = $category->ticketTypes;
+    // $response = "";
+    // foreach ($types as $type) {
+    //     $response .= "<b>ID: </b>" . $type->id 
+    //         . "<b> - Tipo: </b>" . $type->name 
+    //         . "<b> - ID Categoria: </b>" . $type->ticket_type_category_id 
+    //         . "<b> - Categoria: </b>" . $type->category->name 
+    //         . "<b> - ID Compagnia: </b>" . $type->company_id 
+    //         . "<b> - Eliminato: </b>" . $type->is_deleted 
+    //         . "<br>";
+        
+    // }
+    // return $response;
+});
+
 require __DIR__ . '/auth.php';

@@ -12,6 +12,7 @@ class TicketTypeCategory extends Model {
         'name',
         'is_problem',
         'is_request',
+        'is_deleted',
     ];
 
     public function ticketTypes() {

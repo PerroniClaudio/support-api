@@ -248,10 +248,11 @@ class TicketController extends Controller {
                 'message' => 'The user must be an admin.',
             ], 401);
         }
-
-        $ticket->update([
+        
+        $ticket->fill([
             'status' => $request->status,
-        ]);
+            'wait_end' => $request['wait_end'],
+        ])->save();
 
         TicketStatusUpdate::create([
             'ticket_id' => $ticket->id,

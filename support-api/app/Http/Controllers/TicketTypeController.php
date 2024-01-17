@@ -25,7 +25,7 @@ class TicketTypeController extends Controller {
 
     public function categories() {
 
-        $ticketTypeCategories = TicketTypeCategory::all();
+        $ticketTypeCategories = TicketTypeCategory::where("is_deleted", false)->get();
 
         return response([
             'categories' => $ticketTypeCategories,

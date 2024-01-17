@@ -57,8 +57,18 @@ class OfficeController extends Controller {
     /**
      * Display the specified resource.
      */
-    public function show(Office $office) {
-        //
+    public function show(Request $request, Office $office) {
+        $user = $request->user();
+        
+        if ($user["is_admin"] != 1 && $user["company_id"] != $office["company_id"]) {
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
+        return response([
+            'office' => $office,
+        ], 200);
     }
 
     /**
