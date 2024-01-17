@@ -390,11 +390,19 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 
 Route::middleware(['auth:sanctum'])->group(function () {
-
     Route::get("/brands", [BrandController::class, "index"]);
     Route::get("/brands/{brand}", [BrandController::class, "show"]);
     Route::post("/brands", [BrandController::class, "store"]);
     Route::patch("/brands/{brand}", [BrandController::class, "update"]);
     Route::delete("/brands/{brand}", [BrandController::class, "destroy"]);
     Route::post("/brands/{brand}/logo", [BrandController::class, "uploadLogo"]);
+});
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get("/suppliers", [App\Http\Controllers\SupplierController::class, "index"]);
+    Route::get("/suppliers/{supplier}", [App\Http\Controllers\SupplierController::class, "show"]);
+    Route::post("/suppliers", [App\Http\Controllers\SupplierController::class, "store"]);
+    Route::patch("/suppliers/{supplier}", [App\Http\Controllers\SupplierController::class, "update"]);
+    Route::delete("/suppliers/{supplier}", [App\Http\Controllers\SupplierController::class, "destroy"]);
+    Route::post("/suppliers/{supplier}/logo", [App\Http\Controllers\SupplierController::class, "uploadLogo"]);
 });

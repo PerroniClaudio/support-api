@@ -9,4 +9,8 @@ class Brand extends Model {
     use HasFactory;
 
     protected $fillable = ['name', 'description', 'logo_url'];
+
+    public function supplier() {
+        return $this->belongsTo(Supplier::class);
+    }
 }
