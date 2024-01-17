@@ -5,14 +5,12 @@ namespace Database\Seeders;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
-class DatabaseSeeder extends Seeder
-{
+class DatabaseSeeder extends Seeder {
     /**
      * Seed the application's database.
      */
-    public function run(): void
-    {
-        
+    public function run(): void {
+
         // \App\Models\User::factory(10)->create();
 
         // \App\Models\User::factory()->create([
@@ -27,10 +25,10 @@ class DatabaseSeeder extends Seeder
         //         ->count(3))
         //     ->create();
 
-  
-       //\App\Models\Office::factory(16)->create();
 
-       //\App\Models\Attendance::factory(16)->create();
+        //\App\Models\Office::factory(16)->create();
+
+        //\App\Models\Attendance::factory(16)->create();
 
         // \App\Models\AttendanceType::factory(4)->has(
         //     \App\Models\Attendance::factory()->count(12)
@@ -40,7 +38,8 @@ class DatabaseSeeder extends Seeder
         //     \App\Models\TimeOffRequest::factory()->count(3)
         // )->create();
 
-        \App\Models\BusinessTrip::factory(10)->create();
-        
+        //\App\Models\BusinessTrip::factory(10)->create();
+
+        \App\Models\Brand::factory(10)->create();
     }
 }

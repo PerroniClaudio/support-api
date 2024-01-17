@@ -22,6 +22,7 @@ services:
       context: ./support-api
       dockerfile: Dockerfile
     image: blaudio/supporto-ift-api
+    command: sh -c "php artisan queue:work --daemon"
     volumes:
       - ./support-api:/var/www/html
     depends_on:

@@ -1,8 +1,6 @@
 <?php
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
 
+use App\Http\Controllers\BrandController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TicketMessageController;
@@ -49,7 +47,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         '/user/{id}',
         [App\Http\Controllers\UserController::class, "destroy"]
     );
-    
+
     Route::get(
         '/user/{id}/enable',
         [App\Http\Controllers\UserController::class, "enable"]
@@ -239,7 +237,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         "/ticket-type/{ticketType}",
         [App\Http\Controllers\TicketTypeController::class, "show"]
     );
-   
+
     // Eliminazione di tipo e categoria da rivedere
     Route::delete(
         "/ticket-type/{ticketType}/delete",
@@ -311,7 +309,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         "/ticket-type-webform",
         [App\Http\Controllers\TicketTypeController::class, "createFormField"]
     );
-    
+
     Route::post(
         "/ticket-type-webform/{formFieldId}/delete",
         [App\Http\Controllers\TicketTypeController::class, "deleteFormField"]
@@ -388,4 +386,23 @@ Route::middleware(['auth:sanctum'])->group(function () {
         "/groups-types",
         [GroupController::class, "updateTypes"]
     );
+});
+
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get("/brands", [BrandController::class, "index"]);
+    Route::get("/brands/{brand}", [BrandController::class, "show"]);
+    Route::post("/brands", [BrandController::class, "store"]);
+    Route::patch("/brands/{brand}", [BrandController::class, "update"]);
+    Route::delete("/brands/{brand}", [BrandController::class, "destroy"]);
+    Route::post("/brands/{brand}/logo", [BrandController::class, "uploadLogo"]);
+});
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get("/suppliers", [App\Http\Controllers\SupplierController::class, "index"]);
+    Route::get("/suppliers/{supplier}", [App\Http\Controllers\SupplierController::class, "show"]);
+    Route::post("/suppliers", [App\Http\Controllers\SupplierController::class, "store"]);
+    Route::patch("/suppliers/{supplier}", [App\Http\Controllers\SupplierController::class, "update"]);
+    Route::delete("/suppliers/{supplier}", [App\Http\Controllers\SupplierController::class, "destroy"]);
+    Route::post("/suppliers/{supplier}/logo", [App\Http\Controllers\SupplierController::class, "uploadLogo"]);
 });

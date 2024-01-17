@@ -9,8 +9,6 @@ services:
       - ./support-api:/var/www/html
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
       - ./sslcert:/sslcert
-    links:
-      - php
     networks:
       - supportapi
 
@@ -25,8 +23,6 @@ services:
       - redis
     networks:
       - supportapi
-    command: >
-      sh -c "php artisan migrate && php artisan queue:work"
 
   redis:
     image: redis:7.2.1-bookworm
