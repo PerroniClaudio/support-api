@@ -54,7 +54,8 @@ class BrandController extends Controller {
         //
 
         $brand->update([
-            'name' => $request->name
+            'name' => $request->name,
+            'supplier_id' => $request->supplier_id
         ]);
 
         return response([
