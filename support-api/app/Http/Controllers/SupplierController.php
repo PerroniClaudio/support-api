@@ -105,4 +105,11 @@ class SupplierController extends Controller {
             'url' => $url,
         ], 200);
     }
+
+    public function brands(Supplier $supplier) {
+
+        return response([
+            'brands' => $supplier->brands
+        ], 200);
+    }
 }
