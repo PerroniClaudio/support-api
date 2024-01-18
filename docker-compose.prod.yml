@@ -15,14 +15,14 @@ services:
       - php
     networks:
       - supportapi
-
+ 
   php:
     platform: linux/arm64
     build:
       context: ./support-api
       dockerfile: Dockerfile
     image: blaudio/supporto-ift-api
-    command: sh -c "php artisan queue:work --daemon"
+ 
     volumes:
       - ./support-api:/var/www/html
     depends_on:
@@ -32,7 +32,7 @@ services:
     ports:
       - 9000:9000
       - 587:587
-
+ 
   redis:
     platform: linux/arm64
     image: redis:7.2.1-bookworm
@@ -42,7 +42,7 @@ services:
       - ./redis:/data
     networks:
       - supportapi
-
+ 
 networks:
   supportapi:
     driver: bridge
