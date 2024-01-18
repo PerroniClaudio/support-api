@@ -405,4 +405,5 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::patch("/suppliers/{supplier}", [App\Http\Controllers\SupplierController::class, "update"]);
     Route::delete("/suppliers/{supplier}", [App\Http\Controllers\SupplierController::class, "destroy"]);
     Route::post("/suppliers/{supplier}/logo", [App\Http\Controllers\SupplierController::class, "uploadLogo"]);
+    Route::get("/suppliers/{supplier}/brands", [App\Http\Controllers\SupplierController::class, "brands"]);
 });
