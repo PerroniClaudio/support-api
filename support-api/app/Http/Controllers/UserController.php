@@ -364,4 +364,18 @@ class UserController extends Controller {
             ], 401);
         }
     }
+
+    public function getName($id, Request $request){
+        $user = User::where('id', $id)->first();
+
+        if(!$request->user()["is_admin"] && $user["company_id"] != $request->user()["company_id"]){
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
+        return response([
+            'name' => $user["name"] . " " . $user["surname"],
+        ], 200);
+    }
 }

@@ -62,6 +62,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         '/user/alladmins',
         [App\Http\Controllers\UserController::class, "allAdmins"]
     );
+    
+    Route::get(
+        '/user/{id}/get-name',
+        [App\Http\Controllers\UserController::class, "getName"]
+    );
 });
 
 
