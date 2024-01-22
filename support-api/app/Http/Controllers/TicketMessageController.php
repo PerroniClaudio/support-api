@@ -51,8 +51,6 @@ class TicketMessageController extends Controller
      */
     public function store($id, Request $request)
     {
-        //
-
         $user = $request->user();
 
         $fields = $request->validate([
@@ -65,7 +63,7 @@ class TicketMessageController extends Controller
             'user_id' => $user->id,
         ]);
 
-        $ticket = Ticket::where('id', 1)->with(['ticketType' => function ($query) {
+        $ticket = Ticket::where('id', $id)->with(['ticketType' => function ($query) {
             $query->with('category');
         }])->first();
 
