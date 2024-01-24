@@ -130,7 +130,13 @@ class TicketTypeController extends Controller {
             ], 400);
         }
 
-        $ticketType->update($validated);
+        $fillableFields = array_merge(
+            $request->only((new TicketType)->getFillable())
+        );
+    
+        $ticketType->update($fillableFields);
+
+        // $ticketType->update($validated);
 
         $tt = TicketType::where('id', $ticketType->id)->with('category')->first();
 

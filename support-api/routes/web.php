@@ -57,7 +57,9 @@ Route::get('/testmail', function () {
 
 Route::get('/test', function () {
     return "test";
-    // $types = \App\Models\TicketType::with('category')->get();
+    // $brand = \App\Models\TicketType::where('id', 61)->first()->brand()->get()->each(function ($brand) {
+    //     $brand->withGUrl();})[0];
+    // return "<img src='" . $brand->logo_url . "' alt='' className='w-1/3' />";
     // $response ="";
     // foreach ($types as $type) {
     //     $response .= "<b>ID: </b>" . $type->id 

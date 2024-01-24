@@ -62,4 +62,10 @@ class Company extends Model {
     public function transfers() {
         return $this->hasMany(BusinessTripTransfer::class);
     }
+
+    public function brands() {
+        return  $this->ticketTypes()->get()->map(function ($ticketType) {
+            return Brand::where('id', $ticketType->brand_id)->first();
+        })->unique('id');
+    }
 }

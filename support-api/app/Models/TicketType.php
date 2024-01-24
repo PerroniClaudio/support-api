@@ -15,7 +15,8 @@ class TicketType extends Model {
         'default_sla_take',
         'default_sla_solve',
         'company_id',
-        'is_deleted'
+        'is_deleted',
+        'brand_id'
     ];
 
     public function tickets() {
@@ -50,6 +51,10 @@ class TicketType extends Model {
 
     public function groups() {
         return $this->belongsToMany(Group::class, 'ticket_type_group', 'ticket_type_id', 'group_id');
+    }
+
+    public function brand() {
+        return $this->belongsTo(Brand::class, 'brand_id');
     }
 
 }

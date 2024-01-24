@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Brand;
 use App\Models\Company;
 use Illuminate\Http\Request;
 
@@ -209,6 +210,16 @@ class CompanyController extends Controller {
 
         return response([
             'companyTicketTypes' => $ticketTypes,
+        ], 200);
+    }
+
+    public function brands(Company $company) {
+        $brands = $company->brands()->each(function (Brand $brand) {
+            $brand->withGUrl();
+        });
+
+        return response([
+            'brands' => $brands,
         ], 200);
     }
 }

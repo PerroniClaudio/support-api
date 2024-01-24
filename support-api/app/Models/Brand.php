@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Brand extends Model {
     use HasFactory;
@@ -12,5 +13,10 @@ class Brand extends Model {
 
     public function supplier() {
         return $this->belongsTo(Supplier::class);
+    }
+
+    public function withGUrl() {
+        $this->logo_url = $this->logo_url != null ? Storage::disk('gcs')->temporaryUrl($this->logo_url, now()->addMinutes(10)) : '';
+        return $this;
     }
 }

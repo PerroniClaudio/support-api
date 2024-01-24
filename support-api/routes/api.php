@@ -143,6 +143,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         "/companies/{company}/ticket-types",
         [CompanyController::class, "ticketTypes"]
     );
+
+    Route::get(
+        "/companies/{company}/brands",
+        [CompanyController::class, "brands"]
+    );
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {
