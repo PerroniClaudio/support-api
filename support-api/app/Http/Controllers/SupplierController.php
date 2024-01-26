@@ -39,7 +39,7 @@ class SupplierController extends Controller {
     public function show(Supplier $supplier) {
         //
 
-        $supplier->logo_url = $supplier->logo_url != null ? Storage::disk('gcs')->temporaryUrl($supplier->logo_url, now()->addMinutes(10)) : '';
+        $supplier->logo_url = $supplier->logo_url != null ? Storage::disk('gcs')->temporaryUrl($supplier->logo_url, now()->addMinutes(70)) : '';
 
 
         return response([
@@ -98,7 +98,7 @@ class SupplierController extends Controller {
 
         $url = Storage::disk('gcs')->temporaryUrl(
             $supplier->logo_url,
-            now()->addMinutes(5)
+            now()->addMinutes(65)
         );
 
         return response([

@@ -483,7 +483,7 @@ class TicketController extends Controller {
 
         $url = Storage::disk('gcs')->temporaryUrl(
             $ticketFile->path,
-            now()->addMinutes(5)
+            now()->addMinutes(65)
         );
 
         return response([

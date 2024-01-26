@@ -39,7 +39,7 @@ class BrandController extends Controller {
     public function show(Brand $brand) {
         //
 
-        $brand->logo_url = $brand->logo_url != null ? Storage::disk('gcs')->temporaryUrl($brand->logo_url, now()->addMinutes(10)) : '';
+        $brand->logo_url = $brand->logo_url != null ? Storage::disk('gcs')->temporaryUrl($brand->logo_url, now()->addMinutes(70)) : '';
 
         return response([
             'brand' => $brand,
@@ -98,7 +98,7 @@ class BrandController extends Controller {
 
         $url = Storage::disk('gcs')->temporaryUrl(
             $brand->logo_url,
-            now()->addMinutes(5)
+            now()->addMinutes(65)
         );
 
         return response([
