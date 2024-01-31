@@ -1,12 +1,21 @@
 <?php
 
+use App\Jobs\SendCloseTicketEmail;
+use App\Jobs\SendNewMessageEmail;
+use App\Jobs\SendWelcomeEmail;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\StatusUpdateMail;
 use App\Models\User;
+use App\Models\Company;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
+use App\Models\Supplier;
 use Illuminate\Support\Facades\Schema;
+
+ini_set ('display_errors', 1);
+ini_set ('display_startup_errors', 1);
+error_reporting (E_ALL);
 
 /*
 |--------------------------------------------------------------------------
@@ -57,35 +66,23 @@ Route::get('/testmail', function () {
 
 Route::get('/test', function () {
     return "test";
-    // $brand = \App\Models\TicketType::where('id', 61)->first()->brand()->get()->each(function ($brand) {
-    //     $brand->withGUrl();})[0];
-    // return "<img src='" . $brand->logo_url . "' alt='' className='w-1/3' />";
-    // $response ="";
-    // foreach ($types as $type) {
-    //     $response .= "<b>ID: </b>" . $type->id 
-    //         . "<b> - Tipo: </b>" . $type->name 
-    //         . "<b> - ID Categoria: </b>" . $type->ticket_type_category_id 
-    //         . "<b> - Categoria: </b>" . $type->category->name 
-    //         . "<b> - ID Compagnia: </b>" . $type->company_id 
-    //         . "<b> - Eliminato: </b>" . $type->is_deleted 
-    //         . "<br>";
-    // }
-    // return $response;
-    
-    // $category = \App\Models\TicketTypeCategory::where('id', 2)->first();
-    // $types = $category->ticketTypes;
-    // $response = "";
-    // foreach ($types as $type) {
-    //     $response .= "<b>ID: </b>" . $type->id 
-    //         . "<b> - Tipo: </b>" . $type->name 
-    //         . "<b> - ID Categoria: </b>" . $type->ticket_type_category_id 
-    //         . "<b> - Categoria: </b>" . $type->category->name 
-    //         . "<b> - ID Compagnia: </b>" . $type->company_id 
-    //         . "<b> - Eliminato: </b>" . $type->is_deleted 
-    //         . "<br>";
-        
-    // }
-    // return $response;
+
+});
+
+Route::get('/welcome', function () {
+    return "welcome";
+    // $user = User::find(13);
+    // $ticket = Ticket::where('id', 91)->first();
+    // $company = $ticket->company;
+    // $ticketType =  $ticket->ticketType;
+    // $category =  $ticketType->category;
+    // $brand_url = $ticket->brandUrl();
+    // dispatch(new App\Jobs\SendOpenTicketEmail($ticket, $brand_url));
+    // $brand_url = $ticket->brandUrl();
+    // dispatch(new SendCloseTicketEmail($ticket, 'Messaggio di chiusura', $brand_url));
+    // // dispatch(new SendWelcomeEmail($user, "URL non serve"));
+    // dispatch(new SendNewMessageEmail($ticket, $user, "URL non serve"));
+    // return "mail sent";
 });
 
 require __DIR__ . '/auth.php';

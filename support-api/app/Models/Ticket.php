@@ -59,6 +59,11 @@ class Ticket extends Model
     public function files() {
         return $this->hasMany(TicketFile::class);
     }
+    
+    public function brandUrl() {
+        $brand_id = $this->ticketType->brand->id;
+        return env('APP_URL') . '/api/brand/' . $brand_id . '/logo';
+    }
 
     // public function calculateRemainingTime() {
         

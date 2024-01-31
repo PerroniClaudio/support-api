@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendNewMessageEmail;
 use App\Mail\TicketMessageMail;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
@@ -67,11 +68,15 @@ class TicketMessageController extends Controller
             $query->with('category');
         }])->first();
 
+        $brand_url = $ticket->brandUrl();
+
         if($user['is_admin'] == 1) {
             $ticket_message->is_read = 1;
             $ticket_message->save();
+            dispatch(new SendNewMessageEmail($ticket, $user, $ticket_message->message, $brand_url));
         } else {
-            Mail::to('support@ifortech.com')->send(new TicketMessageMail($ticket, $user, $ticket_message));
+            // Mail::to('support@ifortech.com')->send(new TicketMessageMail($ticket, $user, $ticket_message));
+            dispatch(new SendNewMessageEmail($ticket, $user, $ticket_message->message, $brand_url));
         }
 
         return response([

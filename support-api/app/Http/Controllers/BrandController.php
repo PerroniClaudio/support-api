@@ -105,4 +105,24 @@ class BrandController extends Controller {
             'url' => $url,
         ], 200);
     }
+
+    public function getLogo(Brand $brand) {
+        // header("Content-type: image/jpeg"); //(così che viene settato l'header della risposta)
+        // $url = Storage::disk('gcs')->temporaryUrl(
+        //     $brand->logo_url,
+        //     now()->addMinutes(65)
+        // );
+        // imagejpeg($url);
+
+        //Query per l'immagine che ti serve
+        $imagePath = $brand->logo_url; 
+        // Genera l'URL temporaneo per l'immagine nel bucket
+        $imageUrl = Storage::disk('gcs')->temporaryUrl($imagePath, now()->addMinutes(65));
+        // Scarica l'immagine dal bucket
+        $imageContent = file_get_contents($imageUrl);
+        // Restituisci l'immagine come risposta HTTP con il tipo di contenuto image/jpeg
+        return response($imageContent, 200, [
+            'Content-Type' => 'image/jpeg',
+        ]);
+    }
 }

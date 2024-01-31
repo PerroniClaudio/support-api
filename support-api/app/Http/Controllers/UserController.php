@@ -7,6 +7,7 @@ use App\Jobs\SendWelcomeEmail;
 use App\Jobs\SendTestEmail;
 use Illuminate\Http\Request;
 use App\Models\User;
+use App\Models\Supplier;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
@@ -376,6 +377,45 @@ class UserController extends Controller {
 
         return response([
             'name' => $user["name"] . " " . $user["surname"],
+        ], 200);
+    }
+
+    public function frontendLogoUrl(Request $request) {
+        $suppliers = Supplier::all()->toArray();
+
+        // Prendi tutti i brand dei tipi di ticket associati all'azienda dell'utente
+        $brands = $request->user()->company->brands()->toArray();
+
+        // Filtra i brand omonimo alle aziende interne ed utilizza quello dell'azienda interna con l'id piu basso
+        $sameNameSuppliers = array_filter($suppliers, function($supplier) use ($brands) {
+            $brandNames = array_column($brands, 'name');
+            return in_array($supplier['name'], $brandNames);
+        });
+
+        $selectedBrand = '';
+
+        // Se ci sono aziende interne allora prende quella con l'id più basso e recupera il marchio omonimo, altrimenti usa il marchio con l'id più basso.
+        if(!empty($sameNameSuppliers)){
+            usort($sameNameSuppliers, function($a, $b) {
+                return $a['id'] <=> $b['id'];
+            });
+            $selectedSupplier = reset($sameNameSuppliers);
+            $selectedBrand = array_values(array_filter($brands, function($brand) use ($selectedSupplier) {
+                return $brand['name'] === $selectedSupplier['name'];
+            }))[0];
+        } else {
+            usort($brands, function($a, $b) {
+                return $a['id'] <=> $b['id'];
+            });
+
+            $selectedBrand = reset($brands);
+        }
+
+        // Crea l'url
+        $url = config('app.url') . '/api/brand/' . $selectedBrand['id'] . '/logo';
+        
+        return response([
+            'urlLogo' => $url,
         ], 200);
     }
 }

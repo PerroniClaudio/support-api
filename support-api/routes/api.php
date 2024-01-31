@@ -27,6 +27,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
             return $request->user();
         }
     );
+    
+    Route::get(
+        '/user/header-logo-url',
+        [App\Http\Controllers\UserController::class, "frontendLogoUrl"]
+    );
 
     Route::get(
         '/user/all',
@@ -66,6 +71,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get(
         '/user/{id}/get-name',
         [App\Http\Controllers\UserController::class, "getName"]
+    );
+    
+    Route::get(
+        '/user/frontend/logo',
+        [App\Http\Controllers\UserController::class, "frontendLogoUrl"]
     );
 });
 
@@ -407,6 +417,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete("/brands/{brand}", [BrandController::class, "destroy"]);
     Route::post("/brands/{brand}/logo", [BrandController::class, "uploadLogo"]);
 });
+// Route usata per i loghi nelle mail. non deve richiedere l'autenticazione.
+Route::get("/brand/{brand}/logo", [BrandController::class, "getLogo"]);
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/suppliers", [App\Http\Controllers\SupplierController::class, "index"]);
@@ -417,3 +429,4 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post("/suppliers/{supplier}/logo", [App\Http\Controllers\SupplierController::class, "uploadLogo"]);
     Route::get("/suppliers/{supplier}/brands", [App\Http\Controllers\SupplierController::class, "brands"]);
 });
+

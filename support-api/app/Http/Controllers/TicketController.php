@@ -6,6 +6,8 @@ ini_set ('display_errors', 1);
 ini_set ('display_startup_errors', 1);
 error_reporting (E_ALL);
 
+use App\Jobs\SendOpenTicketEmail;
+use App\Jobs\SendCloseTicketEmail;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\TicketStatusUpdate;
@@ -116,6 +118,9 @@ class TicketController extends Controller {
             'message' => $fields['description'],
             'is_read' => 0
         ]);
+
+        $brand_url = $ticket->brandUrl();
+        dispatch(new SendOpenTicketEmail($ticket, $brand_url));
 
         return response([
             'ticket' => $ticket,
@@ -359,6 +364,8 @@ class TicketController extends Controller {
         if ($request->sendMail == true) {
             // Invio mail al cliente
             // sendMail($dafeultMail, $fields['message']);
+            $brand_url = $ticket->brandUrl();
+            dispatch(new SendCloseTicketEmail($ticket, $fields['message'], $brand_url));
         }
 
         return response([
