@@ -37,11 +37,13 @@ class SendNewMessageEmail implements ShouldQueue {
     public function handle(): void {
       // Se l'utente che ha aperto il ticket non è admin invia la mail
       if(!$this->ticket->user['is_admin']) {
-        $link = "";
+        $link = '';
         $mail = '';
+        $logoRedirectUrl = '';
         // Se l'utente che ha inviato il messaggio è admin la mail viene inviata all'utente del ticket
         if($this->user->is_admin){
           $link = env('FRONTEND_URL') . '/support/user/ticket/' . $this->ticket->id;
+          $logoRedirectUrl = config('app.frontend_url');
           // $companyAdmin = $this->ticket->company->users->where('is_company_admin', true)->first();
           // Invia mail all'azienda
           // $mail = $companyAdmin['email'];
@@ -50,11 +52,12 @@ class SendNewMessageEmail implements ShouldQueue {
           // Mail::to($mail)->send(new NewMessageEmail("company", $this->ticket, $this->message, $link));
         } else {
           $link = env('FRONTEND_URL') . '/support/admin/ticket/' . $this->ticket->id;
+          $logoRedirectUrl = config('app.frontend_url') . '/support/admin';
           $mail = env('MAIL_TO_ADDRESS');
           // Invia mail al supporto
           // Mail::to($mail)->send(new NewMessageEmail("support", $this->ticket, $this->message, $link));
         }
-        Mail::to($mail)->send(new NewMessageEmail("support", $this->ticket, $this->message, $link, $this->brand_url));
+        Mail::to($mail)->send(new NewMessageEmail("support", $this->ticket, $this->message, $link, $this->brand_url, $logoRedirectUrl));
       }
     }
 }
