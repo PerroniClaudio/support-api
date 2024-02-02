@@ -186,6 +186,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     );
 
     Route::post(
+        "/ticket/{ticket}/blame-update",
+        [App\Http\Controllers\TicketController::class, "updateTicketBlame"]
+    );
+
+    Route::post(
         "/ticket/{ticket}/status-update",
         [App\Http\Controllers\TicketController::class, "updateStatus"]
     );

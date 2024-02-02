@@ -25,6 +25,7 @@ class Ticket extends Model
         'sla_solve',
         'priority',
         'wait_end',
+        'is_user_error',
     ];
 
     /* get the owner */

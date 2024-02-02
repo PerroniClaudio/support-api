@@ -8,6 +8,7 @@ error_reporting (E_ALL);
 
 use App\Jobs\SendOpenTicketEmail;
 use App\Jobs\SendCloseTicketEmail;
+use App\Jobs\SendUpdateEmail;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\TicketStatusUpdate;
@@ -259,12 +260,14 @@ class TicketController extends Controller {
             'wait_end' => $request['wait_end'],
         ])->save();
 
-        TicketStatusUpdate::create([
+        $update = TicketStatusUpdate::create([
             'ticket_id' => $ticket->id,
             'user_id' => $request->user()->id,
             'content' => "Stato del ticket modificato in " . $request->status,
             'type' => 'status',
         ]);
+
+        dispatch(new SendUpdateEmail($update));
 
         return response([
             'ticket' => $ticket,
@@ -280,12 +283,14 @@ class TicketController extends Controller {
             'message' => 'required|string',
         ]);
 
-        TicketStatusUpdate::create([
+        $update = TicketStatusUpdate::create([
             'ticket_id' => $ticket->id,
             'user_id' => $request->user()->id,
             'content' => $request->message,
             'type' => 'note',
         ]);
+
+        dispatch(new SendUpdateEmail($update));
 
         return response([
             'new-note' => $request->message,
@@ -331,12 +336,48 @@ class TicketController extends Controller {
             'sla_solve' => $new_sla_solve,
         ]);
 
-        TicketStatusUpdate::create([
+        $update = TicketStatusUpdate::create([
             'ticket_id' => $ticket->id,
             'user_id' => $request->user()->id,
             'content' => "Priorità del ticket modificata da " . $old_priority . " a " . $fields['priority'] . ". SLA aggiornata di conseguenza.",
             'type' => 'sla',
         ]);
+
+        dispatch(new SendUpdateEmail($update));
+
+        return response([
+            'ticket' => $ticket,
+        ], 200);
+    }
+
+    public function updateTicketBlame(Ticket $ticket, Request $request) {
+        $fields = $request->validate([
+            'is_user_error' => 'required|boolean',
+        ]);
+
+        if ($request->user()["is_admin"] != 1) {
+            return response([
+                'message' => 'The user must be an admin.',
+            ], 401);
+        }
+
+        // $old_value = $ticket['is_user_error'] ? 'Cliente' : 'Supporto';
+
+        $ticket->update([
+            'is_user_error' => $fields['is_user_error']
+        ]);
+
+        // $new_value = $fields['is_user_error'] ? 'Cliente' : 'Supporto';
+        $new_value = $ticket['is_user_error'] ? 'Cliente' : 'Supporto';
+
+        $update = TicketStatusUpdate::create([
+            'ticket_id' => $ticket->id,
+            'user_id' => $request->user()->id,
+            'content' => "Responsabilità del ticket assegnata a: " . $new_value,
+            'type' => 'blame',
+        ]);
+
+        dispatch(new SendUpdateEmail($update));
 
         return response([
             'ticket' => $ticket,
@@ -353,12 +394,14 @@ class TicketController extends Controller {
             'status' => 5, // Si può impostare l'array di stati e prendere l'indice di "Chiuso" da lì
         ]);
 
-        TicketStatusUpdate::create([
+        $update = TicketStatusUpdate::create([
             'ticket_id' => $ticket->id,
             'user_id' => $request->user()->id,
             'content' => $fields['message'],
             'type' => 'closing',
         ]);
+
+        dispatch(new SendUpdateEmail($update));
 
         // Controllare se si deve inviare la mail
         if ($request->sendMail == true) {
@@ -392,14 +435,16 @@ class TicketController extends Controller {
 
         $group = Group::where('id', $request->group_id)->first();
 
-        TicketStatusUpdate::create([
+        $update = TicketStatusUpdate::create([
             'ticket_id' => $ticket->id,
             'user_id' => $request->user()->id,
             'content' => "Ticket assegnato al gruppo " . $group->name,
             'type' => 'group_assign',
         ]);
 
-        // Ticket va messo in attesa se si cambia il gruppo. Comportamento da confermare.
+        dispatch(new SendUpdateEmail($update));
+
+        // Ticket va messo in attesa se si cambia il gruppo. Comportamento da confermare. --  Si è deciso di non metterlo in attesa.
         // Se deve ripartire da zero allora si può prendere la data della modifica come partenza, senza ulteriori cambi di stato.
         // $ticketStages = config('app.ticket_stages');
 
@@ -441,12 +486,14 @@ class TicketController extends Controller {
 
         $adminUser = User::where('id', $request->admin_user_id)->first();
 
-        TicketStatusUpdate::create([
+        $update = TicketStatusUpdate::create([
             'ticket_id' => $ticket->id,
             'user_id' => $request->user()->id,
             'content' => "Ticket assegnato all'utente " . $adminUser->name . " " . $adminUser->surname,
             'type' => 'assign',
         ]);
+
+        dispatch(new SendUpdateEmail($update));
 
         return response([
             'ticket' => $ticket,

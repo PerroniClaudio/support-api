@@ -312,32 +312,38 @@ img {
 }
 
 .status-0-box {
-    border-color: #22c55e
-}
-.status-0-circle{
-    color: #22c55e
-}
-.status-1-box {
-    border-color: #facc15
-}
-.status-1-circle{
-    color: #facc15
-}
-.status-2-box {
-    border-color: #f97316
-}
-.status-2-circle{
-    color: #f97316
-}
-.status-3-box {
     border-color: #ef4444
 }
-.status-3-circle{
+.status-0-circle{
     color: #ef4444
 }
-.status-4-box {
+.status-1-box {
+    border-color: #f97316 
+}
+.status-1-circle{
+    color: #f97316
+}
+.status-2-box {
+    border-color: #facc15
+}
+.status-2-circle{
+    color: #facc15
+}
+.status-3-box {
     border-color: #3b82f6
 }
-.status-4-circle{
+.status-3-circle{
     color: #3b82f6
+}
+.status-4-box {
+    border-color: #22c55e
+}
+.status-4-circle{
+    color: #22c55e
+}
+.status-5-box {
+    border-color: #d0d0cf
+}
+.status-5-circle{
+    color: #d0d0cf
 }

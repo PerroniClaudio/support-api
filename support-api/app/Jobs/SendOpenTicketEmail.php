@@ -30,7 +30,7 @@ class SendOpenTicketEmail implements ShouldQueue {
      */
     public function handle(): void {
 
-      // Se l'utente che ha creato il ticket non è admin gli invia la mail di chiusura
+      // Se l'utente che ha creato il ticket non è admin invia la mail al supporto
       if(!$this->ticket->user['is_admin']){
         $company = $this->ticket->company;
         $ticketType =  $this->ticket->ticketType;

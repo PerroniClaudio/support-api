@@ -1,12 +1,20 @@
 @component('mail::message')
+## Update ticket
 
-L'utente {{ $user->name }} ha aggiornato lo stato del ticket #{{ $ticket->id }} in
+L'utente {{ $user->name }} ha fatto un update.
 
-<x-status>
-@slot('status', $ticket->status)
-@slot('slot')
-Aperto
-@endslot
-</x-status>
+Ticket n° {{ $ticket->id }} <br>
+Azienda: {{ $company->name }} <br>
+Categoria: {{ $category->name }} <br>
+Tipo di ticket: {{ $ticketType->name }} <br>
+Update: {{ $update->content }} <br><br>
+Stato:
+@component('mail::status', ['status' => $ticket->status, 'stages' => $stages])
+@endcomponent
+
+<br>
+@component('mail::button', ['url' => $link])
+Vai al ticket
+@endcomponent
 
 @endcomponent

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\TicketStatusUpdate;
 use Illuminate\Http\Request;
+use App\Jobs\SendUpdateEmail;
 
 class TicketStatusUpdateController extends Controller
 {
@@ -44,6 +45,8 @@ class TicketStatusUpdateController extends Controller
             'content' => $fields['status'],
             'type' => 'status',
         ]);
+
+        dispatch(new SendUpdateEmail($ticketStatusUpdate));
 
         return response([
             'ticketStatusUpdate' => $ticketStatusUpdate,

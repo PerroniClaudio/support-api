@@ -71,6 +71,11 @@ Route::get('/test', function () {
 
 Route::get('/welcome', function () {
     return "welcome";
+    
+    // $update = App\Models\TicketStatusUpdate::find(143);
+    // dispatch(new App\Jobs\SendUpdateEmail($update));
+    // return $update;
+
     // $user = User::find(13);
     // $ticket = Ticket::where('id', 91)->first();
     // $company = $ticket->company;
