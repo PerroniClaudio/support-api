@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivationToken;
 use App\Jobs\SendWelcomeEmail;
-use App\Jobs\SendTestEmail;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Supplier;
@@ -350,20 +349,6 @@ class UserController extends Controller {
         return response([
             'users' => $users,
         ], 200);
-    }
-
-    public function testMail(Request $request) {
-
-        $request->validate([
-            'email' => 'required|string',
-        ]);
-
-        $user = $request->user();
-        if (!$user["is_admin"] == 1) {
-            return response([
-                'message' => 'Unauthorized',
-            ], 401);
-        }
     }
 
     public function getName($id, Request $request){
