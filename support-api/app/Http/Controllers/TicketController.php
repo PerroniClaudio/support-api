@@ -399,6 +399,7 @@ class TicketController extends Controller {
             'user_id' => $request->user()->id,
             'content' => $fields['message'],
             'type' => 'closing',
+            'show_to_user' => $request->sendMail,
         ]);
 
         dispatch(new SendUpdateEmail($update));
@@ -419,6 +420,7 @@ class TicketController extends Controller {
 
 
     public function assignToGroup(Ticket $ticket, Request $request) {
+
         $request->validate([
             'group_id' => 'required|int',
         ]);
@@ -429,11 +431,17 @@ class TicketController extends Controller {
             ], 401);
         }
 
+        $group = Group::where('id', $request->group_id)->first();
+
+        if($group == null){
+            return response([
+                'message' => 'Group not found',
+            ], 404);
+        }
+
         $ticket->update([
             'group_id' => $request->group_id,
         ]);
-
-        $group = Group::where('id', $request->group_id)->first();
 
         $update = TicketStatusUpdate::create([
             'ticket_id' => $ticket->id,
@@ -443,6 +451,37 @@ class TicketController extends Controller {
         ]);
 
         dispatch(new SendUpdateEmail($update));
+
+        // Va rimosso l'utente assegnato al ticket se non fa parte del gruppo
+        if($ticket->admin_user_id && !$group->users()->where('user_id', $ticket->admin_user_id)->first()){
+            $old_handler = User::find($ticket->admin_user_id);
+            $ticket->update(['admin_user_id' => null]);
+
+            $update = TicketStatusUpdate::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $request->user()->id,
+                'content' => "Modifica automatica: Ticket rimosso dall'utente " . $old_handler->name . ", perchè non è del gruppo " . $group->name,
+                'type' => 'assign',
+            ]);
+
+            // Va modificato lo stato se viene rimosso l'utente assegnato al ticket. (solo se il ticket non è stato già chiuso)
+            $ticketStages = config('app.ticket_stages');
+            $index_status_nuovo = array_search("Nuovo", $ticketStages);
+            $index_status_chiuso = array_search("Chiuso", $ticketStages);
+            if($ticket->status != $index_status_nuovo && $ticket->status != $index_status_chiuso){
+                $old_status = $ticketStages[$ticket->status];
+                $ticket->update(['status' => $index_status_nuovo]);
+                $new_status = $ticketStages[$ticket->status];
+
+                $update = TicketStatusUpdate::create([
+                    'ticket_id' => $ticket->id,
+                    'user_id' => $request->user()->id,
+                    'content' => "Modifica automatica: Stato del ticket modificato da " . $old_status . " a " . $new_status,
+                    'type' => 'status',
+                ]);
+            }
+        }
+
 
         // Ticket va messo in attesa se si cambia il gruppo. Comportamento da confermare. --  Si è deciso di non metterlo in attesa.
         // Se deve ripartire da zero allora si può prendere la data della modifica come partenza, senza ulteriori cambi di stato.
@@ -563,12 +602,32 @@ class TicketController extends Controller {
 
         $tickets = [];
         foreach ($groups as $group) {
-            $groupTickets = $group->tickets;
+            $groupTickets = $group->ticketsWithUser;
             $tickets = array_merge($tickets, $groupTickets->toArray());
         }
 
         return response([
             'tickets' => $tickets,
+        ], 200);
+    }
+
+    /**
+     * Show closing messages of the ticket
+    */
+    public function closingMessages(Ticket $ticket, Request $request) {
+
+        $user = $request->user();
+
+        if ($user["is_admin"] != 1 && $ticket->company_id != $user->company_id) {
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
+        $closingUpdates = TicketStatusUpdate::where('ticket_id', $ticket->id)->where('type', 'closing')->where('show_to_user', true)->get();
+
+        return response([
+            'closing_messages' => $closingUpdates,
         ], 200);
     }
 }

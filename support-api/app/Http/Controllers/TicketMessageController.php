@@ -6,6 +6,8 @@ use App\Jobs\SendNewMessageEmail;
 use App\Mail\TicketMessageMail;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
+use App\Models\TicketStatusUpdate;
+use App\Models\Group;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 
@@ -71,6 +73,40 @@ class TicketMessageController extends Controller
         $brand_url = $ticket->brandUrl();
 
         if($user['is_admin'] == 1) {
+            // A messaggio da admin modificare lo stato in 'In corso', se lo stato è 'Nuovo' o 'Assegnato' ed assegnarlo a chi invia il messaggio se non è assegnato.
+            $ticketStages = config('app.ticket_stages');
+            $index_status_nuovo = array_search("Nuovo", $ticketStages);
+            $index_status_assegnato = array_search("Assegnato", $ticketStages);
+            if($ticket->status == $index_status_nuovo || $ticket->status == $index_status_assegnato){
+                $index_status_in_corso = array_search("In corso", $ticketStages);
+                
+                $old_status = $ticketStages[$ticket->status];
+                $ticket->update(['status' => $index_status_in_corso]);
+                $new_status = $ticketStages[$ticket->status];
+                
+                $sentence = "Modifica automatica: Stato del ticket modificato da " . $old_status . " a " . $new_status;
+                $update = TicketStatusUpdate::create([
+                    'ticket_id' => $ticket->id,
+                    'user_id' => $request->user()->id,
+                    'content' => $sentence,
+                    'type' => 'status',
+                ]);
+            }
+
+            if(
+                !$ticket->admin_user_id 
+                && !Group::where('id', $ticket->group_id)->first()->users()->where('user_id', $ticket->admin_user_id)->first()
+            ){
+                $ticket->update(['admin_user_id' => $user->id]);
+
+                $update = TicketStatusUpdate::create([
+                    'ticket_id' => $ticket->id,
+                    'user_id' => $user->id,
+                    'content' => "Modifica automatica: Ticket assegnato all'utente " . $user->name . " " . $user->surname ?? "",
+                    'type' => 'assign',
+                ]);
+            }
+
             $ticket_message->is_read = 1;
             $ticket_message->save();
             dispatch(new SendNewMessageEmail($ticket, $user, $ticket_message->message, $brand_url));

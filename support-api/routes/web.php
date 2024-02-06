@@ -71,7 +71,7 @@ Route::get('/test', function () {
 
 Route::get('/welcome', function () {
     return "welcome";
-    
+
     // $update = App\Models\TicketStatusUpdate::find(143);
     // dispatch(new App\Jobs\SendUpdateEmail($update));
     // return $update;

@@ -24,6 +24,10 @@ class Group extends Model {
         return $this->hasMany(Ticket::class);
     }
 
+    public function ticketsWithUser() {
+        return $this->hasMany(Ticket::class)->with('user');
+    }
+
     // public function allTickets()
     // {
     //     return $this->tickets()->where('group_id', $this->id);

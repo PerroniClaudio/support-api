@@ -223,6 +223,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
         "/ticket/{ticket}/assign-to-group",
         [App\Http\Controllers\TicketController::class, "assignToGroup"]
     );
+    Route::get(
+        "/ticket/{ticket}/closing-messages",
+        [App\Http\Controllers\TicketController::class, "closingMessages"]
+    );
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {

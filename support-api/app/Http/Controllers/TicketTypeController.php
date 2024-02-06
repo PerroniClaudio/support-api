@@ -62,13 +62,18 @@ class TicketTypeController extends Controller {
         $validated = $request->validate([
             'name' => 'required',
             'ticket_type_category_id' => 'required',
-            'company_id' => 'required|numeric',
+            // 'company_id' => 'required|numeric',
             'default_priority' => 'required|string',
             'default_sla_solve' => 'required|numeric',
             'default_sla_take' => 'required|numeric'
         ]);
-
-        $ticketType = TicketType::create($validated);
+        
+        // $ticketType = TicketType::create($validated);
+        
+        $fillableFields = array_merge(
+            $request->only((new TicketType)->getFillable())
+        );
+        $ticketType = TicketType::create($fillableFields);
 
         return response([
             'ticketType' => $ticketType,
@@ -129,6 +134,11 @@ class TicketTypeController extends Controller {
                 'message' => 'Non è possibile modificare il tipo di ticket perché ci sono ticket associati con l\'attuale azienda',
             ], 400);
         }
+        // if ($ticketType->company_id != $request['company_id'] && $ticketType->countRelatedTickets()) {
+        //     return response([
+        //         'message' => 'Non è possibile modificare il tipo di ticket perché ci sono ticket associati con l\'attuale azienda',
+        //     ], 400);
+        // }
 
         $fillableFields = array_merge(
             $request->only((new TicketType)->getFillable())
@@ -155,14 +165,19 @@ class TicketTypeController extends Controller {
         }
 
         $ticketType = TicketType::where('id', $ticketType["id"])->first();
-        if($ticketType->countRelatedTickets() > 0) {
-            $ticketType->update([
-                'is_deleted' => true,
-            ]);
-            return response([
-                'message' => 'Ticket type deleted successfully',
-            ], 200);
-        } else {
+        // Modificato quando l'azienda è stata resa facoltativa. se non ha l'azienda non dovrebbe avere nemmeno ticket allegati.
+        // quindi si elimina direttamente, altrimenti countRelatedTickets dà errore, perchè passa dall'azienda.
+        if($ticketType->company){
+            if($ticketType->countRelatedTickets() > 0) {
+                $ticketType->update([
+                    'is_deleted' => true,
+                ]);
+                return response([
+                    'message' => 'Ticket type deleted successfully',
+                ], 200);
+            }
+        }
+         else {
             $deleted = TicketType::destroy($ticketType["id"]);
             if ($deleted) {
                 return response(['message' => 'Ticket type deleted successfully'], 200);
