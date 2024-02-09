@@ -21,10 +21,10 @@ class TicketTypeFactory extends Factory
         return [
             //
             'name' => fake()->sentence(5),
-            'ticket_type_category_id' => TicketTypeCategory::factory(),
+            'ticket_type_category_id' => fake()->randomElement(TicketTypeCategory::all()->pluck('id')->toArray()),
             'default_sla_take' => 120,
             'default_sla_solve' => 3000,
-            'company_id' => Company::factory(),
+            'company_id' => fake()->randomElement(Company::all()->pluck('id')->toArray()),
             'brand_id' => 1,
         ];
     }
