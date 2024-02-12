@@ -125,13 +125,13 @@ class TicketTypeController extends Controller {
             'default_priority' => 'required|string',
             'default_sla_take' => 'required|numeric',
             'default_sla_solve' => 'required|numeric',
-            'company_id' => 'required|numeric',
         ]);
 
+        // $request['company_id'] = $request['company_id'] ? $request['company_id'] : null;
         // controllo ticket della compagnia precedente. se non ce ne sono si può modificare la compagnia, altrimenti no.
-        if ($ticketType->company_id != $validated['company_id'] && $ticketType->countRelatedTickets()) {
+        if ($ticketType['company_id'] && $ticketType['company_id'] != $request['company_id'] && $ticketType->countRelatedTickets() > 0) {
             return response([
-                'message' => 'Non è possibile modificare il tipo di ticket perché ci sono ticket associati con l\'attuale azienda',
+                'message' => 'Nessuna modifica effettuata. Non è possibile modificare l\'azienda perché ci sono ticket associati con l\'attuale azienda',
             ], 400);
         }
         // if ($ticketType->company_id != $request['company_id'] && $ticketType->countRelatedTickets()) {
@@ -366,7 +366,12 @@ class TicketTypeController extends Controller {
 
 
     public function countTicketsInCompany($ticketTypeId) {
-        $count = TicketType::where('id', $ticketTypeId)->first()->countRelatedTickets();
+        $ticketType = TicketType::where('id', $ticketTypeId)->first();
+        $count = 0;
+        // Non essendo più obbligatoria la compagnia, si deve controllare prima se è stata assegnata.
+        if($ticketType->company){
+            $count = $ticketType->countRelatedTickets();
+        }
         return response([
             'count' => $count,
         ], 200);

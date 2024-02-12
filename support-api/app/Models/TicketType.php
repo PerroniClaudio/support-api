@@ -16,7 +16,8 @@ class TicketType extends Model {
         'default_sla_solve',
         'company_id',
         'is_deleted',
-        'brand_id'
+        'brand_id',
+        'warning',
     ];
 
     public function tickets() {
