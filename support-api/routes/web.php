@@ -162,6 +162,14 @@ Route::get('/test', function () {
 
         // echo "Ticket: " . $ticket->id . " - Diff in hours: " . $diffInHours . " - SLA: " . $sla . "\n";
 
+        /*
+
+            Se il ticket è rimasto in attesa è necessario rimuovere le ore in cui è rimasto in attesa.
+
+        */
+
+
+
 
         if ($diffInHours > $sla) {
             switch ($ticket->ticketType->category->is_problem) {
