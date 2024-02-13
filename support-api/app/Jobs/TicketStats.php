@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Ticket;
+use App\Models\TicketStats as Stats;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -104,20 +105,24 @@ class TicketStats implements ShouldQueue {
 
             */
 
-            $ticketType = $ticket->ticketType;
-            $sla = $ticketType->sla_solve / 60;
+            $sla = $ticket->sla_solve / 60;
             $ticketCreationDate = $ticket->created_at;
             $now = now();
 
             $diffInHours = $ticketCreationDate->diffInHours($now);
 
-            // Rimuovere le ore tra mezzanotte e le 8 del mattino da $diffInHours
+            // ? Rimuovere le ore tra mezzanotte e le 8 del mattino da $diffInHours
 
-            $diffInHours -= $this->getNightHours($ticketCreationDate, $now);
+            $diffInHours -= getNightHours($ticketCreationDate, $now);
 
-            // Rimuovere le ore tra le 18:00 e mezzanotte da $diffInHours
+            // ? Rimuovere le ore tra le 18:00 e mezzanotte da $diffInHours
 
-            $diffInHours -= $this->getNightHours($ticketCreationDate->copy()->addHours(18), $now);
+            $diffInHours -= getNightHours($ticketCreationDate->copy()->addHours(18), $now);
+
+            // ? Se il ticket è rimasto in attesa è necessario rimuovere le ore in cui è rimasto in attesa.
+
+            $waitingHours = $ticket->waitingHours();
+            $diffInHours -= $waitingHours;
 
 
             if ($diffInHours > $sla) {
@@ -130,6 +135,18 @@ class TicketStats implements ShouldQueue {
                         break;
                 }
             }
+
+            Stats::create([
+                'incident_open' => $results['incident_open'],
+                'incident_in_progress' => $results['incident_in_progress'],
+                'incident_waiting' => $results['incident_waiting'],
+                'incident_out_of_sla' => $results['incident_out_of_sla'],
+                'request_open' => $results['request_open'],
+                'request_in_progress' => $results['request_in_progress'],
+                'request_waiting' => $results['request_waiting'],
+                'request_out_of_sla' => $results['request_out_of_sla'],
+                'compnanies_opened_tickets' => "{}"
+            ]);
         }
     }
 }

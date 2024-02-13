@@ -11,6 +11,7 @@ use App\Models\Company;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\Supplier;
+use App\Models\TicketStats;
 use App\Models\TicketType;
 use App\Models\TicketTypeCategory;
 use Illuminate\Support\Facades\Schema;
@@ -138,39 +139,33 @@ Route::get('/test', function () {
         }
 
         /*
-                Per verificare se il ticket in sla bisogna utilizzare il campo sla_solve del ticket. 
+        
+            Per verificare se il ticket in sla bisogna utilizzare il campo sla_solve del ticket. 
+            Bisogna verificare che la differenza tra la data attuale e la data di creazione del ticket sia minore della data di sla_solve.
+            Calcolando questa differenza bisogna tenere conto del fatto che le ore tra mezzanotte e le 8 del mattino non vanno calcolate.
+            Calcolando questa differenza bisogna tenere conto del fatto che le ore tra le 18 e mezzanotte non vanno calcolate.
+            Calcolando questa differenza bisogna tenere conto che il sabato, la domenica ed i giorni festivi non vanno calcolati.
 
-                Bisogna verificare che la differenza tra la data attuale e la data di creazione del ticket sia minore della data di sla_solve.
-                Calcolando questa differenza bisogna tenere conto del fatto che le ore tra mezzanotte e le 8 del mattino non vanno calcolate.
-                Calcolando questa differenza bisogna tenere conto del fatto che le ore tra le 18 e mezzanotte non vanno calcolate.
-                Calcolando questa differenza bisogna tenere conto che il sabato, la domenica ed i giorni festivi non vanno calcolati.
+        */
 
-            */
-
-        $ticketType = $ticket->ticketType;
         $sla = $ticket->sla_solve / 60;
         $ticketCreationDate = $ticket->created_at;
         $now = now();
 
         $diffInHours = $ticketCreationDate->diffInHours($now);
 
-        // Rimuovere le ore tra mezzanotte e le 8 del mattino da $diffInHours
+        // ? Rimuovere le ore tra mezzanotte e le 8 del mattino da $diffInHours
 
         $diffInHours -= getNightHours($ticketCreationDate, $now);
 
-        // Rimuovere le ore tra le 18:00 e mezzanotte da $diffInHours
+        // ? Rimuovere le ore tra le 18:00 e mezzanotte da $diffInHours
 
         $diffInHours -= getNightHours($ticketCreationDate->copy()->addHours(18), $now);
 
-        // echo "Ticket: " . $ticket->id . " - Diff in hours: " . $diffInHours . " - SLA: " . $sla . "\n";
+        // ? Se il ticket è rimasto in attesa è necessario rimuovere le ore in cui è rimasto in attesa.
 
-        /*
-
-            Se il ticket è rimasto in attesa è necessario rimuovere le ore in cui è rimasto in attesa.
-
-        */
-
-
+        $waitingHours = $ticket->waitingHours();
+        $diffInHours -= $waitingHours;
 
 
         if ($diffInHours > $sla) {
@@ -184,6 +179,18 @@ Route::get('/test', function () {
             }
         }
     }
+
+    $ticketStats = TicketStats::create([
+        'incident_open' => $results['incident_open'],
+        'incident_in_progress' => $results['incident_in_progress'],
+        'incident_waiting' => $results['incident_waiting'],
+        'incident_out_of_sla' => $results['incident_out_of_sla'],
+        'request_open' => $results['request_open'],
+        'request_in_progress' => $results['request_in_progress'],
+        'request_waiting' => $results['request_waiting'],
+        'request_out_of_sla' => $results['request_out_of_sla'],
+        'compnanies_opened_tickets' => "{}"
+    ]);
 
 
     return $results;
@@ -248,7 +255,7 @@ Route::get('/factory', function () {
     //     echo "<br><br>";
     // }
 
-    
+
 
 });
 

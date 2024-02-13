@@ -5,8 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Ticket extends Model
-{
+class Ticket extends Model {
     use HasFactory;
 
     protected $fillable = [
@@ -30,22 +29,19 @@ class Ticket extends Model
 
     /* get the owner */
 
-    public function user()
-    {
+    public function user() {
         return $this->belongsTo(User::class);
     }
 
     /** get  messages  */
 
-    public function messages()
-    {
+    public function messages() {
         return $this->hasMany(TicketMessage::class);
     }
 
     /** get  status updates  */
 
-    public function statusUpdates()
-    {
+    public function statusUpdates() {
         return $this->hasMany(TicketStatusUpdate::class);
     }
 
@@ -60,14 +56,50 @@ class Ticket extends Model
     public function files() {
         return $this->hasMany(TicketFile::class);
     }
-    
+
     public function brandUrl() {
         $brand_id = $this->ticketType->brand->id;
         return env('APP_URL') . '/api/brand/' . $brand_id . '/logo';
     }
 
+    public function waitingHours() {
+        $waitingHours = 0;
+
+        /*
+            Se il ticket è stato in attesa almeno una volta bisogna calcolare il tempo totale in cui è rimasto in attesa.
+        */
+
+        $statusUpdates = $this->statusUpdates()->where('type', 'status')->where(function ($query) {
+            $query->where('content', 'like', '%"in attesa"%')
+                ->orWhere('content', 'like', '%"risolto"%')
+                ->orWhere('content', 'like', '%"chiuso"%');
+        })->get();
+
+        $time_frames = [];
+
+        $now_going = true;
+
+        foreach ($statusUpdates as $update) {
+            if ($now_going) {
+                $time_frames[] = ['type' => 'go', 'start' => $update->created_at, 'end' => null];
+            } else {
+                $time_frames[count($time_frames) - 1]['end'] = $update->created_at;
+            }
+
+            $now_going = !$now_going;
+        }
+
+        foreach ($time_frames as $time_frame) {
+            if ($time_frame['type'] == 'go') {
+                $waitingHours += $time_frame['start']->diffInMinutes($time_frame['end']);
+            }
+        }
+
+        return $waitingHours;
+    }
+
     // public function calculateRemainingTime() {
-        
+
     //     // $statusUpdatesGo = $this->statusUpdates()->where('type', 'status')->where(function ($query) {
     //     //     $query->where('content', 'not like', '%in attesa%')
     //     //         ->orWhere('content', 'not like', '%risolto%')
