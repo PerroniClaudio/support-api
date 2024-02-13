@@ -260,10 +260,12 @@ class TicketController extends Controller {
             'wait_end' => $request['wait_end'],
         ])->save();
 
+        $ticketStages = config('app.ticket_stages');
+
         $update = TicketStatusUpdate::create([
             'ticket_id' => $ticket->id,
             'user_id' => $request->user()->id,
-            'content' => "Stato del ticket modificato in " . $request->status,
+            'content' => 'Stato del ticket modificato in "' . $ticketStages[$request->status] . '"',
             'type' => 'status',
         ]);
 
@@ -469,14 +471,14 @@ class TicketController extends Controller {
             $index_status_nuovo = array_search("Nuovo", $ticketStages);
             $index_status_chiuso = array_search("Chiuso", $ticketStages);
             if($ticket->status != $index_status_nuovo && $ticket->status != $index_status_chiuso){
-                $old_status = $ticketStages[$ticket->status];
+                // $old_status = $ticketStages[$ticket->status];
                 $ticket->update(['status' => $index_status_nuovo]);
                 $new_status = $ticketStages[$ticket->status];
 
                 $update = TicketStatusUpdate::create([
                     'ticket_id' => $ticket->id,
                     'user_id' => $request->user()->id,
-                    'content' => "Modifica automatica: Stato del ticket modificato da " . $old_status . " a " . $new_status,
+                    'content' => 'Modifica automatica: Stato del ticket modificato in "' . $new_status . '"',
                     'type' => 'status',
                 ]);
             }

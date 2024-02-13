@@ -35,8 +35,10 @@ class SendNewMessageEmail implements ShouldQueue {
      * Execute the job.
      */
     public function handle(): void {
+      // Se il ticket ha il referer invia la mail a lui
+      $referer = $this->ticket->referer();
       // Se l'utente che ha aperto il ticket non è admin invia la mail
-      if(!$this->ticket->user['is_admin']) {
+      if(!$this->ticket->user['is_admin'] || ($referer && $referer->email)) {
         $link = '';
         $mail = '';
         $logoRedirectUrl = '';
@@ -47,8 +49,12 @@ class SendNewMessageEmail implements ShouldQueue {
           // $companyAdmin = $this->ticket->company->users->where('is_company_admin', true)->first();
           // Invia mail all'azienda
           // $mail = $companyAdmin['email'];
-          // Invia mail all'utente che ha aperto il ticket
-          $mail = $this->ticket->user['email'];
+          // Invia mail al referente o all'utente che ha aperto il ticket
+          if($referer){
+            $mail = $referer->email;
+          } else {
+            $mail = $this->ticket->user['email'];
+          }
           // Mail::to($mail)->send(new NewMessageEmail("company", $this->ticket, $this->message, $link));
         } else {
           $link = env('FRONTEND_URL') . '/support/admin/ticket/' . $this->ticket->id;

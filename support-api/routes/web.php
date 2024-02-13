@@ -199,6 +199,13 @@ Route::get('/test', function () {
 Route::get('/welcome', function () {
     return "welcome";
 
+    // return json_decode(Ticket::find(154)->messages[0]->message)->referer;
+    // return $referer = User::find(json_decode(Ticket::find(108)->messages[0]->message)->referer);
+    // return Ticket::find(108)->referer();
+    // if($referer){
+    //     return $referer;
+    // }
+
     // $update = App\Models\TicketStatusUpdate::find(143);
     // dispatch(new App\Jobs\SendUpdateEmail($update));
     // return $update;
@@ -215,6 +222,8 @@ Route::get('/welcome', function () {
     // // dispatch(new SendWelcomeEmail($user, "URL non serve"));
     // dispatch(new SendNewMessageEmail($ticket, $user, "URL non serve"));
     // return "mail sent";
+
+
 });
 
 Route::get('/factory', function () {

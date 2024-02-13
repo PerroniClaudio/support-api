@@ -84,7 +84,7 @@ class TicketMessageController extends Controller
                 $ticket->update(['status' => $index_status_in_corso]);
                 $new_status = $ticketStages[$ticket->status];
                 
-                $sentence = "Modifica automatica: Stato del ticket modificato da " . $old_status . " a " . $new_status;
+                $sentence = 'Modifica automatica: Stato del ticket modificato in "' . $new_status . '"';
                 $update = TicketStatusUpdate::create([
                     'ticket_id' => $ticket->id,
                     'user_id' => $request->user()->id,
@@ -109,11 +109,9 @@ class TicketMessageController extends Controller
 
             $ticket_message->is_read = 1;
             $ticket_message->save();
-            dispatch(new SendNewMessageEmail($ticket, $user, $ticket_message->message, $brand_url));
-        } else {
-            // Mail::to('support@ifortech.com')->send(new TicketMessageMail($ticket, $user, $ticket_message));
-            dispatch(new SendNewMessageEmail($ticket, $user, $ticket_message->message, $brand_url));
-        }
+        } 
+        
+        dispatch(new SendNewMessageEmail($ticket, $user, $ticket_message->message, $brand_url));
 
         return response([
             'ticket_message' => $ticket_message,

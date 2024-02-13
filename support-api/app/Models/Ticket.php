@@ -33,6 +33,19 @@ class Ticket extends Model {
         return $this->belongsTo(User::class);
     }
 
+    /* get the handler */
+
+    public function handler() {
+        // return User::find($this->admin_user_id);
+        return $this->belongsTo(User::class, 'admin_user_id');
+    }
+    
+    /* get the handler */
+
+    public function referer() {
+        return User::find(json_decode($this->messages[0]->message)->referer);
+    }
+
     /** get  messages  */
 
     public function messages() {

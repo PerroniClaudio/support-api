@@ -31,10 +31,14 @@ class SendCloseTicketEmail implements ShouldQueue {
      * Execute the job.
      */
     public function handle(): void {
-
-      // Se l'utente che ha creato il ticket non è admin gli invia la mail di chiusura
-      if(!$this->ticket->user['is_admin']){
-        $link = env('FRONTEND_URL') . '/support/user/ticket/' . $this->ticket->id;
+      $link = env('FRONTEND_URL') . '/support/user/ticket/' . $this->ticket->id;
+      $referer = $this->ticket->referer();
+      // Se il ticket ha il referente invia la mail a lui. 
+      // Altrimenti, se l'utente che ha creato il ticket non è admin invia la mail a lui
+      if($referer && $referer->email){
+        $mail = $referer->email;
+        Mail::to($mail)->send(new CloseTicketEmail($this->ticket, $this->message, $link, $this->brand_url));
+      } else if(!$this->ticket->user['is_admin']){
         $mail = $this->ticket->user['email'];
         Mail::to($mail)->send(new CloseTicketEmail($this->ticket, $this->message, $link, $this->brand_url));
       }

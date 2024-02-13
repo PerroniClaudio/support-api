@@ -41,8 +41,15 @@ class SendUpdateEmail implements ShouldQueue {
           $category = $ticketType->category;
           $link = env('FRONTEND_URL') . '/support/admin/ticket/' . $ticket->id;
           $mail = env('MAIL_TO_ADDRESS');
+          $handler = $ticket->handler;
           // Inviarla anche a tutti i membri del gruppo?
           Mail::to($mail)->send(new UpdateEmail($ticket, $company, $ticketType, $category, $link, $this->update, $user));
+          if($handler) {
+            // Aggiungere qui gli eventuali altri tipi di update per i quali inviare una mail (assign, status, sla, closing, note, blame, group_assign)
+            if(in_array($this->update->type, ['assign', 'sla']))
+            Mail::to($handler['email'])->send(new UpdateEmail($ticket, $company, $ticketType, $category, $link, $this->update, $user));
+            // Inviare mail di assegnazione ticket
+          }
         // }
       }
 
