@@ -18,7 +18,7 @@ class CompanyFactory extends Factory
     {
         return [
             'name' => fake()->company(),
-            'sla' => fake()->numberBetween(1, 10),
+            'sla' => 'vuoto',
         ];
     }
 }

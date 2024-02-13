@@ -365,7 +365,7 @@ class UserController extends Controller {
         ], 200);
     }
 
-    public function frontendLogoUrl(Request $request) {
+    public function getFrontendLogoUrl(Request $request) {
         $suppliers = Supplier::all()->toArray();
 
         // Prendi tutti i brand dei tipi di ticket associati all'azienda dell'utente
@@ -398,6 +398,8 @@ class UserController extends Controller {
 
         // Crea l'url
         $url = config('app.url') . '/api/brand/' . $selectedBrand['id'] . '/logo';
+
+        // $url = $request->user()->company->frontendLogoUrl;
         
         return response([
             'urlLogo' => $url,

@@ -27,11 +27,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
             return $request->user();
         }
     );
-    
-    Route::get(
-        '/user/header-logo-url',
-        [App\Http\Controllers\UserController::class, "frontendLogoUrl"]
-    );
 
     Route::get(
         '/user/all',
@@ -75,7 +70,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     
     Route::get(
         '/user/frontend/logo',
-        [App\Http\Controllers\UserController::class, "frontendLogoUrl"]
+        [App\Http\Controllers\UserController::class, "getFrontendLogoUrl"]
     );
 });
 
@@ -157,6 +152,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get(
         "/companies/{company}/brands",
         [CompanyController::class, "brands"]
+    );
+    
+    Route::get(
+        "/companies/{company}/frontend-logo",
+        [CompanyController::class, "getFrontendLogoUrl"]
     );
 });
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Brand;
 use App\Models\Company;
+use App\Models\Supplier;
 use Illuminate\Http\Request;
 
 class CompanyController extends Controller {
@@ -220,6 +221,47 @@ class CompanyController extends Controller {
 
         return response([
             'brands' => $brands,
+        ], 200);
+    }
+
+    public function getFrontendLogoUrl(Company $company) {
+        $suppliers = Supplier::all()->toArray();
+
+        // Prendi tutti i brand dei tipi di ticket associati all'azienda dell'utente
+        $brands = $company->brands()->toArray();
+
+        // Filtra i brand omonimo alle aziende interne ed utilizza quello dell'azienda interna con l'id piu basso
+        $sameNameSuppliers = array_filter($suppliers, function($supplier) use ($brands) {
+            $brandNames = array_column($brands, 'name');
+            return in_array($supplier['name'], $brandNames);
+        });
+
+        $selectedBrand = '';
+
+        // Se ci sono aziende interne allora prende quella con l'id più basso e recupera il marchio omonimo, altrimenti usa il marchio con l'id più basso.
+        if(!empty($sameNameSuppliers)){
+            usort($sameNameSuppliers, function($a, $b) {
+                return $a['id'] <=> $b['id'];
+            });
+            $selectedSupplier = reset($sameNameSuppliers);
+            $selectedBrand = array_values(array_filter($brands, function($brand) use ($selectedSupplier) {
+                return $brand['name'] === $selectedSupplier['name'];
+            }))[0];
+        } else {
+            usort($brands, function($a, $b) {
+                return $a['id'] <=> $b['id'];
+            });
+
+            $selectedBrand = reset($brands);
+        }
+
+        // Crea l'url
+        $url = config('app.url') . '/api/brand/' . $selectedBrand['id'] . '/logo';
+
+        // $url = $request->user()->company->frontendLogoUrl;
+        
+        return response([
+            'urlLogo' => $url,
         ], 200);
     }
 }
