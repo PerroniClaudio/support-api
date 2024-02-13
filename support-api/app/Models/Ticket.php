@@ -82,31 +82,31 @@ class Ticket extends Model {
             Se il ticket è stato in attesa almeno una volta bisogna calcolare il tempo totale in cui è rimasto in attesa.
         */
 
-        $statusUpdates = $this->statusUpdates()->where('type', 'status')->where(function ($query) {
-            $query->where('content', 'like', '%"in attesa"%')
-                ->orWhere('content', 'like', '%"risolto"%')
-                ->orWhere('content', 'like', '%"chiuso"%');
-        })->get();
+        $statusUpdates = $this->statusUpdates()->where('type', 'status')->get();
 
-        $time_frames = [];
+        $hasBeenWaiting = false;
+        $waitingRecords = [];
+        $waitingEndingRecords = [];
 
-        $now_going = true;
-
-        foreach ($statusUpdates as $update) {
-            if ($now_going) {
-                $time_frames[] = ['type' => 'go', 'start' => $update->created_at, 'end' => null];
-            } else {
-                $time_frames[count($time_frames) - 1]['end'] = $update->created_at;
-            }
-
-            $now_going = !$now_going;
-        }
-
-        foreach ($time_frames as $time_frame) {
-            if ($time_frame['type'] == 'go') {
-                $waitingHours += $time_frame['start']->diffInMinutes($time_frame['end']);
+        for ($i = 0; $i < count($statusUpdates); $i++) {
+            if (
+                (strpos($statusUpdates[$i]->content, 'in attesa') !== false) || (strpos($statusUpdates[$i]->content, 'risolto') !== false)
+            ) {
+                $hasBeenWaiting = true;
+                $waitingRecords[] = $statusUpdates[$i];
+                $waitingEndingRecords[] = $statusUpdates[$i + 1];
             }
         }
+
+        if ($hasBeenWaiting === false) {
+            return 0;
+        }
+
+        for ($i = 0; $i < count($waitingRecords); $i++) {
+            $waitingHours += $waitingRecords[$i]->created_at->diffInMinutes($waitingEndingRecords[$i]->created_at);
+        }
+
+
 
         return $waitingHours;
     }
