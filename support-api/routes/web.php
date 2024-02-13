@@ -162,6 +162,12 @@ Route::get('/test', function () {
 
         $diffInHours -= getNightHours($ticketCreationDate->copy()->addHours(18), $now);
 
+        // ? Rimuovere le ore di sabato e domenica da $diffInHours
+
+        $diffInHours -= $ticketCreationDate->diffInDaysFiltered(function ($date) {
+            return $date->isWeekend();
+        }, $now);
+
         // ? Se il ticket è rimasto in attesa è necessario rimuovere le ore in cui è rimasto in attesa.
 
         $waitingHours = $ticket->waitingHours();
