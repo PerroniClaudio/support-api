@@ -31,17 +31,24 @@ class SendCloseTicketEmail implements ShouldQueue {
      * Execute the job.
      */
     public function handle(): void {
-      $link = env('FRONTEND_URL') . '/support/user/ticket/' . $this->ticket->id;
+      $userLink = env('FRONTEND_URL') . '/support/user/ticket/' . $this->ticket->id;
       $referer = $this->ticket->referer();
-      // Se il ticket ha il referente invia la mail a lui. 
-      // Altrimenti, se l'utente che ha creato il ticket non è admin invia la mail a lui
-      if($referer && $referer->email){
-        $mail = $referer->email;
-        Mail::to($mail)->send(new CloseTicketEmail($this->ticket, $this->message, $link, $this->brand_url));
-      } else if(!$this->ticket->user['is_admin']){
-        $mail = $this->ticket->user['email'];
-        Mail::to($mail)->send(new CloseTicketEmail($this->ticket, $this->message, $link, $this->brand_url));
+      $refererIT = $this->ticket->refererIT();
+      
+      // Inviare la mail di chiusura all'utente che l'ha aperto, se non è admin
+      if(!$this->ticket->user['is_admin'] && $this->ticket->user->email){
+        Mail::to($this->ticket->user->email)->send(new CloseTicketEmail($this->ticket, $this->message, $userLink, $this->brand_url));
       }
+      
+      // Inviare la mail di chiusura al referente IT
+      if($refererIT && $refererIT->email){
+        Mail::to($refererIT->email)->send(new CloseTicketEmail($this->ticket, $this->message, $userLink, $this->brand_url));
+      } 
 
+      // Inviare la mail di chiusura al referente in sede, se è diverso dal referente IT
+      if($referer && ($referer->id !== ($refererIT->id ?? null)) && $referer->email){
+        Mail::to($referer->email)->send(new CloseTicketEmail($this->ticket, $this->message, $userLink, $this->brand_url));
+      } 
+      
     }
 }

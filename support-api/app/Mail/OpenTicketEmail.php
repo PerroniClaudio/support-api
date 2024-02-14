@@ -17,7 +17,7 @@ class OpenTicketEmail extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct(public Ticket $ticket, public $company, public $ticketType, public $category, public $link, public $brand_url)
+    public function __construct(public Ticket $ticket, public $company, public $ticketType, public $category, public $link, public $brand_url, public $mailType)
     {
         //
     }

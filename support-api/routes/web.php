@@ -207,7 +207,7 @@ Route::get('/welcome', function () {
 
     // return json_decode(Ticket::find(154)->messages[0]->message)->referer;
     // return $referer = User::find(json_decode(Ticket::find(108)->messages[0]->message)->referer);
-    // return Ticket::find(108)->referer();
+    // return Ticket::find(73)->handler;
     // if($referer){
     //     return $referer;
     // }

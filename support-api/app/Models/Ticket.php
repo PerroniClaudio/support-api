@@ -40,10 +40,26 @@ class Ticket extends Model {
         return $this->belongsTo(User::class, 'admin_user_id');
     }
     
-    /* get the handler */
+    /* get the referer (referente in sede) */
 
     public function referer() {
-        return User::find(json_decode($this->messages[0]->message)->referer);
+        // In questo modo se non c'è la voce non dà errore
+        $message_obj = json_decode($this->messages[0]->message);
+        if(isset($message_obj->referer)){
+            return User::find($message_obj->referer);
+        }
+        return User::find(0);
+    }
+
+    /* get the IT referer (referente IT) */
+    
+    public function refererIT() {
+        // Controllo se esiste la proprietà, perchè nei ticket vecchi non c'è e può dare errore.
+        $message_obj = json_decode($this->messages[0]->message);
+        if(isset($message_obj->referer_it)){
+            return User::find($message_obj->referer_it);
+        }
+        return User::find(0);
     }
 
     /** get  messages  */

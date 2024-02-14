@@ -30,22 +30,34 @@ class SendOpenTicketEmail implements ShouldQueue {
      */
     public function handle(): void {
 
+      $ticketUser = $this->ticket->user;
       $company = $this->ticket->company;
       $ticketType =  $this->ticket->ticketType;
       $category = $ticketType->category;
-      // Se l'utente che ha creato il ticket non è admin invia la mail al supporto
-      if(!$this->ticket->user['is_admin']){
-        $link = env('FRONTEND_URL') . '/support/admin/ticket/' . $this->ticket->id;
-        $mail = env('MAIL_TO_ADDRESS');
+      $adminLink = env('FRONTEND_URL') . '/support/admin/ticket/' . $this->ticket->id;
+      $userlink = env('FRONTEND_URL') . '/support/user/ticket/' . $this->ticket->id;
+
+      // Se l'utente che ha creato il ticket non è admin invia la mail al supporto e a chi ha aperto il ticket.
+      if(!$ticketUser['is_admin']){
+        $supportMail = env('MAIL_TO_ADDRESS');
         // Inviarla anche a tutti i membri del gruppo?
-        Mail::to($mail)->send(new OpenTicketEmail($this->ticket, $company, $ticketType, $category, $link, $this->brand_url));
+        Mail::to($supportMail)->send(new OpenTicketEmail($this->ticket, $company, $ticketType, $category, $adminLink, $this->brand_url, "admin"));
+        if($ticketUser['email']){
+          Mail::to($ticketUser['email'])->send(new OpenTicketEmail($this->ticket, $company, $ticketType, $category, $userlink, $this->brand_url, "user"));
+        }
       } 
-      
-      // In ogni caso, se il referente è impostato, invia la mail al referente.
+
       $referer = $this->ticket->referer();
-      if($referer && $referer->email){
-        $link = env('FRONTEND_URL') . '/support/user/ticket/' . $this->ticket->id;
-        Mail::to($referer->email)->send(new OpenTicketEmail($this->ticket, $company, $ticketType, $category, $link, $this->brand_url));
+      $refererIT = $this->ticket->refererIT();
+
+      // Se il referente in sede è impostato ed è diverso dall'utente che ha aperto il ticket, gli invia la mail.
+      if($referer && $referer->id !== $ticketUser->id && $referer->email){
+        Mail::to($referer->email)->send(new OpenTicketEmail($this->ticket, $company, $ticketType, $category, $userlink, $this->brand_url, "referer"));
+      }
+
+      // Se il referente IT è impostato ed è diverso dall'utente e dalreferente in sede, gli invia la mail.
+      if($refererIT && $refererIT->id !== $referer->id && $refererIT->id !== $ticketUser->id && $refererIT->email){
+        Mail::to($refererIT->email)->send(new OpenTicketEmail($this->ticket, $company, $ticketType, $category, $userlink, $this->brand_url, "referer_it"));
       }
       
     }

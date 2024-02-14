@@ -20,7 +20,8 @@ class NewMessageEmail extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct(public $destination, public Ticket $ticket, public $message, public $link, public $brand_url, public $url)
+    // public function __construct(public $destination, public Ticket $ticket, public $message, public $link, public $brand_url, public $url)
+    public function __construct(public $mailType, public Ticket $ticket, public $message, public $link, public $brand_url, public $url)
     {
         //
     }

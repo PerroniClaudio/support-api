@@ -35,35 +35,45 @@ class SendNewMessageEmail implements ShouldQueue {
      * Execute the job.
      */
     public function handle(): void {
-      // Se il ticket ha il referer invia la mail a lui
+      $ticketUser = $this->ticket->user;
+      $handler = $this->ticket->handler;
       $referer = $this->ticket->referer();
-      // Se l'utente che ha aperto il ticket non è admin invia la mail
-      if(!$this->ticket->user['is_admin'] || ($referer && $referer->email)) {
-        $link = '';
-        $mail = '';
-        $logoRedirectUrl = '';
-        // Se l'utente che ha inviato il messaggio è admin la mail viene inviata all'utente del ticket
-        if($this->user->is_admin){
-          $link = env('FRONTEND_URL') . '/support/user/ticket/' . $this->ticket->id;
-          $logoRedirectUrl = config('app.frontend_url');
-          // $companyAdmin = $this->ticket->company->users->where('is_company_admin', true)->first();
-          // Invia mail all'azienda
-          // $mail = $companyAdmin['email'];
-          // Invia mail al referente o all'utente che ha aperto il ticket
-          if($referer){
-            $mail = $referer->email;
-          } else {
-            $mail = $this->ticket->user['email'];
-          }
-          // Mail::to($mail)->send(new NewMessageEmail("company", $this->ticket, $this->message, $link));
-        } else {
-          $link = env('FRONTEND_URL') . '/support/admin/ticket/' . $this->ticket->id;
-          $logoRedirectUrl = config('app.frontend_url') . '/support/admin';
-          $mail = env('MAIL_TO_ADDRESS');
-          // Invia mail al supporto
-          // Mail::to($mail)->send(new NewMessageEmail("support", $this->ticket, $this->message, $link));
-        }
-        Mail::to($mail)->send(new NewMessageEmail("support", $this->ticket, $this->message, $link, $this->brand_url, $logoRedirectUrl));
+      $refererIT = $this->ticket->refererIT();
+      $link_user = env('FRONTEND_URL') . '/support/user/ticket/' . $this->ticket->id;
+      $link_admin = env('FRONTEND_URL') . '/support/admin/ticket/' . $this->ticket->id;
+      $userLogoRedirectUrl = config('app.frontend_url');
+      $adminLogoRedirectUrl = config('app.frontend_url') . '/support/admin';
+      $supportMail = env('MAIL_TO_ADDRESS');
+      
+      // Inviarlo all'utente che ha creato il ticket se non è admin e se non l'ha inviato lui
+      if (!$ticketUser->is_admin && $ticketUser->id !== $this->user->id && $ticketUser->email) {
+        Mail::to($ticketUser->email)->send(new NewMessageEmail('user', $this->ticket, $this->message, $link_user, $this->brand_url, $userLogoRedirectUrl));
       }
-    }
+
+      // Se chi ha creato il ticket è admin, se non l'ha inviato lui, solo se il ticket non ha il gestore, gli si invia la mail.
+      if ($ticketUser->is_admin && $ticketUser->id !== $this->user->id && !$handler && $ticketUser->email) {
+        Mail::to($ticketUser->email)->send(new NewMessageEmail('admin', $this->ticket, $this->message, $link_admin, $this->brand_url, $adminLogoRedirectUrl));
+      }
+
+      // Inviarlo al gestore se c'è e non l'ha inviato lui
+      if ($handler && $handler->id !== $this->user->id && $handler->email) {
+        Mail::to($handler->email)->send(new NewMessageEmail('admin', $this->ticket, $this->message, $link_admin, $this->brand_url, $adminLogoRedirectUrl));
+      }
+
+      // Inviarlo al referente in sede se non l'ha inviato lui e se è diverso dal referente IT
+      if($referer && $referer->id !== $this->user->id && ($referer->id !== ($refererIT->id ?? null)) && $referer->email){
+        Mail::to($referer->email)->send(new NewMessageEmail("referer", $this->ticket, $this->message, $link_user, $this->brand_url, $userLogoRedirectUrl));
+      }
+
+      // Inviarlo al referente it se non l'ha inviato lui
+      if($refererIT && $refererIT->id !== $this->user->id && $refererIT->email){
+        Mail::to($refererIT->email)->send(new NewMessageEmail("referer_it", $this->ticket, $this->message, $link_user, $this->brand_url, $userLogoRedirectUrl));
+      }
+
+      // Inviarlo al supporto in ogni caso
+      Mail::to($supportMail)->send(new NewMessageEmail('support', $this->ticket, $this->message, $link_admin, $this->brand_url, $adminLogoRedirectUrl));
+
+    } 
 }
+
+
