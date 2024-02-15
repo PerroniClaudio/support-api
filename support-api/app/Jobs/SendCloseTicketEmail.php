@@ -46,7 +46,7 @@ class SendCloseTicketEmail implements ShouldQueue {
       } 
 
       // Inviare la mail di chiusura al referente in sede, se è diverso dal referente IT
-      if($referer && ($referer->id !== ($refererIT->id ?? null)) && $referer->email){
+      if($referer && ($refererIT ? $refererIT->id !== $referer->id : true) && $referer->email){
         Mail::to($referer->email)->send(new CloseTicketEmail($this->ticket, $this->message, $userLink, $this->brand_url));
       } 
       

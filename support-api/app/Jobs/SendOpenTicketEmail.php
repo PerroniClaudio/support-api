@@ -56,7 +56,7 @@ class SendOpenTicketEmail implements ShouldQueue {
       }
 
       // Se il referente IT è impostato ed è diverso dall'utente e dalreferente in sede, gli invia la mail.
-      if($refererIT && $refererIT->id !== $referer->id && $refererIT->id !== $ticketUser->id && $refererIT->email){
+      if($refererIT && ($referer ? $refererIT->id !== $referer->id : true) && $refererIT->id !== $ticketUser->id && $refererIT->email){
         Mail::to($refererIT->email)->send(new OpenTicketEmail($this->ticket, $company, $ticketType, $category, $userlink, $this->brand_url, "referer_it"));
       }
       

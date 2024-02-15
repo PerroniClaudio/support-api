@@ -175,7 +175,7 @@ class TicketController extends Controller {
             ($user["is_admin"] == 1 && $groupIdExists) ||
             ($ticket->company_id == $user->company_id && $user["is_company_admin"] == 1) ||
             ($ticket->company_id == $user->company_id && $ticket->user_id == $user->id) ||
-            (($ticket->referer()->id ?? null) == $user->id)
+            (($ticket->referer() ? $ticket->referer()->id == $user->id : false))
         ) {
             $authorized = true;
         }

@@ -61,7 +61,7 @@ class SendNewMessageEmail implements ShouldQueue {
       }
 
       // Inviarlo al referente in sede se non l'ha inviato lui e se è diverso dal referente IT
-      if($referer && $referer->id !== $this->user->id && ($referer->id !== ($refererIT->id ?? null)) && $referer->email){
+      if($referer && $referer->id !== $this->user->id && ($refererIT ? $refererIT->id !== $referer->id : true) && $referer->email){
         Mail::to($referer->email)->send(new NewMessageEmail("referer", $this->ticket, $this->message, $link_user, $this->brand_url, $userLogoRedirectUrl));
       }
 
