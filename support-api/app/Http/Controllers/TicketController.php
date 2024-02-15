@@ -167,12 +167,13 @@ class TicketController extends Controller {
             }
         }
 
-        // Può avere il ticket solo se admin e del gruppo associato, company admin e della stessa azienda del ticket, o se è e della stessa azienda del ticket ed il creatore del ticket.
+        // Può avere il ticket solo se admin e del gruppo associato, company admin e della stessa azienda del ticket, se è e della stessa azienda del ticket ed il creatore del ticket o se è il referente interno (non necessariamente company_admin).
         $authorized = false;
         if (
             ($user["is_admin"] == 1 && $groupIdExists) ||
             ($ticket->company_id == $user->company_id && $user["is_company_admin"] == 1) ||
-            ($ticket->company_id == $user->company_id && $ticket->user_id == $user->id)
+            ($ticket->company_id == $user->company_id && $ticket->user_id == $user->id) ||
+            (($ticket->referer()->id ?? null) == $user->id)
         ) {
             $authorized = true;
         }
