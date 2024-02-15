@@ -46,7 +46,9 @@ class TicketController extends Controller {
             $tickets =  $user->company->tickets;
         } else {
             // return Ticket::where('user_id', $user->id)->get();
-            $tickets =  $user->tickets;
+            // $tickets =  $user->tickets;
+            $tickets = $user->tickets->merge($user->refererTickets());
+            
         }
 
         return response([

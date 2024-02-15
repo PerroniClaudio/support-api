@@ -72,6 +72,19 @@ class User extends Authenticatable
     }
 
     /**
+     * get user's tickets as referer (seen in the webform message)
+     */
+    public function refererTickets()
+    {
+        $filteredTickets = $this->company->tickets->filter(function ($ticket) {
+            return $ticket->referer() && ($ticket->referer()->id == $this->id);
+        });
+        $ids = $filteredTickets->pluck('id')->all();
+        $tickets = Ticket::whereIn('id', $ids)->get();
+        return $tickets;
+    }
+
+    /**
      * get user's groups
      */
 

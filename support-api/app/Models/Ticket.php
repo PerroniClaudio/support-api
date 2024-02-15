@@ -44,9 +44,12 @@ class Ticket extends Model {
 
     public function referer() {
         // In questo modo se non c'è la voce non dà errore
-        $message_obj = json_decode($this->messages[0]->message);
-        if(isset($message_obj->referer)){
-            return User::find($message_obj->referer);
+        $messages = $this->messages;
+        if(count($messages) > 0){
+            $message_obj = json_decode($this->messages[0]->message);
+            if(isset($message_obj->referer)){
+                return User::find($message_obj->referer);
+            }
         }
         return User::find(0);
     }
@@ -55,9 +58,12 @@ class Ticket extends Model {
     
     public function refererIT() {
         // Controllo se esiste la proprietà, perchè nei ticket vecchi non c'è e può dare errore.
-        $message_obj = json_decode($this->messages[0]->message);
-        if(isset($message_obj->referer_it)){
-            return User::find($message_obj->referer_it);
+        $messages = $this->messages;
+        if(count($messages) > 0){
+            $message_obj = json_decode($this->messages[0]->message);
+            if(isset($message_obj->referer_it)){
+                return User::find($message_obj->referer_it);
+            }
         }
         return User::find(0);
     }

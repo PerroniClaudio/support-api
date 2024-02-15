@@ -205,6 +205,10 @@ Route::get('/test', function () {
 Route::get('/welcome', function () {
     return "welcome";
 
+    // $user = User::find(82);
+    // return $user->tickets->merge($user->refererTickets());
+    
+    // return Ticket::find(73)->messages[0]->message;
     // return json_decode(Ticket::find(154)->messages[0]->message)->referer;
     // return $referer = User::find(json_decode(Ticket::find(108)->messages[0]->message)->referer);
     // return Ticket::find(73)->handler;
