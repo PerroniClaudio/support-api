@@ -17,10 +17,22 @@ class AuthenticatedSessionController extends Controller {
      */
     public function store(LoginRequest $request): Response {
         $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            return response([
+                'message' => 'Utente inesistente',
+            ], 401);
+        }
+
+        if (!Hash::check($request->password, $user->password)) {
+            return response([
+                'message' => 'Le credenziali non corrispondono',
+            ], 401);
+        }
         
         if ($user['is_deleted'] == 1) {
             return response([
-                'message' => 'Unauthorized',
+                'message' => 'Utente disabilitato',
             ], 401);
         }
 

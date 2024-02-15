@@ -33,23 +33,25 @@ class TicketController extends Controller {
         $user = $request->user();
         $cacheKey = 'user_' . $user->id . '_tickets';
 
-        // $tickets = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($user) {
-        //     if ($user["is_company_admin"] != 1) {
-        //         return $user->company->tickets;
-        //     } else {
-        //         // return Ticket::where('user_id', $user->id)->get();
-        //         return $user->tickets;
-        //     }
-        // });
+        $tickets = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($user) {
+            if ($user["is_company_admin"] == 1) {
+                return  $user->company->tickets;
+            } else {
+                // return Ticket::where('user_id', $user->id)->get();
+                // $tickets =  $user->tickets;
+                return $user->tickets->merge($user->refererTickets());
+                
+            }
+        });
         
-        if ($user["is_company_admin"] == 1) {
-            $tickets =  $user->company->tickets;
-        } else {
-            // return Ticket::where('user_id', $user->id)->get();
-            // $tickets =  $user->tickets;
-            $tickets = $user->tickets->merge($user->refererTickets());
+        // if ($user["is_company_admin"] == 1) {
+        //     $tickets =  $user->company->tickets;
+        // } else {
+        //     // return Ticket::where('user_id', $user->id)->get();
+        //     // $tickets =  $user->tickets;
+        //     $tickets = $user->tickets->merge($user->refererTickets());
             
-        }
+        // }
 
         return response([
             'tickets' => $tickets,
