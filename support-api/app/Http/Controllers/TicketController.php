@@ -541,6 +541,22 @@ class TicketController extends Controller {
 
         dispatch(new SendUpdateEmail($update));
 
+        // Se lo stato è 'Nuovo' aggiornarlo in assegnato
+        $ticketStages = config('app.ticket_stages');
+        if($ticketStages[$ticket->status] == 'Nuovo'){
+            $index_status_assegnato = array_search('Assegnato', $ticketStages);
+            $ticket->update(['status' => $index_status_assegnato]);
+            $new_status = $ticketStages[$ticket->status];
+
+            $update = TicketStatusUpdate::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $request->user()->id,
+                'content' => 'Modifica automatica: Stato del ticket modificato in "' . $new_status . '"',
+                'type' => 'status',
+            ]);
+            
+        }
+
         return response([
             'ticket' => $ticket,
         ], 200);

@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Mail\UpdateEmail;
+use App\Mail\AssignToUserEmail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -30,10 +31,10 @@ class SendUpdateEmail implements ShouldQueue {
 
       $ticket = $this->update->ticket;
 
-      // Se l'utente che ha creato il ticket non è admin invia la mail al supporto.
-      if(!$ticket->user['is_admin']){
-        // Tipo di update: status, note, sla, closing, group_assign, assign, 
-        // Per ora invio solo le note
+      // Se l'utente che ha creato il ticket non è admin invia la mail al supporto. Si è deciso di farlo in ogni caso.
+      // if(!$ticket->user['is_admin']){
+
+        // Si inviano tutti gli update al supporto e solo quelli selezionati al gestore
         // if($this->update["type"] == "note"){
           $user = $this->update->user;
           $company = $ticket->company;
@@ -44,14 +45,22 @@ class SendUpdateEmail implements ShouldQueue {
           $handler = $ticket->handler;
           // Inviarla anche a tutti i membri del gruppo?
           Mail::to($mail)->send(new UpdateEmail($ticket, $company, $ticketType, $category, $link, $this->update, $user));
+          
+          // Per il gestore
           if($handler) {
-            // Aggiungere qui gli eventuali altri tipi di update per i quali inviare una mail (assign, status, sla, closing, note, blame, group_assign)
-            if(in_array($this->update->type, ['assign', 'sla']))
-            Mail::to($handler['email'])->send(new UpdateEmail($ticket, $company, $ticketType, $category, $link, $this->update, $user));
-            // Inviare mail di assegnazione ticket
+            // Filtro tipi di update per i quali inviare una mail al gestore. (assign, status, sla, closing, note, blame, group_assign)
+            if(in_array($this->update->type, ['assign', 'sla'])) {
+              // Inviare mail di assegnazione ticket, altrimenti mail di update
+              if($this->update->type == 'assign'){
+                Mail::to($handler->email)->send(new AssignToUserEmail($ticket, $company, $ticketType, $category, $link, $this->update, $user));
+              } else {
+                Mail::to($handler->email)->send(new UpdateEmail($ticket, $company, $ticketType, $category, $link, $this->update, $user));
+              }
+            }
           }
         // }
-      }
+
+      // }
 
     }
 }
