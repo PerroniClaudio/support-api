@@ -24,6 +24,12 @@ class AuthenticatedSessionController extends Controller {
             ], 401);
         }
 
+        if ($user['email_verified_at'] == null) {
+            return response([
+                'message' => 'Utenza non attivata. seguire le indicazioni nella mail di attivazione.',
+            ], 401);
+        }
+
         if (!Hash::check($request->password, $user->password)) {
             return response([
                 'message' => 'Le credenziali non corrispondono',

@@ -116,6 +116,7 @@ class UserController extends Controller {
 
         $updated = $user->update([
             'password' => Hash::make($fields['password']),
+            'email_verified_at' => date('Y-m-d H:i:s'),
         ]);
 
         if (!$updated) {
@@ -230,6 +231,7 @@ class UserController extends Controller {
         ], 200);
     }
 
+    // Riabilitare utente disabilitato
     public function enable($id, Request $request) {
         $req_user = $request->user();
 

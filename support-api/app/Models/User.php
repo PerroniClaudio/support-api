@@ -31,6 +31,7 @@ class User extends Authenticatable
         'is_company_admin',
         'microsoft_token',
         'is_deleted',
+        'email_verified_at',
     ];
 
     /**
