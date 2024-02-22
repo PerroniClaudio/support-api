@@ -22,24 +22,22 @@ class TicketStats implements ShouldQueue {
     }
 
     private function getNightHours($start, $end) {
-        $nightHours = 0;
-        $startDay = $start->copy()->startOfDay();
-        $endDay = $end->copy()->startOfDay();
-        $nightStart = $startDay->copy()->addHours(18);
-        $nightEnd = $startDay->copy()->addHours(8);
 
-        if ($startDay->isSameDay($endDay)) {
-            if ($start->isBefore($nightStart) && $end->isAfter($nightEnd)) {
+        $nightHours = 0;
+
+        if ($start->isSameDay($end)) {
+
+            if ($start->isBefore($start->copy()->startOfDay()->addHours(18)) && $end->isAfter($start->copy()->startOfDay()->addHours(8))) {
                 $nightHours = 10;
-            } else if ($start->isBefore($nightStart) && $end->isBefore($nightEnd)) {
-                $nightHours = $start->diffInHours($nightEnd);
-            } else if ($start->isAfter($nightStart) && $end->isAfter($nightEnd)) {
-                $nightHours = $end->diffInHours($nightStart);
+            } else if ($start->isBefore($start->copy()->startOfDay()->addHours(18)) && $end->isBefore($start->copy()->startOfDay()->addHours(8))) {
+                $nightHours = $start->diffInHours($start->copy()->startOfDay()->addHours(8));
+            } else if ($start->isAfter($start->copy()->startOfDay()->addHours(18)) && $end->isAfter($start->copy()->startOfDay()->addHours(8))) {
+                $nightHours = $end->diffInHours($start->copy()->startOfDay()->addHours(18));
             }
         } else {
-            $nightHours = $start->diffInHours($nightEnd);
-            $nightHours += $end->diffInHours($nightStart);
+            $nightHours = $start->diffInDays($end) * 13;
         }
+
 
         return $nightHours;
     }
@@ -105,19 +103,26 @@ class TicketStats implements ShouldQueue {
 
             */
 
-            $sla = $ticket->sla_solve / 60;
+            $sla = round($ticket->sla_solve / 60, 1);
             $ticketCreationDate = $ticket->created_at;
             $now = now();
 
             $diffInHours = $ticketCreationDate->diffInHours($now);
 
-            // ? Rimuovere le ore tra mezzanotte e le 8 del mattino da $diffInHours
+            $diffInHours -= $this->getNightHours($ticketCreationDate, $now);
 
-            $diffInHours -= getNightHours($ticketCreationDate, $now);
+            // ? Rimuovere sabati e domeniche 
 
-            // ? Rimuovere le ore tra le 18:00 e mezzanotte da $diffInHours
+            $weekendDays = 0;
 
-            $diffInHours -= getNightHours($ticketCreationDate->copy()->addHours(18), $now);
+            for ($i = 0; $i < $ticketCreationDate->diffInDays($now); $i++) {
+                $day = $ticketCreationDate->copy()->addDays($i);
+                if ($day->isSaturday() || $day->isSunday()) {
+                    $weekendDays++;
+                }
+            }
+
+            $diffInHours -= $weekendDays * 24;
 
             // ? Se il ticket è rimasto in attesa è necessario rimuovere le ore in cui è rimasto in attesa.
 
@@ -135,18 +140,18 @@ class TicketStats implements ShouldQueue {
                         break;
                 }
             }
-
-            Stats::create([
-                'incident_open' => $results['incident_open'],
-                'incident_in_progress' => $results['incident_in_progress'],
-                'incident_waiting' => $results['incident_waiting'],
-                'incident_out_of_sla' => $results['incident_out_of_sla'],
-                'request_open' => $results['request_open'],
-                'request_in_progress' => $results['request_in_progress'],
-                'request_waiting' => $results['request_waiting'],
-                'request_out_of_sla' => $results['request_out_of_sla'],
-                'compnanies_opened_tickets' => "{}"
-            ]);
         }
+
+        Stats::create([
+            'incident_open' => $results['incident_open'],
+            'incident_in_progress' => $results['incident_in_progress'],
+            'incident_waiting' => $results['incident_waiting'],
+            'incident_out_of_sla' => $results['incident_out_of_sla'],
+            'request_open' => $results['request_open'],
+            'request_in_progress' => $results['request_in_progress'],
+            'request_waiting' => $results['request_waiting'],
+            'request_out_of_sla' => $results['request_out_of_sla'],
+            'compnanies_opened_tickets' => "{}"
+        ]);
     }
 }
