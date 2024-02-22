@@ -8,10 +8,47 @@ use Illuminate\Database\Eloquent\Model;
 class Group extends Model {
     use HasFactory;
 
-    protected $fillable = ["name"];
+    protected $fillable = [
+        "name",
+        "parent_id"
+    ];
+
+    // get parent group
+    public function parent()
+    {
+        return $this->belongsTo(Group::class, 'parent_id');
+    }
+
+    // get children groups (one level down)
+    public function children()
+    {
+        // return $this->hasMany(Group::class, 'parent_id');
+        return $this->hasMany(Group::class, 'parent_id');
+    }
+
+    // get children groups (all levels)
+    function getAllChildren()
+    {
+        $children = $this->children;
+        foreach ($children as $child) {
+            $children = $children->merge($children->getAllChildren($child));
+        }
+        return $children;
+    }
+    
+    // get the level of the group
+    function level()
+    {   
+        $level = 0;
+        $parent = $this->parent;
+        while ($parent) {
+            $level++;
+            $parent = $parent->parent;
+        }
+        return $level;
+    }
 
     /* get the users */
-
     public function users() {
         return $this->belongsToMany(User::class, 'user_groups', 'group_id', 'user_id');
     }
@@ -27,6 +64,7 @@ class Group extends Model {
     public function ticketsWithUser() {
         return $this->hasMany(Ticket::class)->with('user');
     }
+
 
     // public function allTickets()
     // {

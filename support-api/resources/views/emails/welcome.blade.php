@@ -1,8 +1,8 @@
 @component('mail::message')
-## Attivazione utenza
+## Creazione utenza
 
 Buongiorno {{ $user->name }},<br>
-le comunichiamo l'attivazione della sua utenza sul portale di supporto iFortech.
+le comunichiamo la creazione della sua utenza sul portale di supporto iFortech.
 
 Può impostare la sua password al seguente link.
 

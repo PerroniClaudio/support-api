@@ -16,10 +16,6 @@ use App\Models\TicketType;
 use App\Models\TicketTypeCategory;
 use Illuminate\Support\Facades\Schema;
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -205,6 +201,10 @@ Route::get('/test', function () {
 Route::get('/welcome', function () {
     return "welcome";
 
+    // return App\Models\Group::find(1)->level();
+    // return App\Models\Group::find(1)->children;
+    // return App\Models\Group::find(1)->getAllChildren();
+
     // $user = User::find(82);
     // return $user->tickets->merge($user->refererTickets());
     
@@ -250,9 +250,18 @@ Route::get('/factory', function () {
     //     echo "<br><br>";
     // }
 
+    // CREA CATEGORIA
+    // $newCategories = TicketTypeCategory::factory()->count(2)->create();
+
     // CREA TIPO per l'azienda (indicare l'id dell'azienda)
     // $newTypes = TicketType::factory()->count(2)->create([
-    //     'company_id' => 19,
+    //     'company_id' => 1,
+    // ]);
+    // $newTypes[] = TicketType::factory()->count(2)->create([
+    //     'company_id' => 2,
+    // ]);
+    // $newTypes[] = TicketType::factory()->count(2)->create([
+    //     'company_id' => 3,
     // ]);
     // foreach ($newTypes as $type) {
     //     echo $type;
@@ -274,6 +283,22 @@ Route::get('/factory', function () {
     //     echo "<br><br>";
     // }
 
+    // $type = TicketType::all()->random();
+    // $company = $type->company;
+    // // Si potrebbe pensare di prendere l'utente tra quelli dell'azienda del tipo di ticket.
+    // $user = User::where('is_admin', 1)->get()->random();
+    // $group = $type->groups->first();
+    // $type['priority'] ;
+    // $ticket = Ticket::factory()->create([
+    //     'user_id' => $user->id,
+    //     'company_id' => $company->id,
+    //     'type_id' => $type->id,
+    //     'group_id' => $group->id,
+    //     'sla_take' => $type->default_sla_take ?? 240,
+    //     'sla_solve' => $type->default_sla_solve ?? 3000,
+    //     'priority' => $type->default_priority ?? 'low',
+    // ]);
+    // return $ticket;
 
 
 });

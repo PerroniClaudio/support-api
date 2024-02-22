@@ -391,6 +391,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         "/groups/{group}",
         [GroupController::class, "show"]
     );
+    
+    Route::patch(
+        "/groups/{group}",
+        [GroupController::class, "update"]
+    );
 
     Route::get(
         "/groups/{group}/ticket-types",

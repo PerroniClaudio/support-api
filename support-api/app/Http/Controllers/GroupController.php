@@ -12,7 +12,10 @@ class GroupController extends Controller {
     public function index() {
         //
         $groups = Group::all();
-
+        foreach ($groups as $group) {
+            $group->level = $group->level();
+        }
+        
         return response([
             'groups' => $groups,
         ], 200);
@@ -29,14 +32,14 @@ class GroupController extends Controller {
      * Store a newly created resource in storage.
      */
     public function store(Request $request) {
-        //
 
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:groups',
         ]);
 
-        $group = Group::create($validated);
-
+        $fields = $request->only((new Group())->getFillable());
+        $group = Group::create($fields);        
+        
         return response([
             'group' => $group,
         ], 200);
@@ -64,7 +67,24 @@ class GroupController extends Controller {
      * Update the specified resource in storage.
      */
     public function update(Request $request, Group $group) {
-        //
+        $request->validate([
+            'name' => 'required|string|max:255',
+        ]);
+
+        if(!$request->user()->is_admin) {
+            return response([
+                'message' => 'Unauthorized',
+            ], 403);
+        }
+
+        $fields = $request->only((new Group())->getFillable());
+
+        $group->update($fields);
+
+        return response([
+            'group' => $group,
+        ], 200);
+
     }
 
     /**
