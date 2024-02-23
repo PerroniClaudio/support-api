@@ -33,7 +33,7 @@ class TicketController extends Controller {
         $user = $request->user();
         $cacheKey = 'user_' . $user->id . '_tickets';
 
-        $tickets = Cache::remember($cacheKey, now()->addMinutes(30), function () use ($user) {
+        $tickets = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($user) {
             if ($user["is_company_admin"] == 1) {
                 return  $user->company->tickets;
             } else {
