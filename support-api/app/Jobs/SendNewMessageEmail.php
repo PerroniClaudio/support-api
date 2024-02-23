@@ -45,7 +45,7 @@ class SendNewMessageEmail implements ShouldQueue {
       $adminLogoRedirectUrl = config('app.frontend_url') . '/support/admin';
       $supportMail = env('MAIL_TO_ADDRESS');
       
-      // Inviarlo all'utente che ha creato il ticket se non è admin e se non l'ha inviato lui
+      // Inviarlo all'utente che ha creato il ticket se non è admin e se non l'ha inviato lui (il messaggio)
       if (!$ticketUser->is_admin && $ticketUser->id !== $this->user->id && $ticketUser->email) {
         Mail::to($ticketUser->email)->send(new NewMessageEmail('user', $this->ticket, $this->message, $link_user, $this->brand_url, $userLogoRedirectUrl));
       }

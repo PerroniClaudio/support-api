@@ -37,11 +37,12 @@ class SendOpenTicketEmail implements ShouldQueue {
       $adminLink = env('FRONTEND_URL') . '/support/admin/ticket/' . $this->ticket->id;
       $userlink = env('FRONTEND_URL') . '/support/user/ticket/' . $this->ticket->id;
 
-      // Se l'utente che ha creato il ticket non è admin invia la mail al supporto e a chi ha aperto il ticket.
+      $supportMail = env('MAIL_TO_ADDRESS');
+      // Inviarla anche a tutti i membri del gruppo?
+      // In ogni caso invia la mail al supporto
+      Mail::to($supportMail)->send(new OpenTicketEmail($this->ticket, $company, $ticketType, $category, $adminLink, $this->brand_url, "admin"));
+      // Se l'utente che ha creato il ticket non è admin invia la mail anche a lui.
       if(!$ticketUser['is_admin']){
-        $supportMail = env('MAIL_TO_ADDRESS');
-        // Inviarla anche a tutti i membri del gruppo?
-        Mail::to($supportMail)->send(new OpenTicketEmail($this->ticket, $company, $ticketType, $category, $adminLink, $this->brand_url, "admin"));
         if($ticketUser['email']){
           Mail::to($ticketUser['email'])->send(new OpenTicketEmail($this->ticket, $company, $ticketType, $category, $userlink, $this->brand_url, "user"));
         }
