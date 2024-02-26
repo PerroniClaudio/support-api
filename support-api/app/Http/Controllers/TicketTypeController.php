@@ -25,7 +25,11 @@ class TicketTypeController extends Controller {
 
     public function categories() {
 
-        $ticketTypeCategories = TicketTypeCategory::where("is_deleted", false)->get();
+        // $ticketTypeCategories = TicketTypeCategory::where("is_deleted", false)->get();
+        $ticketTypeCategories = TicketTypeCategory::where("is_deleted", false)
+            ->orderBy('name')
+            ->orderBy('is_problem', 'desc')
+            ->get();
 
         return response([
             'categories' => $ticketTypeCategories,
@@ -167,17 +171,14 @@ class TicketTypeController extends Controller {
         $ticketType = TicketType::where('id', $ticketType["id"])->first();
         // Modificato quando l'azienda è stata resa facoltativa. se non ha l'azienda non dovrebbe avere nemmeno ticket allegati.
         // quindi si elimina direttamente, altrimenti countRelatedTickets dà errore, perchè passa dall'azienda.
-        if($ticketType->company){
-            if($ticketType->countRelatedTickets() > 0) {
-                $ticketType->update([
-                    'is_deleted' => true,
-                ]);
-                return response([
-                    'message' => 'Ticket type deleted successfully',
-                ], 200);
-            }
-        }
-         else {
+        if($ticketType->company && $ticketType->countRelatedTickets() > 0){
+            $ticketType->update([
+                'is_deleted' => true,
+            ]);
+            return response([
+                'message' => 'Ticket type deleted successfully',
+            ], 200);
+        } else {
             $deleted = TicketType::destroy($ticketType["id"]);
             if ($deleted) {
                 return response(['message' => 'Ticket type deleted successfully'], 200);
