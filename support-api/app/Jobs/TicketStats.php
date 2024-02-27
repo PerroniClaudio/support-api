@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\Company;
 use App\Models\Ticket;
 use App\Models\TicketStats as Stats;
 use Illuminate\Bus\Queueable;
@@ -61,7 +62,7 @@ class TicketStats implements ShouldQueue {
 
         foreach ($openTicekts as $ticket) {
 
-
+            // Aggiunti anche i risolti tra quelli in attesa, perchè non sono chiusi e potrebbero tornare in lavorazione se la soluzione non viene accettata dall'utente.
             switch ($ticket->ticketType->category->is_problem) {
                 case 1:
                     switch ($ticket->status) {
@@ -73,6 +74,7 @@ class TicketStats implements ShouldQueue {
                             $results['incident_in_progress']++;
                             break;
                         case 3:
+                        case 4:
                             $results['incident_waiting']++;
                             break;
                     }
@@ -87,6 +89,7 @@ class TicketStats implements ShouldQueue {
                             $results['request_in_progress']++;
                             break;
                         case 3:
+                        case 4:
                             $results['request_waiting']++;
                             break;
                     }
@@ -142,6 +145,17 @@ class TicketStats implements ShouldQueue {
             }
         }
 
+        // Creare la lista di compagnie con ticket aperti
+        $companiesOpenTickets = [];
+        // Seve use(&$companiesOpenTickets) per passare la variabile per riferimento e non per valore
+        Company::all()->each(function ($company) use (&$companiesOpenTickets) {
+            $companyTickets = $company->tickets->where('status', '!=', '5')->count();
+            $companiesOpenTickets[] = [
+                "name" => $company->name,
+                "tickets" => $companyTickets
+            ];
+        });
+
         Stats::create([
             'incident_open' => $results['incident_open'],
             'incident_in_progress' => $results['incident_in_progress'],
@@ -151,7 +165,7 @@ class TicketStats implements ShouldQueue {
             'request_in_progress' => $results['request_in_progress'],
             'request_waiting' => $results['request_waiting'],
             'request_out_of_sla' => $results['request_out_of_sla'],
-            'compnanies_opened_tickets' => "{}"
+            'compnanies_opened_tickets' => json_encode($companiesOpenTickets)
         ]);
     }
 }

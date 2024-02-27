@@ -13,6 +13,7 @@ class Kernel extends ConsoleKernel {
         // $schedule->command('inspire')->hourly();
 
         $schedule->job(new \App\Jobs\TicketStats)->hourly();
+        // $schedule->job(new \App\Jobs\TicketStats)->everyMinute();
     }
 
 

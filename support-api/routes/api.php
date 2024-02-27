@@ -444,3 +444,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/suppliers/{supplier}/brands", [App\Http\Controllers\SupplierController::class, "brands"]);
 });
 
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get("/stats", [App\Http\Controllers\TicketStatsController::class, "latestStats"]);
+});
