@@ -11,6 +11,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Cache;
 
 class TicketStats implements ShouldQueue {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
@@ -167,5 +168,8 @@ class TicketStats implements ShouldQueue {
             'request_out_of_sla' => $results['request_out_of_sla'],
             'compnanies_opened_tickets' => json_encode($companiesOpenTickets)
         ]);
+
+        // Invalida la cache coi dati precedenti
+        Cache::forget('tickets_stats');
     }
 }

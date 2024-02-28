@@ -16,6 +16,8 @@ class CompanyController extends Controller {
 
         if ($isAdminRequest) {
             $companies = Company::all();
+            $companies->makeHidden(['sla', 'sla_take_low', 'sla_take_medium', 'sla_take_high', 'sla_take_critical', 'sla_solve_low', 'sla_solve_medium', 'sla_solve_high', 'sla_solve_critical', 'sla_prob_take_low', 'sla_prob_take_medium', 'sla_prob_take_high', 'sla_prob_take_critical', 'sla_prob_solve_low', 'sla_prob_solve_medium', 'sla_prob_solve_high', 'sla_prob_solve_critical']);
+
             if (!$companies) {
                 $companies = [];
             }
@@ -200,6 +202,7 @@ class CompanyController extends Controller {
         }
         // Esclude gli utenti disabilitati
         $users = $company->users()->where('is_deleted', false)->get();
+        $users->makeHidden('microsoft_token');
 
         return response([
             'users' => $users,

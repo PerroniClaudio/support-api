@@ -338,9 +338,9 @@ class UserController extends Controller {
 
     public function allUsers(Request $request) {
         $isAdminRequest = $request->user()["is_admin"] == 1;
-
         if ($isAdminRequest) {
             $users = User::all();
+            $users->makeHidden(['microsoft_token']);
             if (!$users) {
                 $users = [];
             }

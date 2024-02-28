@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 
 class Ticket extends Model {
     use HasFactory;
@@ -95,6 +96,23 @@ class Ticket extends Model {
     public function brandUrl() {
         $brand_id = $this->ticketType->brand->id;
         return env('APP_URL') . '/api/brand/' . $brand_id . '/logo';
+    }
+    
+    // Invalida la cache per chi ha creato il ticket e per i referenti
+    public function invalidateCache() {
+        // $cacheKey = 'user_' . $user->id . '_tickets';
+        $ticketUser = $this->user;
+        $referer = $this->referer();
+        $refererIT = $this->refererIT();
+        if($ticketUser){
+            Cache::forget('user_' . $ticketUser->id . '_tickets');
+        }
+        if($referer){
+            Cache::forget('user_' . $referer->id . '_tickets');
+        }
+        if($refererIT){
+            Cache::forget('user_' . $refererIT->id . '_tickets');
+        }
     }
 
     public function waitingHours() {

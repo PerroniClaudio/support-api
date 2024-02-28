@@ -155,11 +155,22 @@ class TicketController extends Controller {
         $ticket = Ticket::where('id', $id)->with(['ticketType' => function ($query) {
             $query->with('category');
         }, 'company', 'user', 'files'])->first();
-
+        
         if($ticket == null){
             return response([
                 'message' => 'Ticket not found',
             ], 404);
+        }
+
+        $ticket->user->makeHidden(["microsoft_token", "email_verified_at", "created_at", "updated_at", "phone", "city", "zip_code", "address"]);
+        $ticket->company->makeHidden(["sla", "sla_take_low", "sla_take_medium", "sla_take_high", "sla_take_critical", "sla_solve_low", "sla_solve_medium", "sla_solve_high", "sla_solve_critical", "sla_prob_take_low", "sla_prob_take_medium", "sla_prob_take_high", "sla_prob_take_critical", "sla_prob_solve_low", "sla_prob_solve_medium", "sla_prob_solve_high", "sla_prob_solve_critical"]);
+
+        // Se la richiesta è lato utente ed il ticket è stato aperto dal supporto, si deve nascondere il nome dell'utente che ha aperto il ticket
+        if(!$user->is_admin && $ticket->user->is_admin){
+            $ticket->user->id = 1;
+            $ticket->user->name = "Supporto";
+            $ticket->user->surname = "";
+            $ticket->user->email = "Supporto";
         }
 
         $groupIdExists = false;
@@ -275,6 +286,9 @@ class TicketController extends Controller {
         ]);
 
         dispatch(new SendUpdateEmail($update));
+
+        // Invalida la cache per chi ha creato il ticket e per i referenti.
+        $ticket->invalidateCache();
 
         return response([
             'ticket' => $ticket,
@@ -419,6 +433,9 @@ class TicketController extends Controller {
             dispatch(new SendCloseTicketEmail($ticket, $fields['message'], $brand_url));
         }
 
+        // Invalida la cache per chi ha creato il ticket e per i referenti.
+        $ticket->invalidateCache();
+
         return response([
             'ticket' => $ticket,
         ], 200);
@@ -486,6 +503,9 @@ class TicketController extends Controller {
                     'content' => 'Modifica automatica: Stato del ticket modificato in "' . $new_status . '"',
                     'type' => 'status',
                 ]);
+
+                // Invalida la cache per chi ha creato il ticket e per i referenti.
+                $ticket->invalidateCache();
             }
         }
 
@@ -554,7 +574,9 @@ class TicketController extends Controller {
                 'content' => 'Modifica automatica: Stato del ticket modificato in "' . $new_status . '"',
                 'type' => 'status',
             ]);
-            
+
+            // Invalida la cache per chi ha creato il ticket e per i referenti.
+            $ticket->invalidateCache();
         }
 
         return response([

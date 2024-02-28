@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\TicketStats;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class TicketStatsController extends Controller
 {
@@ -63,8 +64,19 @@ class TicketStatsController extends Controller
         //
     }
 
-    public function latestStats() {
-        $stats = TicketStats::latest()->first();
+    public function latestStats(Request $request) {
+        $user = $request->user();
+        if($user["is_admin"] != 1){
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
+        $cacheKey = 'tickets_stats';
+        $stats = Cache::remember($cacheKey, now()->addMinutes(60), function () {
+            return TicketStats::latest()->first();
+        });
+
         return response([
             'stats' => $stats,
         ], 200);
