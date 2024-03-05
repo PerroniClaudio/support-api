@@ -44,10 +44,12 @@ class Ticket extends Model {
     /* get the referer (referente in sede) */
 
     public function referer() {
-        // In questo modo se non c'è la voce non dà errore
-        $messages = $this->messages;
+        // Si usa newQueryWithoutRelationships per evitare di caricare i messaggi, che non servono
+        $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
+        $messages = $ticketWithoutMessages->messages;
         if(count($messages) > 0){
-            $message_obj = json_decode($this->messages[0]->message);
+            $message_obj = json_decode($messages[0]->message);
+            // Controllo se esiste la proprietà, perchè nei ticket vecchi non c'è e può dare errore.
             if(isset($message_obj->referer)){
                 return User::find($message_obj->referer);
             }
@@ -58,10 +60,11 @@ class Ticket extends Model {
     /* get the IT referer (referente IT) */
     
     public function refererIT() {
-        // Controllo se esiste la proprietà, perchè nei ticket vecchi non c'è e può dare errore.
-        $messages = $this->messages;
+        $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
+        $messages = $ticketWithoutMessages->messages;
         if(count($messages) > 0){
-            $message_obj = json_decode($this->messages[0]->message);
+            $message_obj = json_decode($messages[0]->message);
+            // Controllo se esiste la proprietà, perchè nei ticket vecchi non c'è e può dare errore.
             if(isset($message_obj->referer_it)){
                 return User::find($message_obj->referer_it);
             }
@@ -75,6 +78,57 @@ class Ticket extends Model {
         return $this->hasMany(TicketMessage::class);
     }
 
+    // Messaggi non letti inviati dagli utenti
+    public function unreadUsersMessages() {
+        $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
+        $usersIds = User::all()->where('is_admin', 0)->pluck('id');
+        $messages = $ticketWithoutMessages->messages->whereIn('user_id', $usersIds);
+        $unreadMessages = $messages->where('is_read', 0);
+        return count($unreadMessages);
+    }
+    // Questa funzione permette di usare $ticket->append('unread_users_messages') per aggiungere la proprietà al ticlet o $ticket->unread_users_messages per accedere alla proprietà (laravel esegue in automatico la funzione unreadUsersMessages per calcolarne il valore)
+    public function getUnreadUsersMessagesAttribute()
+    {
+        return $this->unreadUsersMessages();
+    }
+    // Imposta i messaggi degli utenti come letti
+    public function setUsersMessagesAsRead() {
+        $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
+        $usersIds = User::all()->where('is_admin', 0)->pluck('id');
+        $messages = $ticketWithoutMessages->messages->whereIn('user_id', $usersIds);
+        $unreadMessages = $messages->where('is_read', 0);
+        foreach($unreadMessages as $message){
+            $message->is_read = 1;
+            $message->save();
+        }
+    }
+    
+    // Messaggi non letti inviati dagli admin
+    public function unreadAdminsMessages() {
+        $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
+        $adminsIds = User::all()->where('is_admin', 1)->pluck('id');
+        $messages = $ticketWithoutMessages->messages->whereIn('user_id', $adminsIds);
+        $unreadMessages = $messages->where('is_read', 0);
+        return count($unreadMessages);
+    }
+    // Questa funzione permette di usare $ticket->append('unread_admins_messages') per aggiungere la proprietà al ticlet o $ticket->unread_admins_messages per accedere alla proprietà (laravel esegue in automatico la funzione unreadAdminsMessages per calcolarne il valore)
+    public function getUnreadAdminsMessagesAttribute()
+    {
+        return $this->unreadAdminsMessages();
+    }
+    // Imposta i messaggi degli admin come letti
+    public function setAdminsMessagesAsRead() {
+        $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
+        $adminsIds = User::all()->where('is_admin', 1)->pluck('id');
+        $messages = $ticketWithoutMessages->messages->whereIn('user_id', $adminsIds);
+        $unreadMessages = $messages->where('is_read', 0);
+        foreach($unreadMessages as $message){
+            $message->is_read = 1;
+            $message->save();
+        }
+    }
+
+    
     /** get  status updates  */
 
     public function statusUpdates() {

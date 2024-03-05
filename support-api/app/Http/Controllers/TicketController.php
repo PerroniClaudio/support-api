@@ -35,23 +35,46 @@ class TicketController extends Controller {
 
         $tickets = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($user) {
             if ($user["is_company_admin"] == 1) {
-                return  $user->company->tickets;
+                // return  $user->company->tickets;
+                $ticketsTemp = $user->company->tickets;
+                foreach ($ticketsTemp as $ticket) {
+                    $ticket->referer = $ticket->referer();
+                    if($ticket->referer) {
+                        $ticket->referer->makeHidden(['email_verified_at', 'microsoft_token', 'created_at', 'updated_at', 'phone', 'city', 'zip_code', 'address']);
+                    }
+                    // Nascondere i dati utente se è stato aperto dal supporto
+                    if($ticket->user->is_admin){
+                        $ticket->user->id = 1;
+                        $ticket->user->name = "Supporto";
+                        $ticket->user->surname = "";
+                        $ticket->user->email = "Supporto";
+                    }
+                    // Aggiunge la proprietà unread_admins_messages
+                    $ticket->append('unread_admins_messages');
+                }
+                return $ticketsTemp;
             } else {
                 // return Ticket::where('user_id', $user->id)->get();
                 // $tickets =  $user->tickets;
-                return $user->tickets->merge($user->refererTickets());
-                
+                // return $user->tickets->merge($user->refererTickets());
+                $ticketsTemp = $user->tickets->merge($user->refererTickets());
+                foreach ($ticketsTemp as $ticket) {
+                    $ticket->referer = $ticket->referer();
+                    if($ticket->referer) {
+                        $ticket->referer->makeHidden(['email_verified_at', 'microsoft_token', 'created_at', 'updated_at', 'phone', 'city', 'zip_code', 'address']);
+                    }
+                    // Nascondere i dati utente se è stato aperto dal supporto
+                    if($ticket->user->is_admin){
+                        $ticket->user->id = 1;
+                        $ticket->user->name = "Supporto";
+                        $ticket->user->surname = "";
+                        $ticket->user->email = "Supporto";
+                    }
+                    $ticket->append('unread_admins_messages');
+                }
+                return $ticketsTemp;
             }
         });
-        
-        // if ($user["is_company_admin"] == 1) {
-        //     $tickets =  $user->company->tickets;
-        // } else {
-        //     // return Ticket::where('user_id', $user->id)->get();
-        //     // $tickets =  $user->tickets;
-        //     $tickets = $user->tickets->merge($user->refererTickets());
-            
-        // }
 
         return response([
             'tickets' => $tickets,
@@ -114,7 +137,7 @@ class TicketController extends Controller {
             'ticket_id' => $ticket->id,
             'user_id' => $user->id,
             'message' => json_encode($request['messageData']),
-            'is_read' => 0
+            'is_read' => 1
         ]);
 
         TicketMessage::create([
@@ -197,6 +220,14 @@ class TicketController extends Controller {
             return response([
                 'message' => 'Unauthorized',
             ], 401);
+        }
+
+        // Se l'utente è admin si devono impostare i messaggi degli utenti come letti, altrimenti si devono impostare i messaggi degli admin come letti
+        // Questa operazione potrebbe pasare in un job così da non dover aspettare per dare la risposta.
+        if($user["is_admin"] == 1){
+            $ticket->setUsersMessagesAsRead();
+        } else {
+            $ticket->setAdminsMessagesAsRead();
         }
 
         return response([
@@ -648,6 +679,13 @@ class TicketController extends Controller {
         $tickets = [];
         foreach ($groups as $group) {
             $groupTickets = $group->ticketsWithUser;
+            foreach ($groupTickets as $ticket) {
+                $ticket->referer = $ticket->referer();
+                if($ticket->referer) {
+                    $ticket->referer->makeHidden(['email_verified_at', 'microsoft_token', 'created_at', 'updated_at', 'phone', 'city', 'zip_code', 'address']);
+                }
+                $ticket->append('unread_users_messages');
+            }
             $tickets = array_merge($tickets, $groupTickets->toArray());
         }
 

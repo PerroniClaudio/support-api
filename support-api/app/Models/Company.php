@@ -48,7 +48,9 @@ class Company extends Model {
     }
 
     public function tickets() {
-        return $this->hasMany(Ticket::class);
+        return $this->hasMany(Ticket::class)->with(['user' => function ($query) {
+            $query->select(['id', 'name', 'surname', 'is_admin', 'company_id', 'is_company_admin', 'is_deleted']); // Specify the columns you want to include
+        }]);
     }
 
     public function offices() {

@@ -69,7 +69,9 @@ class User extends Authenticatable
 
     public function tickets()
     {
-        return $this->hasMany(Ticket::class);
+        return $this->hasMany(Ticket::class)->with(['user' => function ($query) {
+            $query->select(['id', 'name', 'surname', 'is_admin', 'company_id', 'is_company_admin', 'is_deleted']); // Specify the columns you want to include
+        }]);
     }
 
     /**
@@ -81,7 +83,9 @@ class User extends Authenticatable
             return $ticket->referer() && ($ticket->referer()->id == $this->id);
         });
         $ids = $filteredTickets->pluck('id')->all();
-        $tickets = Ticket::whereIn('id', $ids)->get();
+        $tickets = Ticket::whereIn('id', $ids)->with(['user' => function ($query) {
+            $query->select(['id', 'name', 'surname', 'is_admin', 'company_id', 'is_company_admin', 'is_deleted']); // Specify the columns you want to include
+        }])->get();
         return $tickets;
     }
 
