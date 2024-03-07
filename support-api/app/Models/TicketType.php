@@ -18,6 +18,7 @@ class TicketType extends Model {
         'is_deleted',
         'brand_id',
         'warning',
+        'it_referer_limited',
     ];
 
     public function tickets() {
