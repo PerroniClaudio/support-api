@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
-ini_set ('display_errors', 1);
-ini_set ('display_startup_errors', 1);
-error_reporting (E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 use App\Jobs\SendOpenTicketEmail;
 use App\Jobs\SendCloseTicketEmail;
@@ -39,11 +39,11 @@ class TicketController extends Controller {
                 $ticketsTemp = $user->company->tickets;
                 foreach ($ticketsTemp as $ticket) {
                     $ticket->referer = $ticket->referer();
-                    if($ticket->referer) {
+                    if ($ticket->referer) {
                         $ticket->referer->makeHidden(['email_verified_at', 'microsoft_token', 'created_at', 'updated_at', 'phone', 'city', 'zip_code', 'address']);
                     }
                     // Nascondere i dati utente se è stato aperto dal supporto
-                    if($ticket->user->is_admin){
+                    if ($ticket->user->is_admin) {
                         $ticket->user->id = 1;
                         $ticket->user->name = "Supporto";
                         $ticket->user->surname = "";
@@ -60,11 +60,11 @@ class TicketController extends Controller {
                 $ticketsTemp = $user->tickets->merge($user->refererTickets());
                 foreach ($ticketsTemp as $ticket) {
                     $ticket->referer = $ticket->referer();
-                    if($ticket->referer) {
+                    if ($ticket->referer) {
                         $ticket->referer->makeHidden(['email_verified_at', 'microsoft_token', 'created_at', 'updated_at', 'phone', 'city', 'zip_code', 'address']);
                     }
                     // Nascondere i dati utente se è stato aperto dal supporto
-                    if($ticket->user->is_admin){
+                    if ($ticket->user->is_admin) {
                         $ticket->user->id = 1;
                         $ticket->user->name = "Supporto";
                         $ticket->user->surname = "";
@@ -178,8 +178,8 @@ class TicketController extends Controller {
         $ticket = Ticket::where('id', $id)->with(['ticketType' => function ($query) {
             $query->with('category');
         }, 'company', 'user', 'files'])->first();
-        
-        if($ticket == null){
+
+        if ($ticket == null) {
             return response([
                 'message' => 'Ticket not found',
             ], 404);
@@ -189,7 +189,7 @@ class TicketController extends Controller {
         $ticket->company->makeHidden(["sla", "sla_take_low", "sla_take_medium", "sla_take_high", "sla_take_critical", "sla_solve_low", "sla_solve_medium", "sla_solve_high", "sla_solve_critical", "sla_prob_take_low", "sla_prob_take_medium", "sla_prob_take_high", "sla_prob_take_critical", "sla_prob_solve_low", "sla_prob_solve_medium", "sla_prob_solve_high", "sla_prob_solve_critical"]);
 
         // Se la richiesta è lato utente ed il ticket è stato aperto dal supporto, si deve nascondere il nome dell'utente che ha aperto il ticket
-        if(!$user->is_admin && $ticket->user->is_admin){
+        if (!$user->is_admin && $ticket->user->is_admin) {
             $ticket->user->id = 1;
             $ticket->user->name = "Supporto";
             $ticket->user->surname = "";
@@ -215,7 +215,7 @@ class TicketController extends Controller {
         ) {
             $authorized = true;
         }
-        
+
         if (!$authorized) {
             return response([
                 'message' => 'Unauthorized',
@@ -224,7 +224,7 @@ class TicketController extends Controller {
 
         // Se l'utente è admin si devono impostare i messaggi degli utenti come letti, altrimenti si devono impostare i messaggi degli admin come letti
         // Questa operazione potrebbe pasare in un job così da non dover aspettare per dare la risposta.
-        if($user["is_admin"] == 1){
+        if ($user["is_admin"] == 1) {
             $ticket->setUsersMessagesAsRead();
         } else {
             $ticket->setAdminsMessagesAsRead();
@@ -301,7 +301,7 @@ class TicketController extends Controller {
                 'message' => 'The user must be an admin.',
             ], 401);
         }
-        
+
         $ticket->fill([
             'status' => $request->status,
             'wait_end' => $request['wait_end'],
@@ -488,7 +488,7 @@ class TicketController extends Controller {
 
         $group = Group::where('id', $request->group_id)->first();
 
-        if($group == null){
+        if ($group == null) {
             return response([
                 'message' => 'Group not found',
             ], 404);
@@ -508,7 +508,7 @@ class TicketController extends Controller {
         dispatch(new SendUpdateEmail($update));
 
         // Va rimosso l'utente assegnato al ticket se non fa parte del gruppo
-        if($ticket->admin_user_id && !$group->users()->where('user_id', $ticket->admin_user_id)->first()){
+        if ($ticket->admin_user_id && !$group->users()->where('user_id', $ticket->admin_user_id)->first()) {
             $old_handler = User::find($ticket->admin_user_id);
             $ticket->update(['admin_user_id' => null]);
 
@@ -523,7 +523,7 @@ class TicketController extends Controller {
             $ticketStages = config('app.ticket_stages');
             $index_status_nuovo = array_search("Nuovo", $ticketStages);
             $index_status_chiuso = array_search("Chiuso", $ticketStages);
-            if($ticket->status != $index_status_nuovo && $ticket->status != $index_status_chiuso){
+            if ($ticket->status != $index_status_nuovo && $ticket->status != $index_status_chiuso) {
                 // $old_status = $ticketStages[$ticket->status];
                 $ticket->update(['status' => $index_status_nuovo]);
                 $new_status = $ticketStages[$ticket->status];
@@ -594,7 +594,7 @@ class TicketController extends Controller {
 
         // Se lo stato è 'Nuovo' aggiornarlo in assegnato
         $ticketStages = config('app.ticket_stages');
-        if($ticketStages[$ticket->status] == 'Nuovo'){
+        if ($ticketStages[$ticket->status] == 'Nuovo') {
             $index_status_assegnato = array_search('Assegnato', $ticketStages);
             $ticket->update(['status' => $index_status_assegnato]);
             $new_status = $ticketStages[$ticket->status];
@@ -650,6 +650,10 @@ class TicketController extends Controller {
 
         $ticketFile = TicketFile::where('id', $id)->first();
 
+        /**
+         * @disregard P1009 Undefined type
+         */
+
         $url = Storage::disk('gcs')->temporaryUrl(
             $ticketFile->path,
             now()->addMinutes(65)
@@ -663,7 +667,7 @@ class TicketController extends Controller {
 
     /**
      * Show only the tickets belonging to the authenticated admin groups.
-    */
+     */
     public function adminGroupsTickets(Request $request) {
 
         $user = $request->user();
@@ -681,7 +685,7 @@ class TicketController extends Controller {
             $groupTickets = $group->ticketsWithUser;
             foreach ($groupTickets as $ticket) {
                 $ticket->referer = $ticket->referer();
-                if($ticket->referer) {
+                if ($ticket->referer) {
                     $ticket->referer->makeHidden(['email_verified_at', 'microsoft_token', 'created_at', 'updated_at', 'phone', 'city', 'zip_code', 'address']);
                 }
                 $ticket->append('unread_users_messages');
@@ -696,7 +700,7 @@ class TicketController extends Controller {
 
     /**
      * Show closing messages of the ticket
-    */
+     */
     public function closingMessages(Ticket $ticket, Request $request) {
 
         $user = $request->user();
@@ -711,6 +715,137 @@ class TicketController extends Controller {
 
         return response([
             'closing_messages' => $closingUpdates,
+        ], 200);
+    }
+
+    public function report(Ticket $ticket, Request $request) {
+
+        //? Webform
+
+        $webform_data = json_decode($ticket->messages()->first()->message);
+
+        $office = $ticket->company->offices()->where('id', $webform_data->office)->first();
+        $webform_data->office = $office ? $office->name : null;
+
+        if (isset($webform_data->referer)) {
+            $referer = User::find($webform_data->referer);
+            $webform_data->referer = $referer ? $referer->name . " " . $referer->surname : null;
+        }
+
+        if (isset($webform_data->referer_it)) {
+            $referer_it = User::find($webform_data->referer_it);
+            $webform_data->referer_it = $referer_it ? $referer_it->name . " " . $referer_it->surname : null;
+        }
+
+        //? Avanzamento
+
+        $avanzamento = [
+            "attesa" => 0,
+            "assegnato" => 0,
+            "in_corso" => 0,
+        ];
+
+        foreach ($ticket->statusUpdates as $update) {
+            if ($update->type == 'status') {
+
+                if (strpos($update->content, 'In attesa') !== false) {
+                    $avanzamento["attesa"]++;
+                }
+                if (strpos($update->content, 'Assegnato') !== false) {
+                    $avanzamento["assegnato"]++;
+                }
+                if (strpos($update->content, 'In corso') !== false) {
+                    $avanzamento["in_corso"]++;
+                }
+            }
+        }
+
+        //? Chiusura
+
+        $closingMessage = "";
+
+        $closingUpdates = TicketStatusUpdate::where('ticket_id', $ticket->id)->where('type', 'closing')->get();
+        $closingUpdate = $closingUpdates->last();
+
+        if ($closingUpdate) {
+            $closingMessage = $closingUpdate->content;
+        }
+
+        return response([
+            'data' => $ticket,
+            'webform_data' => $webform_data,
+            'status_updates' => $avanzamento,
+            'closing_messages' => $closingMessage,
+        ], 200);
+    }
+
+    public function batchReport(Request $request) {
+
+        $tickets = Ticket::where("company_id", $request->company_id)->whereBetween('created_at', [$request->from, $request->to])->get();
+
+        $tickets_data = [];
+
+        foreach ($tickets as $ticket) {
+
+            $webform_data = json_decode($ticket->messages()->first()->message);
+
+            $office = $ticket->company->offices()->where('id', $webform_data->office)->first();
+            $webform_data->office = $office ? $office->name : null;
+
+            if (isset($webform_data->referer)) {
+                $referer = User::find($webform_data->referer);
+                $webform_data->referer = $referer ? $referer->name . " " . $referer->surname : null;
+            }
+
+            if (isset($webform_data->referer_it)) {
+                $referer_it = User::find($webform_data->referer_it);
+                $webform_data->referer_it = $referer_it ? $referer_it->name . " " . $referer_it->surname : null;
+            }
+
+            //? Avanzamento
+
+            $avanzamento = [
+                "attesa" => 0,
+                "assegnato" => 0,
+                "in_corso" => 0,
+            ];
+
+            foreach ($ticket->statusUpdates as $update) {
+                if ($update->type == 'status') {
+
+                    if (strpos($update->content, 'In attesa') !== false) {
+                        $avanzamento["attesa"]++;
+                    }
+                    if (strpos($update->content, 'Assegnato') !== false) {
+                        $avanzamento["assegnato"]++;
+                    }
+                    if (strpos($update->content, 'In corso') !== false) {
+                        $avanzamento["in_corso"]++;
+                    }
+                }
+            }
+
+            //? Chiusura
+
+            $closingMessage = "";
+
+            $closingUpdates = TicketStatusUpdate::where('ticket_id', $ticket->id)->where('type', 'closing')->get();
+            $closingUpdate = $closingUpdates->last();
+
+            if ($closingUpdate) {
+                $closingMessage = $closingUpdate->content;
+            }
+
+            $tickets_data[] = [
+                'data' => $ticket,
+                'webform_data' => $webform_data,
+                'status_updates' => $avanzamento,
+                'closing_messages' => $closingMessage,
+            ];
+        }
+
+        return response([
+            'data' => $tickets_data,
         ], 200);
     }
 }

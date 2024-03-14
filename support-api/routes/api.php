@@ -62,12 +62,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
         '/user/alladmins',
         [App\Http\Controllers\UserController::class, "allAdmins"]
     );
-    
+
     Route::get(
         '/user/{id}/get-name',
         [App\Http\Controllers\UserController::class, "getName"]
     );
-    
+
     Route::get(
         '/user/frontend/logo',
         [App\Http\Controllers\UserController::class, "getFrontendLogoUrl"]
@@ -153,11 +153,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
         "/companies/{company}/brands",
         [CompanyController::class, "brands"]
     );
-    
+
     Route::get(
         "/companies/{company}/frontend-logo",
         [CompanyController::class, "getFrontendLogoUrl"]
     );
+
+    Route::get("/companies/{company}/tickets", [CompanyController::class, "tickets"]);
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -226,6 +228,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get(
         "/ticket/{ticket}/closing-messages",
         [App\Http\Controllers\TicketController::class, "closingMessages"]
+    );
+
+    Route::get(
+        "/ticket/{ticket}/report",
+        [App\Http\Controllers\TicketController::class, "report"]
     );
 });
 
@@ -391,7 +398,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         "/groups/{group}",
         [GroupController::class, "show"]
     );
-    
+
     Route::patch(
         "/groups/{group}",
         [GroupController::class, "update"]

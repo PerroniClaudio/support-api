@@ -142,25 +142,25 @@ class CompanyController extends Controller {
                 'message' => 'tickets',
             ], 400);
         }
-        
+
         if (Company::findOrFail($id)->ticketTypes()->count() > 0) {
             return response([
                 'message' => 'ticket-types',
             ], 400);
         }
-        
+
         if (Company::findOrFail($id)->users()->count() > 0) {
             return response([
                 'message' => 'users',
             ], 400);
         }
-        
+
         if (Company::findOrFail($id)->offices()->count() > 0) {
             return response([
                 'message' => 'offices',
             ], 400);
         }
-        
+
 
         $deleted_company = Company::destroy($id);
 
@@ -234,7 +234,7 @@ class CompanyController extends Controller {
         $brands = $company->brands()->toArray();
 
         // Filtra i brand omonimo alle aziende interne ed utilizza quello dell'azienda interna con l'id piu basso
-        $sameNameSuppliers = array_filter($suppliers, function($supplier) use ($brands) {
+        $sameNameSuppliers = array_filter($suppliers, function ($supplier) use ($brands) {
             $brandNames = array_column($brands, 'name');
             return in_array($supplier['name'], $brandNames);
         });
@@ -242,16 +242,16 @@ class CompanyController extends Controller {
         $selectedBrand = '';
 
         // Se ci sono aziende interne allora prende quella con l'id più basso e recupera il marchio omonimo, altrimenti usa il marchio con l'id più basso.
-        if(!empty($sameNameSuppliers)){
-            usort($sameNameSuppliers, function($a, $b) {
+        if (!empty($sameNameSuppliers)) {
+            usort($sameNameSuppliers, function ($a, $b) {
                 return $a['id'] <=> $b['id'];
             });
             $selectedSupplier = reset($sameNameSuppliers);
-            $selectedBrand = array_values(array_filter($brands, function($brand) use ($selectedSupplier) {
+            $selectedBrand = array_values(array_filter($brands, function ($brand) use ($selectedSupplier) {
                 return $brand['name'] === $selectedSupplier['name'];
             }))[0];
         } else {
-            usort($brands, function($a, $b) {
+            usort($brands, function ($a, $b) {
                 return $a['id'] <=> $b['id'];
             });
 
@@ -262,9 +262,17 @@ class CompanyController extends Controller {
         $url = config('app.url') . '/api/brand/' . $selectedBrand['id'] . '/logo';
 
         // $url = $request->user()->company->frontendLogoUrl;
-        
+
         return response([
             'urlLogo' => $url,
+        ], 200);
+    }
+
+    public function tickets(Company $company) {
+        $tickets = $company->tickets()->with(['ticketType'])->orderBy('created_at', 'desc')->get();
+
+        return response([
+            'tickets' => $tickets,
         ], 200);
     }
 }
