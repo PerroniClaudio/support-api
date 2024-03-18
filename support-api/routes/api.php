@@ -234,6 +234,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
         "/ticket/{ticket}/report",
         [App\Http\Controllers\TicketController::class, "report"]
     );
+
+    Route::get(
+        "/ticket-report/batch",
+        [App\Http\Controllers\TicketController::class, "batchReport"]
+    );
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {

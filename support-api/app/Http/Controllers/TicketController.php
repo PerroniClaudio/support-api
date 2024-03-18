@@ -2,10 +2,6 @@
 
 namespace App\Http\Controllers;
 
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-
 use App\Jobs\SendOpenTicketEmail;
 use App\Jobs\SendCloseTicketEmail;
 use App\Jobs\SendUpdateEmail;
@@ -781,6 +777,16 @@ class TicketController extends Controller {
 
     public function batchReport(Request $request) {
 
+        $cacheKey = 'batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to;
+
+        if (Cache::has($cacheKey)) {
+            $tickets_data = Cache::get($cacheKey);
+
+            return response([
+                'data' => $tickets_data,
+            ], 200);
+        }
+
         $tickets = Ticket::where("company_id", $request->company_id)->whereBetween('created_at', [$request->from, $request->to])->get();
 
         $tickets_data = [];
@@ -840,9 +846,13 @@ class TicketController extends Controller {
                 'data' => $ticket,
                 'webform_data' => $webform_data,
                 'status_updates' => $avanzamento,
-                'closing_messages' => $closingMessage,
+                'closing_message' => $closingMessage,
             ];
         }
+
+        $tickets_batch_data = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($tickets_data) {
+            return $tickets_data;
+        });
 
         return response([
             'data' => $tickets_data,
