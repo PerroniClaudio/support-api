@@ -46,7 +46,7 @@ class TicketController extends Controller {
                         $ticket->user->email = "Supporto";
                     }
                     // Aggiunge la proprietà unread_admins_messages
-                    $ticket->append('unread_admins_messages');
+                    // $ticket->append('unread_admins_messages');
                 }
                 return $ticketsTemp;
             } else {
@@ -66,7 +66,7 @@ class TicketController extends Controller {
                         $ticket->user->surname = "";
                         $ticket->user->email = "Supporto";
                     }
-                    $ticket->append('unread_admins_messages');
+                    // $ticket->append('unread_admins_messages');
                 }
                 return $ticketsTemp;
             }
@@ -116,6 +116,8 @@ class TicketController extends Controller {
             'sla_take' => $ticketType['default_sla_take'],
             'sla_solve' => $ticketType['default_sla_solve'],
             'priority' => $ticketType['default_priority'],
+            'unread_mess_for_adm' => $user["is_admin"] == 1 ? 0 : 1,
+            'unread_mess_for_usr' => $user["is_admin"] == 1 ? 1 : 0,
         ]);
 
         if ($request->file('file') != null) {
@@ -133,14 +135,14 @@ class TicketController extends Controller {
             'ticket_id' => $ticket->id,
             'user_id' => $user->id,
             'message' => json_encode($request['messageData']),
-            'is_read' => 1
+            // 'is_read' => 1
         ]);
 
         TicketMessage::create([
             'ticket_id' => $ticket->id,
             'user_id' => $user->id,
             'message' => $fields['description'],
-            'is_read' => 0
+            // 'is_read' => 0
         ]);
 
         $brand_url = $ticket->brandUrl();
@@ -218,12 +220,21 @@ class TicketController extends Controller {
             ], 401);
         }
 
-        // Se l'utente è admin si devono impostare i messaggi degli utenti come letti, altrimenti si devono impostare i messaggi degli admin come letti
-        // Questa operazione potrebbe pasare in un job così da non dover aspettare per dare la risposta.
+        // Se l'utente è admin si devono impostare i messaggi degli utenti come letti, altrimenti si devono impostare i messaggi degli admin come letti.
+        // Se si vuole mostrare quanti messaggi erano da leggere si potrebbe usare un async che posticipi l'azzeramento dei messaggi non letti, in modo da inviare le risposta prima della modifica.
         if ($user["is_admin"] == 1) {
-            $ticket->setUsersMessagesAsRead();
-        } else {
-            $ticket->setAdminsMessagesAsRead();
+            // $ticket->setUsersMessagesAsRead();
+            // solo se l'admin è anche il gestore del ticket.
+            if(isset($ticket->admin_user_id) && $ticket->admin_user_id == $user->id && $ticket->unread_mess_for_adm > 0){
+                $ticket->update(['unread_mess_for_adm' => 0]);
+                $cacheKey = 'user_' . $user->id . '_tickets';
+                Cache::forget($cacheKey);
+            }
+        } else if ($ticket->unread_mess_for_usr > 0) {
+            // $ticket->setAdminsMessagesAsRead();
+            $ticket->update(['unread_mess_for_usr' => 0]);
+            $cacheKey = 'user_' . $user->id . '_tickets';
+            Cache::forget($cacheKey);
         }
 
         return response([
@@ -249,6 +260,7 @@ class TicketController extends Controller {
         //
 
         $user = $request->user();
+        // Ricrea la stringa della cacheKey per invalidarla, visto che c'è stata una modifica.
         $cacheKey = 'user_' . $user->id . '_tickets_show:' . $ticket->id;
 
         $fields = $request->validate([
@@ -684,7 +696,7 @@ class TicketController extends Controller {
                 if ($ticket->referer) {
                     $ticket->referer->makeHidden(['email_verified_at', 'microsoft_token', 'created_at', 'updated_at', 'phone', 'city', 'zip_code', 'address']);
                 }
-                $ticket->append('unread_users_messages');
+                // $ticket->append('unread_users_messages');
             }
             $tickets = array_merge($tickets, $groupTickets->toArray());
         }

@@ -26,6 +26,8 @@ class Ticket extends Model {
         'priority',
         'wait_end',
         'is_user_error',
+        'unread_mess_for_adm',
+        'unread_mess_for_usr'
     ];
 
     /* get the owner */
@@ -78,55 +80,55 @@ class Ticket extends Model {
         return $this->hasMany(TicketMessage::class);
     }
 
-    // Messaggi non letti inviati dagli utenti
-    public function unreadUsersMessages() {
-        $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
-        $usersIds = User::all()->where('is_admin', 0)->pluck('id');
-        $messages = $ticketWithoutMessages->messages->whereIn('user_id', $usersIds);
-        $unreadMessages = $messages->where('is_read', 0);
-        return count($unreadMessages);
-    }
-    // Questa funzione permette di usare $ticket->append('unread_users_messages') per aggiungere la proprietà al ticlet o $ticket->unread_users_messages per accedere alla proprietà (laravel esegue in automatico la funzione unreadUsersMessages per calcolarne il valore)
-    public function getUnreadUsersMessagesAttribute()
-    {
-        return $this->unreadUsersMessages();
-    }
-    // Imposta i messaggi degli utenti come letti
-    public function setUsersMessagesAsRead() {
-        $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
-        $usersIds = User::all()->where('is_admin', 0)->pluck('id');
-        $messages = $ticketWithoutMessages->messages->whereIn('user_id', $usersIds);
-        $unreadMessages = $messages->where('is_read', 0);
-        foreach($unreadMessages as $message){
-            $message->is_read = 1;
-            $message->save();
-        }
-    }
+    // // Messaggi non letti inviati dagli utenti
+    // public function unreadUsersMessages() {
+    //     $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
+    //     $usersIds = User::all()->where('is_admin', 0)->pluck('id');
+    //     $messages = $ticketWithoutMessages->messages->whereIn('user_id', $usersIds);
+    //     $unreadMessages = $messages->where('is_read', 0);
+    //     return count($unreadMessages);
+    // }
+    // // Questa funzione permette di usare $ticket->append('unread_users_messages') per aggiungere la proprietà al ticlet o $ticket->unread_users_messages per accedere alla proprietà (laravel esegue in automatico la funzione unreadUsersMessages per calcolarne il valore)
+    // public function getUnreadUsersMessagesAttribute()
+    // {
+    //     return $this->unreadUsersMessages();
+    // }
+    // // Imposta i messaggi degli utenti come letti
+    // public function setUsersMessagesAsRead() {
+    //     $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
+    //     $usersIds = User::all()->where('is_admin', 0)->pluck('id');
+    //     $messages = $ticketWithoutMessages->messages->whereIn('user_id', $usersIds);
+    //     $unreadMessages = $messages->where('is_read', 0);
+    //     foreach($unreadMessages as $message){
+    //         $message->is_read = 1;
+    //         $message->save();
+    //     }
+    // }
     
-    // Messaggi non letti inviati dagli admin
-    public function unreadAdminsMessages() {
-        $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
-        $adminsIds = User::all()->where('is_admin', 1)->pluck('id');
-        $messages = $ticketWithoutMessages->messages->whereIn('user_id', $adminsIds);
-        $unreadMessages = $messages->where('is_read', 0);
-        return count($unreadMessages);
-    }
-    // Questa funzione permette di usare $ticket->append('unread_admins_messages') per aggiungere la proprietà al ticlet o $ticket->unread_admins_messages per accedere alla proprietà (laravel esegue in automatico la funzione unreadAdminsMessages per calcolarne il valore)
-    public function getUnreadAdminsMessagesAttribute()
-    {
-        return $this->unreadAdminsMessages();
-    }
-    // Imposta i messaggi degli admin come letti
-    public function setAdminsMessagesAsRead() {
-        $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
-        $adminsIds = User::all()->where('is_admin', 1)->pluck('id');
-        $messages = $ticketWithoutMessages->messages->whereIn('user_id', $adminsIds);
-        $unreadMessages = $messages->where('is_read', 0);
-        foreach($unreadMessages as $message){
-            $message->is_read = 1;
-            $message->save();
-        }
-    }
+    // // Messaggi non letti inviati dagli admin
+    // public function unreadAdminsMessages() {
+    //     $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
+    //     $adminsIds = User::all()->where('is_admin', 1)->pluck('id');
+    //     $messages = $ticketWithoutMessages->messages->whereIn('user_id', $adminsIds);
+    //     $unreadMessages = $messages->where('is_read', 0);
+    //     return count($unreadMessages);
+    // }
+    // // Questa funzione permette di usare $ticket->append('unread_admins_messages') per aggiungere la proprietà al ticlet o $ticket->unread_admins_messages per accedere alla proprietà (laravel esegue in automatico la funzione unreadAdminsMessages per calcolarne il valore)
+    // public function getUnreadAdminsMessagesAttribute()
+    // {
+    //     return $this->unreadAdminsMessages();
+    // }
+    // // Imposta i messaggi degli admin come letti
+    // public function setAdminsMessagesAsRead() {
+    //     $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
+    //     $adminsIds = User::all()->where('is_admin', 1)->pluck('id');
+    //     $messages = $ticketWithoutMessages->messages->whereIn('user_id', $adminsIds);
+    //     $unreadMessages = $messages->where('is_read', 0);
+    //     foreach($unreadMessages as $message){
+    //         $message->is_read = 1;
+    //         $message->save();
+    //     }
+    // }
 
     
     /** get  status updates  */
