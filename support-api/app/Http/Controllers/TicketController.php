@@ -795,8 +795,12 @@ class TicketController extends Controller {
 
             $webform_data = json_decode($ticket->messages()->first()->message);
 
-            $office = $ticket->company->offices()->where('id', $webform_data->office)->first();
-            $webform_data->office = $office ? $office->name : null;
+            if (isset($webform_data->office)) {
+                $office = $ticket->company->offices()->where('id', $webform_data->office)->first();
+                $webform_data->office = $office ? $office->name : null;
+            } else {
+                $webform_data->office = null;
+            }
 
             if (isset($webform_data->referer)) {
                 $referer = User::find($webform_data->referer);

@@ -50,8 +50,19 @@ class TicketReportExportController extends Controller {
 
     public function export(Request $request) {
 
+        $name = time() . '_' . $request->company_id . '_tickets.xlsx';
+
         $company = Company::find($request->company_id);
-        $file =  Excel::store(new TicketsExport($company), 'exports/tickets.xlsx', 'gcs');
+        $file =  Excel::store(new TicketsExport($company), 'exports/' . $request->company_id . '/' . $name, 'gcs');
+
+        TicketReportExport::create([
+            'company_id' => $company->id,
+            'file_name' => $name,
+            'file_path' => 'exports/' . $request->company_id . '/' . $name,
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
+            'optional_parameters' => $request->optional_parameters
+        ]);
 
         return response()->json(['file' => $file]);
     }
