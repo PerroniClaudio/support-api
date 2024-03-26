@@ -91,6 +91,8 @@ class TicketMessageController extends Controller
         $brand_url = $ticket->brandUrl();
 
         if($user['is_admin'] == 1) {
+            $ticket->update(['unread_mess_for_usr' => ($ticket->unread_mess_for_usr + 1)]);
+
             // A messaggio da admin modificare lo stato in 'In corso', se lo stato è 'Nuovo' o 'Assegnato' ed assegnarlo a chi invia il messaggio se non è assegnato.
             $ticketStages = config('app.ticket_stages');
             $index_status_nuovo = array_search("Nuovo", $ticketStages);
@@ -125,9 +127,15 @@ class TicketMessageController extends Controller
                 ]);
             }
 
-            $ticket_message->is_read = 1;
-            $ticket_message->save();
-        } 
+            // $ticket_message->is_read = 1;
+            // $ticket_message->save();
+
+            // Questa parte andrà modificata con la modifica dei referer
+            $ticket->invalidateCache();
+
+        } else {
+            $ticket->update(['unread_mess_for_adm' => ($ticket->unread_mess_for_adm + 1)]);
+        }
         
         dispatch(new SendNewMessageEmail($ticket, $user, $ticket_message->message, $brand_url));
 
@@ -170,25 +178,25 @@ class TicketMessageController extends Controller
     {
         //
 
-        $fields = $request->validate([
-            'is_read' => 'required|boolean',
-        ]);
+        // $fields = $request->validate([
+        //     'is_read' => 'required|boolean',
+        // ]);
 
-        $ticket_message = TicketMessage::where('id', $ticketMesage->id)->first();
+        // $ticket_message = TicketMessage::where('id', $ticketMesage->id)->first();
 
-        if(!$ticket_message) {
-            return response([
-                'message' => 'Ticket message not found'
-            ], 404);
-        }
+        // if(!$ticket_message) {
+        //     return response([
+        //         'message' => 'Ticket message not found'
+        //     ], 404);
+        // }
 
-        $ticket_message->is_read = $fields['is_read'];
+        // $ticket_message->is_read = $fields['is_read'];
 
-        $ticket_message->save();
+        // $ticket_message->save();
 
-        return response([
-            'ticket_message' => $ticket_message,
-        ], 200);
+        // return response([
+        //     'ticket_message' => $ticket_message,
+        // ], 200);
 
     }
 

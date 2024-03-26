@@ -20,7 +20,6 @@ class TicketMessageFactory extends Factory
             'ticket_id' => fake()->numberBetween(9, 11),
             'user_id' => fake()->numberBetween(2, 4),
             'message' => fake()->sentence(),
-            'is_read' => 0,
         ];
     }
 }
