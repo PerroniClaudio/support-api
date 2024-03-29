@@ -42,17 +42,17 @@ class Ticket extends Model {
         // return User::find($this->admin_user_id);
         return $this->belongsTo(User::class, 'admin_user_id');
     }
-    
+
     /* get the referer (referente in sede) */
 
     public function referer() {
         // Si usa newQueryWithoutRelationships per evitare di caricare i messaggi, che non servono
         $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
         $messages = $ticketWithoutMessages->messages;
-        if(count($messages) > 0){
+        if (count($messages) > 0) {
             $message_obj = json_decode($messages[0]->message);
             // Controllo se esiste la proprietà, perchè nei ticket vecchi non c'è e può dare errore.
-            if(isset($message_obj->referer)){
+            if (isset($message_obj->referer)) {
                 return User::find($message_obj->referer);
             }
         }
@@ -60,14 +60,14 @@ class Ticket extends Model {
     }
 
     /* get the IT referer (referente IT) */
-    
+
     public function refererIT() {
         $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
         $messages = $ticketWithoutMessages->messages;
-        if(count($messages) > 0){
+        if (count($messages) > 0) {
             $message_obj = json_decode($messages[0]->message);
             // Controllo se esiste la proprietà, perchè nei ticket vecchi non c'è e può dare errore.
-            if(isset($message_obj->referer_it)){
+            if (isset($message_obj->referer_it)) {
                 return User::find($message_obj->referer_it);
             }
         }
@@ -104,7 +104,7 @@ class Ticket extends Model {
     //         $message->save();
     //     }
     // }
-    
+
     // // Messaggi non letti inviati dagli admin
     // public function unreadAdminsMessages() {
     //     $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
@@ -130,7 +130,7 @@ class Ticket extends Model {
     //     }
     // }
 
-    
+
     /** get  status updates  */
 
     public function statusUpdates() {
@@ -153,20 +153,20 @@ class Ticket extends Model {
         $brand_id = $this->ticketType->brand->id;
         return env('APP_URL') . '/api/brand/' . $brand_id . '/logo';
     }
-    
+
     // Invalida la cache per chi ha creato il ticket e per i referenti
     public function invalidateCache() {
         // $cacheKey = 'user_' . $user->id . '_tickets';
         $ticketUser = $this->user;
         $referer = $this->referer();
         $refererIT = $this->refererIT();
-        if($ticketUser){
+        if ($ticketUser) {
             Cache::forget('user_' . $ticketUser->id . '_tickets');
         }
-        if($referer){
+        if ($referer) {
             Cache::forget('user_' . $referer->id . '_tickets');
         }
-        if($refererIT){
+        if ($refererIT) {
             Cache::forget('user_' . $refererIT->id . '_tickets');
         }
     }
@@ -205,6 +205,36 @@ class Ticket extends Model {
 
 
         return $waitingHours;
+    }
+
+    public function waitingTimes() {
+        $waitingHours = 0;
+
+        /*
+            Se il ticket è stato in attesa almeno una volta bisogna calcolare il tempo totale in cui è rimasto in attesa.
+        */
+
+        $statusUpdates = $this->statusUpdates()->where('type', 'status')->get();
+
+        $hasBeenWaiting = false;
+        $waitingRecords = [];
+        $waitingEndingRecords = [];
+
+        for ($i = 0; $i < count($statusUpdates); $i++) {
+            if (
+                (strpos($statusUpdates[$i]->content, 'in attesa') !== false) || (strpos($statusUpdates[$i]->content, 'risolto') !== false)
+            ) {
+                $hasBeenWaiting = true;
+                $waitingRecords[] = $statusUpdates[$i];
+                $waitingEndingRecords[] = $statusUpdates[$i + 1];
+            }
+        }
+
+        if ($hasBeenWaiting === false) {
+            return 0;
+        }
+
+        return count($waitingRecords);
     }
 
     // public function calculateRemainingTime() {

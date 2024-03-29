@@ -4,6 +4,7 @@ namespace App\Exports;
 
 use App\Models\Company;
 use App\Models\Ticket;
+use App\Models\User;
 use Maatwebsite\Excel\Concerns\FromArray;
 
 class TicketsExport implements FromArray {
@@ -31,7 +32,7 @@ class TicketsExport implements FromArray {
         ])->get();
 
         $ticket_data = [];
-        $headers = ["ID", "Autore", "Referente", "Data", "Tipologia", "Webform", "Chiusura", "Tempo in attesa", "Numero di volte in attesa"];
+        $headers = ["ID", "Autore", "Referente", "Data", "Tipologia", "Webform", "Chiusura", "Tempo in attesa (ore)", "Numero di volte in attesa"];
 
         foreach ($tickets as $ticket) {
 
@@ -43,17 +44,24 @@ class TicketsExport implements FromArray {
                 $webform_text .= $key . ": " . $value . "\n";
             }
 
+            if (isset($webform->referer)) {
+                $referer = User::find($webform->referer);
+                $webform->referer = $referer ? $referer->name . " " . $referer->surname : null;
+            }
+
             $this_ticket = [
                 $ticket->id,
-                $ticket->user->name,
-                "",
+                $ticket->user->name . " " . $ticket->user->surname,
+                $webform->referer,
                 $ticket->created_at,
                 $ticket->ticketType->name,
                 $webform_text,
                 $ticket->created_at,
-                "0",
-                "1"
+                $ticket->waitingHours(),
+                $ticket->waitingTimes()
             ];
+
+
 
             foreach ($ticket->messages as $message) {
 
