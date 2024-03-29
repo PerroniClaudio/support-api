@@ -39,29 +39,38 @@ class TicketsExport implements FromArray {
             $messages = $ticket->messages;
             $webform = json_decode($messages->first()->message, true);
             $webform_text = "";
+            $has_referer = false;
+            $referer_name = "";
 
             foreach ($webform as $key => $value) {
                 $webform_text .= $key . ": " . $value . "\n";
+
+                if ($key == "referer") {
+                    $has_referer = true;
+                }
             }
 
-            if (isset($webform->referer)) {
-                $referer = User::find($webform->referer);
-                $webform->referer = $referer ? $referer->name . " " . $referer->surname : null;
+            if ($has_referer) {
+                if (isset($webform['referer'])) {
+                    $referer = User::find($webform['referer']);
+                    $referer_name = $referer ? $referer->name . " " . $referer->surname : null;
+                }
             }
+
+            $waiting_times = $ticket->waitingTimes();
+            $waiting_hours = $ticket->waitingHours();
 
             $this_ticket = [
                 $ticket->id,
                 $ticket->user->name . " " . $ticket->user->surname,
-                $webform->referer,
+                $referer_name,
                 $ticket->created_at,
                 $ticket->ticketType->name,
                 $webform_text,
                 $ticket->created_at,
-                $ticket->waitingHours(),
-                $ticket->waitingTimes()
+                $waiting_hours,
+                $waiting_times
             ];
-
-
 
             foreach ($ticket->messages as $message) {
 
@@ -75,8 +84,6 @@ class TicketsExport implements FromArray {
 
             $ticket_data[] = $this_ticket;
         }
-
-
 
         return [
             $headers,
