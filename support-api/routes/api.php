@@ -460,7 +460,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/stats", [App\Http\Controllers\TicketStatsController::class, "latestStats"]);
 });
 
+Route::get("/ticket-report/pdf/batch", [App\Http\Controllers\TicketReportExportController::class, "exportBatch"]);
 Route::get("/ticket-report/pdf/{ticket}", [App\Http\Controllers\TicketReportExportController::class, "exportpdf"]);
+
 
 
 /** 

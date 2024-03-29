@@ -103,19 +103,25 @@
             @if ($loop->first)
                 @continue
             @endif
-            <div>
+       
+                <table style="width:100%">
+                    <tr>
+                        <td style="vertical-align: top; width:70%;">
+                            @if ($value->user->is_admin == 1)
+                                <p><b>Supporto - Update</b></p>
+                            @else
+                                <p><b>{{ $value->user->name }} {{ $value->user->surname }}</b></p>
+                            @endif
+                        </td>
+                        <td style="vertical-align: top; width:30%;">
+                            <p style="text-align: right">{{ $value->created_at->format('d/m/Y H:i') }}</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2"> <p>{{ $value->message }}</p></td>
+                    </tr>
+                </table>
 
-                @if ($value->user->is_admin == 1)
-                    <p><b>Supporto</b></p>
-                @else
-                    <p><b>{{ $value->user->name }} {{ $value->user->surname }}</b></p>
-                @endif
-
-
-                <p>
-                    {{ $value->message }}
-                </p>
-            </div>
         @endforeach
     </div>
 

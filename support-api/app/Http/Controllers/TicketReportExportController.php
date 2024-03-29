@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Storage;
 
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Cache;
 
 class TicketReportExportController extends Controller {
     /**
@@ -188,5 +189,21 @@ class TicketReportExportController extends Controller {
         $pdf = Pdf::loadView('pdf.export', $data);
 
         return $pdf->stream();
+    }
+
+    public function exportBatch(Request $request) {
+        $cacheKey = 'batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to;
+        $tickets_data = Cache::get($cacheKey);
+
+        $data = [
+            'tickets' => $tickets_data,
+            'title' => "Esportazione tickets",
+        ];
+
+        Pdf::setOptions(['dpi' => 150, 'defaultFont' => 'sans-serif']);
+        $pdf = Pdf::loadView('pdf.exportbatch', $data);
+
+        return $pdf->stream();
+
     }
 }
