@@ -459,3 +459,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/stats", [App\Http\Controllers\TicketStatsController::class, "latestStats"]);
 });
+
+/** 
+ * Esportazioni
+ */
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get("/ticket-report/list/{company}", [App\Http\Controllers\TicketReportExportController::class, "company"]);
+    Route::post("/ticket-report/export", [App\Http\Controllers\TicketReportExportController::class, "export"]);
+    Route::get("/ticket-report/export/{ticketReportExport}", [App\Http\Controllers\TicketReportExportController::class, "show"]);
+    Route::delete("/ticket-report/export/{ticketReportExport}", [App\Http\Controllers\TicketReportExportController::class, "destroy"]);
+    Route::get("/ticket-report/download/{ticketReportExport}", [App\Http\Controllers\TicketReportExportController::class, "download"]);
+});

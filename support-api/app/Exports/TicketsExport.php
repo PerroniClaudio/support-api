@@ -8,10 +8,15 @@ use Maatwebsite\Excel\Concerns\FromArray;
 
 class TicketsExport implements FromArray {
 
-    private $company;
+    private $company_id;
+    private $start_date;
+    private $end_date;
+    private $job_id;
 
-    public function __construct(Company $company) {
-        $this->company = $company;
+    public function __construct($company_id, $start_date, $end_date) {
+        $this->company_id = $company_id;
+        $this->start_date = $start_date;
+        $this->end_date = $end_date;
     }
 
     /**
@@ -19,7 +24,11 @@ class TicketsExport implements FromArray {
      */
     public function array(): array {
 
-        $tickets = Ticket::where('company_id', $this->company->id)->whereBetween('created_at', [now()->subDays(30)->startOfMonth(), now()->subDays(30)->endOfMonth()])->get();
+        // $tickets = Ticket::where('company_id', $this->company->id)->whereBetween('created_at', [now()->subDays(30)->startOfMonth(), now()->subDays(30)->endOfMonth()])->get();
+        $tickets = Ticket::where('company_id', $this->company_id)->whereBetween('created_at', [
+            $this->start_date,
+            $this->end_date
+        ])->get();
 
         $ticket_data = [];
         $headers = ["ID", "Autore", "Referente", "Data", "Tipologia", "Webform", "Chiusura", "Tempo in attesa", "Numero di volte in attesa"];
@@ -58,6 +67,8 @@ class TicketsExport implements FromArray {
 
             $ticket_data[] = $this_ticket;
         }
+
+
 
         return [
             $headers,
