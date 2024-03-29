@@ -8,7 +8,13 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\TicketsExport;
 use App\Jobs\GenerateReport;
 use App\Models\Company;
+use App\Models\Ticket;
+use App\Models\TicketStatusUpdate;
+use App\Models\User;
 use Illuminate\Support\Facades\Storage;
+
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\App;
 
 class TicketReportExportController extends Controller {
     /**
@@ -112,5 +118,75 @@ class TicketReportExportController extends Controller {
 
 
         return response()->json(['file' => $name]);
+    }
+
+    public function exportpdf(Ticket $ticket) {
+
+        $name = time() . '_' . $ticket->id . '_tickets.xlsx';
+        //? Webform
+
+        $webform_data = json_decode($ticket->messages()->first()->message);
+
+        $office = $ticket->company->offices()->where('id', $webform_data->office)->first();
+        $webform_data->office = $office ? $office->name : null;
+
+        if (isset($webform_data->referer)) {
+            $referer = User::find($webform_data->referer);
+            $webform_data->referer = $referer ? $referer->name . " " . $referer->surname : null;
+        }
+
+        if (isset($webform_data->referer_it)) {
+            $referer_it = User::find($webform_data->referer_it);
+            $webform_data->referer_it = $referer_it ? $referer_it->name . " " . $referer_it->surname : null;
+        }
+
+        //? Avanzamento
+
+        $avanzamento = [
+            "attesa" => 0,
+            "assegnato" => 0,
+            "in_corso" => 0,
+        ];
+
+        foreach ($ticket->statusUpdates as $update) {
+            if ($update->type == 'status') {
+
+                if (strpos($update->content, 'In attesa') !== false) {
+                    $avanzamento["attesa"]++;
+                }
+                if (strpos($update->content, 'Assegnato') !== false) {
+                    $avanzamento["assegnato"]++;
+                }
+                if (strpos($update->content, 'In corso') !== false) {
+                    $avanzamento["in_corso"]++;
+                }
+            }
+        }
+
+        //? Chiusura
+
+        $closingMessage = "";
+
+        $closingUpdates = TicketStatusUpdate::where('ticket_id', $ticket->id)->where('type', 'closing')->get();
+        $closingUpdate = $closingUpdates->last();
+
+        if ($closingUpdate) {
+            $closingMessage = $closingUpdate->content;
+        }
+
+        $data = [
+            'title' => $name,
+            'ticket' => $ticket,
+            'webform_data' => $webform_data,
+            'status_updates' => $avanzamento,
+            'closing_messages' => $closingMessage,
+
+        ];
+
+        Pdf::setOptions(['dpi' => 150, 'defaultFont' => 'sans-serif']);
+
+        $pdf = Pdf::loadView('pdf.export', $data);
+
+        return $pdf->stream();
     }
 }

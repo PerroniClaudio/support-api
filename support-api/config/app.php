@@ -171,6 +171,7 @@ return [
         App\Providers\EventServiceProvider::class,
         App\Providers\HorizonServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
+        Barryvdh\DomPDF\ServiceProvider::class,
     ])->toArray(),
 
     /*
@@ -186,6 +187,7 @@ return [
 
     'aliases' => Facade::defaultAliases()->merge([
         // 'Example' => App\Facades\Example::class,
+
     ])->toArray(),
 
 
@@ -193,11 +195,11 @@ return [
         Possibili stati dei ticket
     */
     'ticket_stages' => [
-        "Nuovo", 
-        "Assegnato", 
-        "In corso", 
-        "In attesa", 
-        "Risolto", 
+        "Nuovo",
+        "Assegnato",
+        "In corso",
+        "In attesa",
+        "Risolto",
         "Chiuso"
     ],
 ];
