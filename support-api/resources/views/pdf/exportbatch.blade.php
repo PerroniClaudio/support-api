@@ -11,20 +11,127 @@
 
 <body>
 
-    <div>
-        <h1>Indice</h1>
-        <hr>
+    <div style="text-align:center; height:100%">
 
-        <ul>
-        @foreach($tickets as $ticket) 
-            <li><a href="#ticket-{{ $ticket['data']['id']}}">Ticket #{{ $ticket['data']['id']}}</a></li>
-        @endforeach
-        </ul>
+        <img src="{{ base_path().'/storage/app/public/iftlogo.png' }}" alt="iftlogo" width="192" height="38">
+
+        <h1 class="main-header" style="font-size:3rem;line-height: 1;margin-top: 4rem;margin-bottom: 4rem;">{{ $company['name'] }}</h1>
+
+        <h3>Periodo</h3>
+        <p>{{ $date_from->format('d/m/Y') }} - {{ $date_to->format('d/m/Y') }}</p>
+
     </div>
 
 
     <div class="page-break"></div>
 
+    <div>
+
+        <div style="text-align:center;margin-top: 1rem;margin-bottom: 1rem;">
+            <p>Periodo: {{ $date_from->format('d/m/Y') }} - {{ $date_to->format('d/m/Y') }}</p>
+        </div>
+        
+
+        @php
+            $incident = 0;
+            $request = 0;
+            $total = 0;
+        @endphp
+
+        @foreach($tickets as $ticket) 
+
+            @if($ticket['data']['ticketType']['category']['is_problem'] == "1")
+                @php
+                    $incident++;
+                @endphp
+            @else
+                @php
+                    $request++;
+                @endphp
+            @endif
+
+            @php 
+                $total++;
+            @endphp
+
+        @endforeach
+
+        <table width="100%">
+            <tr>
+                <td style="width:30%;text-align:center;">
+                    <div class="box">
+                        <h3>Incident</h3>
+                        <p>{{ $incident }}</p>
+                    </div>
+                </td>
+                <td style="width:30%;text-align:center;">
+                    <div class="box">
+                        <h3>Request</h3>
+                        <p>{{ $request }}</p>
+                    </div>
+                </td>
+                <td style="width:30%;text-align:center;">
+                    <div class="box">
+                        <h3>Totale</h3>
+                        <p>{{ $total }}</p>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <div>
+            <h3>Ticket aperti per giornata</h3>
+
+            <table style="width:100%">
+                <thead>
+                    <th><b>Data</b></th>
+                    <th style="text-align:center"><b>Request</b></th>
+                    <th style="text-align:center"><b>Incident</b></th>
+                </thead>
+
+                <tbody>
+                    @for ($date = $date_from; $date <= $date_to; $date->addDay())
+                        <tr>
+                            <td>{{ $date->format('d/m/Y') }}</td>
+                            <th style="text-align:right">{{ isset($ticket_graph_data[$date->format('Y-m-d')]) ? $ticket_graph_data[$date->format('Y-m-d')]['requests'] : '0' }}</td>
+                            <th style="text-align:right">{{ isset($ticket_graph_data[$date->format('Y-m-d')]) ? $ticket_graph_data[$date->format('Y-m-d')]['incidents'] : '0' }}</td>
+                        </tr>
+                    @endfor
+                </tbody>
+            </table>
+        </div>
+
+
+    </div>
+
+    <div class="page-break"></div>
+
+    <div>
+        <h1>Indice</h1>
+        <hr>
+
+        <table style="width:100%">
+            <tbody>
+                @foreach($tickets as $ticket) 
+                    <tr>
+                        <td style="width:25%"><a href="#ticket-{{ $ticket['data']['id']}}">Ticket #{{ $ticket['data']['id']}}</a></td>
+                        <td style="width:25%">{{ $ticket['data']['created_at']->format('d/m/Y H:i') }}</td>
+                        <td style="width:25%">@if($ticket['data']['ticketType']['category']['is_problem'] == "1")Incident @else Request @endif</td>
+                        <td style="width:25%">
+                            @if($ticket['data']['user']['is_admin'] == "0")
+                                {{ $ticket['data']['user']['name'] }} {{ $ticket['data']['user']['surname'] }}
+                            @endif
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+
+
+    <div class="page-break"></div>
+
+        
     @foreach($tickets as $ticket) 
     <div id="ticket-{{ $ticket['data']['id']}}">
         <h1 class="main-header">Report Esteso Ticket #{{ $ticket['data']['id']}}</h1>
@@ -99,20 +206,7 @@
             </p>
         </div>
 
-        <h2>Note interne</h2>
-        <hr>
-    
-        <div class="box">
-            @foreach ($ticket['data']['statusUpdates'] as $key => $value)
-                <div>
-                    <p><b>Supporto</b></p>
-                    <p>
-                        {{ $value->content }}
-                    </p>
-                </div>
-            @endforeach
-        </div>
-    
+       
         <h2>Messaggi</h2>
         <hr>
         <div class="box">
@@ -145,5 +239,8 @@
 
     <div class="page-break"></div>
     @endforeach
+
+
+
 
 </body>

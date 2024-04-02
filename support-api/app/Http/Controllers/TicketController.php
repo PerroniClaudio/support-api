@@ -866,7 +866,7 @@ class TicketController extends Controller {
             ];
         }
 
-        $tickets_batch_data = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($tickets_data) {
+        $tickets_batch_data = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($tickets_data) {
             return $tickets_data;
         });
 

@@ -193,12 +193,55 @@ class TicketReportExportController extends Controller {
 
     public function exportBatch(Request $request) {
         $cacheKey = 'batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to;
+        $company = Company::find($request->company_id);
         $tickets_data = Cache::get($cacheKey);
+
+
+        $tickets_by_day = [];
+        $ticket_graph_data = [];
+
+        foreach ($tickets_data as $ticket) {
+            $date = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $ticket['data']['created_at'])->format('Y-m-d');
+            if (!isset($tickets_by_day[$date])) {
+                $tickets_by_day[$date] = [];
+            }
+            $tickets_by_day[$date][] = $ticket;
+        }
+
+        for($date = \Carbon\Carbon::createFromFormat('Y-m-d', $request->from); $date <= \Carbon\Carbon::createFromFormat('Y-m-d', $request->to); $date->addDay()) {
+            if (isset($tickets_by_day[$date->format('Y-m-d')])) {
+
+                $incidents = 0;
+                $requests = 0;
+                
+                foreach($tickets_by_day[$date->format('Y-m-d')] as $ticket) {
+                    if($ticket['data']['ticketType']['category']['is_problem'] == 1) {
+                        $incidents++;
+                    } else {
+                        $requests++;
+                    }
+                }
+
+                $ticket_graph_data[$date->format('Y-m-d')] = [
+                    'incidents' => $incidents,
+                    'requests' => $requests
+                ];
+            }
+        }
+
 
         $data = [
             'tickets' => $tickets_data,
             'title' => "Esportazione tickets",
+            'date_from' => \Carbon\Carbon::createFromFormat('Y-m-d', $request->from),
+            'date_to' =>\Carbon\Carbon::createFromFormat('Y-m-d', $request->to),
+            'company' => $company,
+            'ticket_graph_data' => $ticket_graph_data
         ];
+
+
+
+
 
         Pdf::setOptions(['dpi' => 150, 'defaultFont' => 'sans-serif']);
         $pdf = Pdf::loadView('pdf.exportbatch', $data);
