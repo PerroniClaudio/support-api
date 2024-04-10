@@ -470,10 +470,11 @@ Route::get("/ticket-report/pdf/{ticket}", [App\Http\Controllers\TicketReportExpo
  */
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/ticket-report/list/{company}", [App\Http\Controllers\TicketReportExportController::class, "company"]);
-
     Route::post("/ticket-report/export", [App\Http\Controllers\TicketReportExportController::class, "export"]);
-
     Route::get("/ticket-report/export/{ticketReportExport}", [App\Http\Controllers\TicketReportExportController::class, "show"]);
     Route::delete("/ticket-report/export/{ticketReportExport}", [App\Http\Controllers\TicketReportExportController::class, "destroy"]);
     Route::get("/ticket-report/download/{ticketReportExport}", [App\Http\Controllers\TicketReportExportController::class, "download"]);
+
+    Route::post("/generic-ticket-report/export", [App\Http\Controllers\TicketReportExportController::class, "genericExport"]);
+    Route::get("/generic-ticket-report/list", [App\Http\Controllers\TicketReportExportController::class, "generic"]);
 });

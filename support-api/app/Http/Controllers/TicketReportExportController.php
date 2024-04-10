@@ -4,17 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\TicketReportExport;
 use Illuminate\Http\Request;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\TicketsExport;
+use App\Jobs\GenerateGenericReport;
 use App\Jobs\GenerateReport;
 use App\Models\Company;
 use App\Models\Ticket;
 use App\Models\TicketStatusUpdate;
+use App\Models\TicketType;
 use App\Models\User;
 use Illuminate\Support\Facades\Storage;
-
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Cache;
 
 class TicketReportExportController extends Controller {
@@ -34,6 +32,38 @@ class TicketReportExportController extends Controller {
             'is_generated',
             true
         )->get();
+
+        return response([
+            'reports' => $reports,
+        ], 200);
+    }
+
+    public function generic() {
+        $reports = TicketReportExport::where('optional_parameters', '!=', "[]")
+            ->where('is_generated', true)
+            ->orderBy('created_at', 'DESC')
+            ->get();
+
+        $reports->each(function ($report) {
+            $optionalParameters = json_decode($report->optional_parameters);
+            if (isset($optionalParameters->specific_types)) {
+                $specificTypes = $optionalParameters->specific_types;
+                $ticketTypes = TicketType::whereIn('id', $specificTypes)->get();
+                $report->specific_types = $ticketTypes;
+            }
+
+            if($report->company_id != 1) {
+                $report->company = Company::find($report->company_id);
+            } else {
+                $report->company = [
+                    'name' => 'Non specificata'
+                ];
+            }
+
+            
+        });
+
+       
 
         return response([
             'reports' => $reports,
@@ -249,4 +279,26 @@ class TicketReportExportController extends Controller {
         return $pdf->stream();
 
     }
+
+    public function genericExport(Request $request) {
+        $name = time() . '_generic_export.xlsx';
+        $file_path = $request->company_id ? 'exports/' . $request->company_id . '/' . $name : 'exports/ifortech/' . $name;
+
+        $report = TicketReportExport::create([
+            'company_id' => $request->company_id ? $request->company_id : 0,
+            'file_name' => $name,
+            'file_path' => $file_path,
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
+            'optional_parameters' => json_encode($request->optional_parameters)
+        ]);
+
+        dispatch(new GenerateGenericReport($report));
+
+        return response()->json(['file' => $name]);
+
+      
+    }
+
+    
 }
