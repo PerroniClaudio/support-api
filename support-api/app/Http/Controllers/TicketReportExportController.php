@@ -6,6 +6,7 @@ use App\Models\TicketReportExport;
 use Illuminate\Http\Request;
 use App\Jobs\GenerateGenericReport;
 use App\Jobs\GenerateReport;
+use App\Jobs\GenerateUserReport;
 use App\Models\Company;
 use App\Models\Ticket;
 use App\Models\TicketStatusUpdate;
@@ -63,7 +64,18 @@ class TicketReportExportController extends Controller {
             
         });
 
-       
+        return response([
+            'reports' => $reports,
+        ], 200);
+    }
+
+    public function user(Request $request) {
+        $user = $request->user();
+
+        $reports = TicketReportExport::where('company_id', $user->company_id)
+            ->where('is_user_generated', true)
+            ->orderBy('created_at', 'DESC')
+            ->get();
 
         return response([
             'reports' => $reports,
@@ -298,6 +310,28 @@ class TicketReportExportController extends Controller {
         return response()->json(['file' => $name]);
 
       
+    }
+
+    public function userExport(Request $request) {
+
+        $user = $request->user();
+
+        $name_file = str_replace("-", "_", $request->start_date) . "_" . str_replace("-", "_", $request->end_date) . str_replace("-", "_", $request->type);
+        $name = time() . '_'  . $name_file . '.xlsx';
+
+        $report = TicketReportExport::create([
+            'company_id' => $user->company_id,
+            'file_name' => $name,
+            'file_path' => 'exports/' . $user->company_id . '/' . $name,
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
+            'optional_parameters' => json_encode(["type" => $request->type]),
+            'is_user_generated' => true
+        ]);
+
+        dispatch(new GenerateUserReport($report));
+
+        return response()->json(['file' => $name]);
     }
 
     

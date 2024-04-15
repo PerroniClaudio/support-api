@@ -475,6 +475,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete("/ticket-report/export/{ticketReportExport}", [App\Http\Controllers\TicketReportExportController::class, "destroy"]);
     Route::get("/ticket-report/download/{ticketReportExport}", [App\Http\Controllers\TicketReportExportController::class, "download"]);
 
-    Route::post("/generic-ticket-report/export", [App\Http\Controllers\TicketReportExportController::class, "genericExport"]);
     Route::get("/generic-ticket-report/list", [App\Http\Controllers\TicketReportExportController::class, "generic"]);
+    Route::post("/generic-ticket-report/export", [App\Http\Controllers\TicketReportExportController::class, "genericExport"]);
+
+    Route::get("/user-ticket-report/list", [App\Http\Controllers\TicketReportExportController::class, "user"]);
+    Route::post("/user-ticket-report/export", [App\Http\Controllers\TicketReportExportController::class, "userExport"]);
+});
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get("/ticket-report/user-stats", [App\Http\Controllers\TicketStatsController::class, "statsForCompany"]);
 });
