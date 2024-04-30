@@ -686,8 +686,11 @@ class TicketController extends Controller {
             ], 401);
         }
 
-        $groups = $user->groups;
+        /** LENTISSIMA!!!! */
 
+        /*
+
+        
         $tickets = [];
         foreach ($groups as $group) {
             $groupTickets = $group->ticketsWithUser;
@@ -700,6 +703,12 @@ class TicketController extends Controller {
             }
             $tickets = array_merge($tickets, $groupTickets->toArray());
         }
+
+        */
+
+        $groups = $user->groups;
+        $tickets = Ticket::where("status", "!=", 5)->whereIn('group_id', $groups->pluck('id'))->with('user')->get();
+
 
         return response([
             'tickets' => $tickets,
