@@ -48,7 +48,14 @@ Route::get('/test', function () {
     return "test";
 });
 
+Route::get('/mailtest', function() {
 
+    $tickets = Ticket::where("status", "!=", 5)->with("company", "ticketType")->orderBy("created_at", "desc")->get();
+
+    Mail::to("c.perroni@ifortech.com")->send(new \App\Mail\PlatformActivityMail($tickets));
+
+    return [];
+});
 
 Route::get('/welcome', function () {
     return "welcome";
