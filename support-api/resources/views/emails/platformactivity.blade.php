@@ -4,11 +4,11 @@
 
 ## Problemi
 @component('mail::table')
-|Azienda|Tipologia|Aperto il|Visita|
-|:--|:--|:--|:--|
+|Azienda|Tipologia|Aperto il|Stato|Visita|
+|:--|:--|:--|:--|--:|
 @foreach ($tickets as $ticket)
     @if($ticket->ticketType->category->is_problem)
-        |{{ $ticket->company->name }}|{{ $ticket->ticketType->name }}|{{ $ticket->created_at->format('d/m/Y H:i') }}|<a href="{{ config('app.frontend_url') }}/support/admin/ticket/{{ $ticket->id }}">Visualizza</a>|
+        |<small>{{ $ticket->company->name }}</small>|<small>{{ $ticket->ticketType->name }}</small>|<small>{{ $ticket->created_at->format('d/m/Y H:i') }}</small>|<small>{{ $stages[$ticket->status] }}</small>|<small><a href="{{ config('app.frontend_url') }}/support/admin/ticket/{{ $ticket->id }}">Visita</a></small>|
     @endif
 
 @endforeach
@@ -17,11 +17,11 @@
 ## Richieste
 
 @component('mail::table')
-|Azienda|Tipologia|Aperto il|Visita|
-|:--|:--|:--|:--|
+|Azienda|Tipologia|Aperto il|Stato|Visita|
+|:--|:--|:--|:--|--:|
 @foreach ($tickets as $ticket)
     @if($ticket->ticketType->category->is_request)
-        |{{ $ticket->company->name }}|{{ $ticket->ticketType->name }}|{{ $ticket->created_at->format('d/m/Y H:i') }}|<a href="{{ config('app.frontend_url') }}/support/admin/ticket/{{ $ticket->id }}">Visualizza</a>|
+        |<small>{{ $ticket->company->name }}</small>|<small>{{ $ticket->ticketType->name }}</small>|<small>{{ $ticket->created_at->format('d/m/Y H:i') }}</small>|<small>{{ $stages[$ticket->status] }}</small>|<small><a href="{{ config('app.frontend_url') }}/support/admin/ticket/{{ $ticket->id }}">Visita</a></small>|
     @endif
 @endforeach
 @endcomponent

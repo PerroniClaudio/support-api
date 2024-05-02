@@ -14,6 +14,15 @@ class PlatformActivityMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public $stages = [
+        "Nuovo", 
+        "Assegnato", 
+        "Gestione", 
+        "Attesa", 
+        "Risolto", 
+        "Chiuso"
+    ];
+
     /**
      * Create a new message instance.
      */
