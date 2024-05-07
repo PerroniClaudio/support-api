@@ -202,4 +202,17 @@ return [
         "Risolto",
         "Chiuso"
     ],
+
+    /* 
+        Tipi di update dei ticket
+    */
+    'update_types' => [
+        "closing" => "Chiusura",
+        "status" => "Cambio stato",
+        "note" => "Aggiunta nota",
+        "assign" => "Assegnamento",
+        "group_assign" => "Assegnamento di gruppo",
+        "sla" => "Cambio SLA",
+        "blame" => "Cambio responsabilità",
+    ],
 ];

@@ -22,6 +22,20 @@ class UpdateEmail extends Mailable
       "Risolto", 
       "Chiuso"
     ];
+
+    public $updateTypes;
+    // public $updateTypes = config('app.update_types');
+    // public $updateTypes = [
+    //   "assign" => "Assegnazione", 
+    //   "status" => "Stato", 
+    //   "sla" => "SLA", 
+    //   "closing" => "Chiusura", 
+    //   "note" => "Nota", 
+    //   "blame" => "Colpa", 
+    //   "group_assign" => "Assegnazione gruppo"
+    // ];
+
+    public $previewText; // Testo visualizzato nella preview dell'email
     
     /**
      * Create a new message instance.
@@ -29,6 +43,9 @@ class UpdateEmail extends Mailable
     public function __construct(public Ticket $ticket, public $company, public $ticketType, public $category, public $link, public $update, public $user)
     {
         //
+        $this->updateTypes = config('app.update_types');
+
+        $this->previewText = $this->updateTypes[$this->update->type] . " ticket " . $this->ticket->id . " - " . $this->update->content;
     }
 
     /**

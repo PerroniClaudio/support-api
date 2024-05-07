@@ -1,9 +1,12 @@
 <x-mail::layout>
+<x-slot:preview>
+    <x-mail::preview :previewText="$previewText ?? ''">
+    </x-mail::preview>
+</x-slot:preview>
 {{-- Header --}}
-
 <x-slot:header>
     <x-mail::header :url="$url ?? config('app.frontend_url')">
-        <img src="{{ $brand_url ?? 'https://frontend.ifortech.com/images/logo.png' }}" class="logo-horizontal" height="100" alt="Logo">
+        <img src="{{ $brand_url ?? 'https://frontend.ifortech.com/images/logo.png' }}" class="logo-horizontal" height="60" alt="Logo">
     </x-mail::header>
 </x-slot:header>
 
