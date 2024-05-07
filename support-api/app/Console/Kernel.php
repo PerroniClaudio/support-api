@@ -20,7 +20,7 @@ class Kernel extends ConsoleKernel {
             } else {
                 $j = $i;
             }
-            $schedule->job(new \App\Jobs\TicketStats)->dailyAt("$j:00");
+            $schedule->job(new \App\Jobs\PlatformActivity)->dailyAt("$j:00");
         }
 
     }
