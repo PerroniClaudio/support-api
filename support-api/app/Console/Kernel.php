@@ -14,7 +14,7 @@ class Kernel extends ConsoleKernel {
 
         $schedule->job(new \App\Jobs\TicketStats)->everyFiveMinutes(); //ogni 5 min
 
-        for($i = 7; $i <= 19; $i++) {
+        for($i = 6; $i <= 17; $i++) {
             if($i < 10) {
                 $j = "0$i";
             } else {
