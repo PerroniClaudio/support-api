@@ -14,7 +14,8 @@ class TicketReportExport extends Model {
         'end_date',
         'optional_parameters',
         'company_id',
-        'is_generated'
+        'is_generated',
+        'is_user_generated'
     ];
 
     use HasFactory;

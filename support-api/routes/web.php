@@ -11,6 +11,7 @@ use App\Models\Company;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\Supplier;
+use App\Models\TicketReportExport;
 use App\Models\TicketStats;
 use App\Models\TicketType;
 use App\Models\TicketTypeCategory;
@@ -45,6 +46,15 @@ Route::get('/testmail', function () {
 
 Route::get('/test', function () {
     return "test";
+});
+
+Route::get('/mailtest', function() {
+
+    $tickets = Ticket::where("status", "!=", 5)->with("company", "ticketType")->orderBy("created_at", "desc")->get();
+
+    Mail::to("c.perroni@ifortech.com")->send(new \App\Mail\PlatformActivityMail($tickets));
+
+    return [];
 });
 
 Route::get('/welcome', function () {

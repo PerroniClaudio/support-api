@@ -12,8 +12,17 @@ class Kernel extends ConsoleKernel {
     protected function schedule(Schedule $schedule): void {
         // $schedule->command('inspire')->hourly();
 
-        $schedule->job(new \App\Jobs\TicketStats)->hourly();
-        // $schedule->job(new \App\Jobs\TicketStats)->everyMinute();
+        $schedule->job(new \App\Jobs\TicketStats)->everyFiveMinutes(); //ogni 5 min
+
+        for($i = 6; $i <= 17; $i++) {
+            if($i < 10) {
+                $j = "0$i";
+            } else {
+                $j = $i;
+            }
+            $schedule->job(new \App\Jobs\PlatformActivity)->dailyAt("$j:00");
+        }
+
     }
 
 
