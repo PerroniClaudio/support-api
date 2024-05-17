@@ -707,8 +707,15 @@ class TicketController extends Controller {
         */
 
         $groups = $user->groups;
-        $tickets = Ticket::where("status", "!=", 5)->whereIn('group_id', $groups->pluck('id'))->with('user')->get();
 
+        $withClosed = $request->query('with-closed') == 'true' ? true : false;
+        
+        // $tickets = Ticket::where("status", "!=", 5)->whereIn('group_id', $groups->pluck('id'))->with('user')->get();
+        if ($withClosed) {
+            $tickets = Ticket::whereIn('group_id', $groups->pluck('id'))->with('user')->get();
+        } else {
+            $tickets = Ticket::where("status", "!=", 5)->whereIn('group_id', $groups->pluck('id'))->with('user')->get();
+        }
 
         return response([
             'tickets' => $tickets,
