@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\UserTemplateExport;
+use App\Imports\UsersImport;
 use App\Models\ActivationToken;
 use App\Jobs\SendWelcomeEmail;
 use Illuminate\Http\Request;
@@ -10,7 +12,7 @@ use App\Models\Supplier;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
-
+use Maatwebsite\Excel\Facades\Excel;
 
 class UserController extends Controller {
     //
@@ -40,6 +42,7 @@ class UserController extends Controller {
             ], 401);
         }
 
+        // Se si modifica qualcosa da questo punto in poi bisogna modificare anche in UsersImport.php
         $newUser = User::create([
             'company_id' => $fields['company_id'],
             'name' => $fields['name'],
@@ -248,7 +251,7 @@ class UserController extends Controller {
         
         $user = User::where('id', $id)->first();
         $enabled = $user->update([
-            'is_deleted' => null,
+            'is_deleted' => 0,
         ]);
         if (!$enabled) {
             return response([
@@ -407,4 +410,35 @@ class UserController extends Controller {
             'urlLogo' => $url,
         ], 200);
     }
+
+    public function exportTemplate() {
+        $name = 'users_import_template_' . time() . '.xlsx';
+        return Excel::download(new UserTemplateExport(), $name);
+    }
+
+    public function importUsers(Request $request) {
+        $request->validate([
+            'file' => 'required|mimes:xlsx',
+        ]);
+
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+
+            $extension = $file->getClientOriginalExtension();
+
+            if (!($extension === 'xlsx')) {
+                return response([
+                    'message' => 'Invalid file type. Please upload an XLSX or XLS file.',
+                ], 400);
+            }
+
+            Excel::import(new UsersImport, $file, 'xlsx');
+        }
+
+        return response([
+            'message' => "Success",
+        ], 200);
+    }
+
 }
+

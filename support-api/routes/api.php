@@ -72,6 +72,18 @@ Route::middleware(['auth:sanctum'])->group(function () {
         '/user/frontend/logo',
         [App\Http\Controllers\UserController::class, "getFrontendLogoUrl"]
     );
+    
+    Route::get(
+        '/user/export-template',
+        [App\Http\Controllers\UserController::class, "exportTemplate"]
+    );
+    
+    Route::post(
+        '/user/import',
+        [App\Http\Controllers\UserController::class, "importUsers"]
+    );
+
+    
 });
 
 
@@ -484,4 +496,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/ticket-report/user-stats", [App\Http\Controllers\TicketStatsController::class, "statsForCompany"]);
+});
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get("/template-export/{type}", [App\Http\Controllers\TemplatesExportController::class, "index"]);
 });
