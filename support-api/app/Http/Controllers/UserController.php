@@ -200,38 +200,54 @@ class UserController extends Controller {
      * Remove the specified resource from storage.
      */
     public function destroy($id, Request $request) {
-        //
+        //Solo gli admin possono eliminare (disabilitare) le utenze
         $req_user = $request->user();
 
+        // if ($req_user["is_admin"] == 1 && $id) {
+        //     // Se l'utente ha ticket associati si disabilita l'utente, senza eliminarlo.
+        //     $user = User::where('id', $id)->first();
+        //     if($user->tickets()->count() > 0){
+        //         $disabled = $user->update([
+        //             'is_deleted' => true,
+        //         ]);
+        //         if($disabled){
+        //             return response([
+        //                 'deleted_user' => $id,
+        //                 'message' => 'tickets',
+        //             ], 200);
+        //         }
+        //         return response([
+        //             'message' => 'Error',
+        //         ], 400);
+        //     }
+
+        //     $deleted_user = User::destroy($id);
+        // }
+
+        // if ($deleted_user  == 0) {
+        //     return response([
+        //         'message' => 'Error',
+        //     ], 404);
+        // }
+        // return response([
+        //     'deleted_user' => $id,
+        // ], 200);
+
         if ($req_user["is_admin"] == 1 && $id) {
-            // Se l'utente ha ticket associati si disabilita l'utente, senza eliminarlo.
+            // In ogni caso si disabilita l'utente, senza eliminarlo.
             $user = User::where('id', $id)->first();
-            if($user->tickets()->count() > 0){
-                $disabled = $user->update([
-                    'is_deleted' => true,
-                ]);
-                if($disabled){
-                    return response([
-                        'deleted_user' => $id,
-                        'message' => 'tickets',
-                    ], 200);
-                }
+            $disabled = $user->update([
+                'is_deleted' => true,
+            ]);
+            if($disabled){
                 return response([
-                    'message' => 'Error',
-                ], 400);
+                    'deleted_user' => $id,
+                ], 200);
             }
-
-            $deleted_user = User::destroy($id);
-        }
-
-        if ($deleted_user  == 0) {
             return response([
                 'message' => 'Error',
-            ], 404);
+            ], 400);
         }
-        return response([
-            'deleted_user' => $id,
-        ], 200);
     }
 
     // Riabilitare utente disabilitato
