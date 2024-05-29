@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\Ticket;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -22,6 +23,8 @@ class AssignToUserEmail extends Mailable
       "Risolto", 
       "Chiuso"
     ];
+
+    public $previewText;
     
     /**
      * Create a new message instance.
@@ -29,6 +32,7 @@ class AssignToUserEmail extends Mailable
     public function __construct(public Ticket $ticket, public $company, public $ticketType, public $category, public $link, public $update, public $user)
     {
         //
+        $this->previewText = $this->ticket->description;
     }
 
     /**
@@ -37,7 +41,7 @@ class AssignToUserEmail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Assegnazione ticket',
+            subject: 'Assegnazione ticket ' . $this->ticket->id . ' - ' . $this->ticketType->name,
         );
     }
 

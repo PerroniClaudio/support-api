@@ -47,31 +47,31 @@ class SendNewMessageEmail implements ShouldQueue {
       
       // Inviarlo all'utente che ha creato il ticket se non è admin e se non l'ha inviato lui (il messaggio)
       if (!$ticketUser->is_admin && $ticketUser->id !== $this->user->id && $ticketUser->email) {
-        Mail::to($ticketUser->email)->send(new NewMessageEmail('user', $this->ticket, $this->message, $link_user, $this->brand_url, $userLogoRedirectUrl));
+        Mail::to($ticketUser->email)->send(new NewMessageEmail('user', $this->ticket, $this->message, $link_user, $this->brand_url, $userLogoRedirectUrl, $this->user));
       }
 
       // Se chi ha creato il ticket è admin, se non l'ha inviato lui, solo se il ticket non ha il gestore, gli si invia la mail.
       if ($ticketUser->is_admin && $ticketUser->id !== $this->user->id && !$handler && $ticketUser->email) {
-        Mail::to($ticketUser->email)->send(new NewMessageEmail('admin', $this->ticket, $this->message, $link_admin, $this->brand_url, $adminLogoRedirectUrl));
+        Mail::to($ticketUser->email)->send(new NewMessageEmail('admin', $this->ticket, $this->message, $link_admin, $this->brand_url, $adminLogoRedirectUrl, $this->user));
       }
 
       // Inviarlo al gestore se c'è e non l'ha inviato lui
       if ($handler && $handler->id !== $this->user->id && $handler->email) {
-        Mail::to($handler->email)->send(new NewMessageEmail('admin', $this->ticket, $this->message, $link_admin, $this->brand_url, $adminLogoRedirectUrl));
+        Mail::to($handler->email)->send(new NewMessageEmail('admin', $this->ticket, $this->message, $link_admin, $this->brand_url, $adminLogoRedirectUrl, $this->user));
       }
 
       // Inviarlo al referente in sede se non l'ha inviato lui e se è diverso dal referente IT
       if($referer && $referer->id !== $this->user->id && ($refererIT ? $refererIT->id !== $referer->id : true) && $referer->email){
-        Mail::to($referer->email)->send(new NewMessageEmail("referer", $this->ticket, $this->message, $link_user, $this->brand_url, $userLogoRedirectUrl));
+        Mail::to($referer->email)->send(new NewMessageEmail("referer", $this->ticket, $this->message, $link_user, $this->brand_url, $userLogoRedirectUrl, $this->user));
       }
 
       // Inviarlo al referente it se non l'ha inviato lui
       if($refererIT && $refererIT->id !== $this->user->id && $refererIT->email){
-        Mail::to($refererIT->email)->send(new NewMessageEmail("referer_it", $this->ticket, $this->message, $link_user, $this->brand_url, $userLogoRedirectUrl));
+        Mail::to($refererIT->email)->send(new NewMessageEmail("referer_it", $this->ticket, $this->message, $link_user, $this->brand_url, $userLogoRedirectUrl, $this->user));
       }
 
       // Inviarlo al supporto in ogni caso
-      Mail::to($supportMail)->send(new NewMessageEmail('support', $this->ticket, $this->message, $link_admin, $this->brand_url, $adminLogoRedirectUrl));
+      Mail::to($supportMail)->send(new NewMessageEmail('support', $this->ticket, $this->message, $link_admin, $this->brand_url, $adminLogoRedirectUrl, $this->user));
 
     } 
 }

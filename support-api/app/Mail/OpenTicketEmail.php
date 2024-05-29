@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\Ticket;
+use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -14,12 +15,16 @@ class OpenTicketEmail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public $previewText;
+
     /**
      * Create a new message instance.
      */
     public function __construct(public Ticket $ticket, public $company, public $ticketType, public $category, public $link, public $brand_url, public $mailType)
     {
-        //
+        // Utente che ha aperto il ticket
+        $user = User::find($this->ticket->user_id);
+        $this->previewText = ($user->is_admin ? "Supporto" : ($user->name . ' ' . $user->surname ?? '')) . ' - ' . $this->ticket->description;
     }
 
     /**
@@ -28,7 +33,7 @@ class OpenTicketEmail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Apertura ticket',
+            subject: 'Apertura ticket ' . $this->ticket->id . ' ' . $this->ticketType->name,
         );
     }
 

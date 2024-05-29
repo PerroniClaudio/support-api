@@ -3,6 +3,7 @@
 namespace App\Mail;
 
 use App\Models\Ticket;
+use App\Models\TicketType;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -14,12 +15,17 @@ class CloseTicketEmail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    public $previewText;
+    public $ticketType;
+
     /**
      * Create a new message instance.
      */
     public function __construct(public Ticket $ticket, public $message, public $link, public $brand_url)
     {
         //
+        $this->ticketType = TicketType::find($this->ticket->type_id);
+        $this->previewText =  'Supporto' . ' - ' . $this->message;
     }
 
     /**
@@ -28,7 +34,7 @@ class CloseTicketEmail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Chiusura ticket',
+            subject: 'Chiusura ticket ' . $this->ticket->id . ' - ' . $this->ticketType->name,
         );
     }
 

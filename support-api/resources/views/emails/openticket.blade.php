@@ -1,4 +1,4 @@
-@component('mail::message', ['brand_url' => $brand_url])
+@component('mail::message', ['brand_url' => $brand_url, 'previewText' => $previewText])
 ## Apertura ticket
 
 @if($mailType == "user") 

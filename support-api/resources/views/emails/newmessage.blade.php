@@ -1,4 +1,4 @@
-@component('mail::message', ['url' => $url, 'brand_url' => $brand_url])
+@component('mail::message', ['url' => $url, 'brand_url' => $brand_url, 'previewText' => $previewText])
 ## Nuovo messaggio dal Supporto
 @if($mailType != "admin" && $mailType != "support")
 Buongiorno,<br><br>

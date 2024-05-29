@@ -45,7 +45,7 @@ class UpdateEmail extends Mailable
         //
         $this->updateTypes = config('app.update_types');
 
-        $this->previewText = $this->updateTypes[$this->update->type] . " ticket " . $this->ticket->id . " - " . $this->update->content;
+        $this->previewText = $this->updateTypes[$this->update->type] . " - " . $this->update->content;
     }
 
     /**
@@ -54,7 +54,7 @@ class UpdateEmail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Update ticket',
+            subject: 'Update ticket ' . $this->ticket->id . ' - ' . $this->ticketType->name,
         );
     }
 
