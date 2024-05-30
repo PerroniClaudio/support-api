@@ -47,7 +47,7 @@ class NewMessageEmail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Nuovo messaggio ' . ($this->category->is_problem ? 'Incident' : 'Richiesta') . ' n° ' . $this->ticket->id . ' - ' . $this->ticketType->name,
+            subject: 'Nuovo messaggio ' . ($this->category->is_problem ? 'Incident' : 'Request') . ' n° ' . $this->ticket->id . ' - ' . $this->ticketType->name,
         );
     }
 
