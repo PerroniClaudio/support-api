@@ -12,10 +12,15 @@ Sei stato indicato come referente IT per il seguente ticket. <br><br>
 Ticket n° {{ $ticket->id }} <br>
 @if($mailType == "admin") 
 Azienda: {{ $company->name }} <br>
+Utente: {{ $user->name . ' ' . $user->surname ?? '' }} <br>
 @endif
 Categoria: {{ $category->name }} <br>
-Tipo: {{ $ticketType->name }} <br>
-Messaggio: <br>{{ $ticket->description }} <br>
+Tipo: {{ $ticketType->name }} <br><br>
+Messaggio: <br>{{ $ticket->description }} <br><br>
+
+@if(isset($form))
+  {!! $form !!}
+@endif
 
 @component('mail::button', ['url' => $link])
 Vai al ticket
