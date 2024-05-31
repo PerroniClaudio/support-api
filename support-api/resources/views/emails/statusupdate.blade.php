@@ -1,9 +1,9 @@
 @component('mail::message', ['previewText' => $previewText])
-## Update ticket
+## Update {{ $category->is_problem ? "Incident" : "Request" }}
 
 L'utente {{ $user->name }} ha fatto un update.
 
-Ticket n° {{ $ticket->id }} <br>
+{{ $category->is_problem ? "Incident" : "Request" }} n° {{ $ticket->id }} <br>
 Azienda: {{ $company->name }} <br>
 Categoria: {{ $category->name }} <br>
 Tipo di ticket: {{ $ticketType->name }} <br><br>

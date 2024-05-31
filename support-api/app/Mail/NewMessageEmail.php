@@ -23,6 +23,9 @@ class NewMessageEmail extends Mailable
     public $ticketType;
     public $category;
     public $company;
+    public $opener;
+    public $refererIT;
+    public $referer;
 
     /**
      * Create a new message instance.
@@ -32,10 +35,13 @@ class NewMessageEmail extends Mailable
     {
         //
         $this->ticketType = TicketType::find($this->ticket->type_id);
+        $this->opener = User::find($this->ticket->user_id);
+        $this->refererIT = $this->ticket->refererIT();
+        $this->referer = $this->ticket->referer();
         $this->category = TicketTypeCategory::find($this->ticketType->ticket_type_category_id);
         $this->company = Company::find($ticket->company_id);
         if($mailType != "admin" && $mailType != "support"){
-            $this->previewText =  'Supporto - ' . $this->message;
+            $this->previewText =  ($sender->is_admin ? "Dal Supporto" : ('Da ' . $sender->name . ' ' . $sender->surname ?? '')) . ' - ' . $this->message;
         } else {
             $this->previewText =  ($sender->is_admin ? "Da Supporto a " . $this->company->name : ('Da ' . $this->company->name . ', ' . $sender->name . ' ' . $sender->surname ?? '')) . ' - ' . $this->message;
         }

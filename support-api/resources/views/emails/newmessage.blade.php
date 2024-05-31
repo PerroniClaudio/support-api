@@ -11,7 +11,15 @@ Questa mail ti è stata inviata perchè sei il referente in sede per il relativo
 Buongiorno, <br><br>
 Questa mail ti è stata inviata perchè sei il referente IT per il relativo ticket. <br><br>
 @endif
-{{ $category->is_problem ? 'Incident' : 'Request' }} n° {{ $ticket->id }} - {{ $ticketType->name }}<br><br>
+{{ $category->is_problem ? 'Incident' : 'Request' }} n° {{ $ticket->id }} - {{ $ticketType->name }}<br>
+@if($sender->is_admin)
+@if($mailType == "admin" || $mailType == "support")
+Aperto da: {{$opener->name . ' ' . ($opener->surname ?? '')}}<br>
+Referente IT: {{$refererIT ? ($refererIT->name . ' ' . ($refererIT->surname ?? '')) : 'Nessuno'}}<br>
+Referente: {{$referer ? ($referer->name . ' ' . ($referer->surname ?? '')) : 'Nessuno'}}<br>
+@endif
+@endif
+Inviato da: {{$sender->is_admin ? "Supporto" : ($company->name . ', ' . $sender->name . ' ' . $sender->surname ?? '')}}<br>
 Testo del messaggio: <br>
 {{ $message }}
 

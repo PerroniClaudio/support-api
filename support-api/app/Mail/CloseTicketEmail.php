@@ -4,6 +4,7 @@ namespace App\Mail;
 
 use App\Models\Ticket;
 use App\Models\TicketType;
+use App\Models\TicketTypeCategory;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
@@ -17,6 +18,7 @@ class CloseTicketEmail extends Mailable
 
     public $previewText;
     public $ticketType;
+    public $category;
 
     /**
      * Create a new message instance.
@@ -25,6 +27,7 @@ class CloseTicketEmail extends Mailable
     {
         //
         $this->ticketType = TicketType::find($this->ticket->type_id);
+        $this->category = TicketTypeCategory::find($this->ticketType->ticket_type_category_id);
         $this->previewText =  'Supporto' . ' - ' . $this->message;
     }
 
@@ -34,7 +37,7 @@ class CloseTicketEmail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Chiusura ticket ' . $this->ticket->id . ' - ' . $this->ticketType->name,
+            subject: 'Chiusura ' . ($this->category->is_problem ? 'Incident' : 'Request') . ' n° ' . $this->ticket->id . ' - ' . $this->ticketType->name,
         );
     }
 

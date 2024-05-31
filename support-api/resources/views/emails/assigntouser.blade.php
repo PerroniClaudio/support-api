@@ -1,13 +1,13 @@
 @component('mail::message')
-## Assegnazione ticket {{ $ticket->id }}
+## Assegnazione {{ $category->is_problem ? 'Incident' : 'Request' }} {{ $ticket->id }}
 
-Ti è stato assegnato un ticket
+{{ $category->is_problem ? 'Ti è stato assegnato un Incident' : 'Ti è stata assegnata una Request' }}
 <!-- da {{ $user->name }} -->
 
-Ticket n° {{ $ticket->id }} <br>
+{{ $category->is_problem ? 'Incident' : 'Request' }} n° {{ $ticket->id }} <br>
 Azienda: {{ $company->name }} <br>
 Categoria: {{ $category->name }} <br>
-Tipo di ticket: {{ $ticketType->name }} <br><br>
+Tipo: {{ $ticketType->name }} <br><br>
 <!-- Update: {{ $update->content }} <br><br> -->
 Stato:
 @component('mail::status', ['status' => $ticket->status, 'stages' => $stages])
