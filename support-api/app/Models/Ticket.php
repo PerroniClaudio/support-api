@@ -162,12 +162,15 @@ class Ticket extends Model {
         $refererIT = $this->refererIT();
         if ($ticketUser) {
             Cache::forget('user_' . $ticketUser->id . '_tickets');
+            Cache::forget('user_' . $ticketUser->id . '_tickets_with_closed');
         }
         if ($referer) {
             Cache::forget('user_' . $referer->id . '_tickets');
+            Cache::forget('user_' . $referer->id . '_tickets_with_closed');
         }
         if ($refererIT) {
             Cache::forget('user_' . $refererIT->id . '_tickets');
+            Cache::forget('user_' . $refererIT->id . '_tickets_with_closed');
         }
     }
 

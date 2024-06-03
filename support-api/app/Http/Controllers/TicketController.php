@@ -27,12 +27,23 @@ class TicketController extends Controller {
         // Show only the tickets belonging to the authenticated user
 
         $user = $request->user();
-        $cacheKey = 'user_' . $user->id . '_tickets';
+        // Deve comprendere i ticket chiusi?
+        $withClosed = $request->query('with-closed') == 'true' ? true : false;
 
-        $tickets = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($user) {
+        if($withClosed){
+            $cacheKey = 'user_' . $user->id . '_tickets_with_closed';
+        } else {
+            $cacheKey = 'user_' . $user->id . '_tickets';
+        }
+        $tickets = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($user, $withClosed) {
             if ($user["is_company_admin"] == 1) {
-                // return  $user->company->tickets;
-                $ticketsTemp = $user->company->tickets;
+                
+                if ($withClosed) {
+                    $ticketsTemp = $user->company->tickets;
+                } else {
+                    $ticketsTemp = Ticket::where("status", "!=", 5)->where('company_id', $user->company->id)->with('user')->get();
+                }
+
                 foreach ($ticketsTemp as $ticket) {
                     $ticket->referer = $ticket->referer();
                     if ($ticket->referer) {
@@ -50,9 +61,6 @@ class TicketController extends Controller {
                 }
                 return $ticketsTemp;
             } else {
-                // return Ticket::where('user_id', $user->id)->get();
-                // $tickets =  $user->tickets;
-                // return $user->tickets->merge($user->refererTickets());
                 $ticketsTemp = $user->tickets->merge($user->refererTickets());
                 foreach ($ticketsTemp as $ticket) {
                     $ticket->referer = $ticket->referer();
@@ -130,6 +138,7 @@ class TicketController extends Controller {
         }
 
         cache()->forget('user_' . $user->id . '_tickets');
+        cache()->forget('user_' . $user->id . '_tickets_with_closed');
 
         TicketMessage::create([
             'ticket_id' => $ticket->id,
@@ -227,14 +236,14 @@ class TicketController extends Controller {
             // solo se l'admin è anche il gestore del ticket.
             if(isset($ticket->admin_user_id) && $ticket->admin_user_id == $user->id && $ticket->unread_mess_for_adm > 0){
                 $ticket->update(['unread_mess_for_adm' => 0]);
-                $cacheKey = 'user_' . $user->id . '_tickets';
-                Cache::forget($cacheKey);
+                cache()->forget('user_' . $user->id . '_tickets');
+                cache()->forget('user_' . $user->id . '_tickets_with_closed');
             }
         } else if ($ticket->unread_mess_for_usr > 0) {
             // $ticket->setAdminsMessagesAsRead();
             $ticket->update(['unread_mess_for_usr' => 0]);
-            $cacheKey = 'user_' . $user->id . '_tickets';
-            Cache::forget($cacheKey);
+            cache()->forget('user_' . $user->id . '_tickets');
+            cache()->forget('user_' . $user->id . '_tickets_with_closed');
         }
 
         return response([
@@ -291,6 +300,7 @@ class TicketController extends Controller {
 
         $ticket = Ticket::where('id', $ticket->id)->where('user_id', $user->id)->first();
         cache()->forget('user_' . $user->id . '_tickets');
+        cache()->forget('user_' . $user->id . '_tickets_with_closed');
 
         $ticket->update([
             'status' => '5',
