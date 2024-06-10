@@ -1,5 +1,8 @@
 @component('mail::message', ['previewText' => $previewText])
-## Update {{ $category->is_problem ? "Incident" : "Request" }}
+<h2> Update {{ $category->is_problem ? "Incident" : "Request" }} - Stato: 
+@component('mail::status', ['status' => $ticket->status, 'stages' => $stages])
+@endcomponent
+</h2>
 
 L'utente {{ $user->name }} ha fatto un update.
 
@@ -9,9 +12,7 @@ Categoria: {{ $category->name }} <br>
 Tipo di ticket: {{ $ticketType->name }} <br><br>
 Update: <br>
 {{ $update->content }} <br><br>
-Stato:
-@component('mail::status', ['status' => $ticket->status, 'stages' => $stages])
-@endcomponent
+
 
 <br>
 @component('mail::button', ['url' => $link])
