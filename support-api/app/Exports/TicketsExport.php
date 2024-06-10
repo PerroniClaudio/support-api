@@ -3,6 +3,7 @@
 namespace App\Exports;
 
 use App\Models\Company;
+use App\Models\Office;
 use App\Models\Ticket;
 use App\Models\User;
 use Maatwebsite\Excel\Concerns\FromArray;
@@ -41,12 +42,17 @@ class TicketsExport implements FromArray {
             $webform_text = "";
             $has_referer = false;
             $referer_name = "";
-
+            
             foreach ($webform as $key => $value) {
-                $webform_text .= $key . ": " . $value . "\n";
-
                 if ($key == "referer") {
                     $has_referer = true;
+                } else if ($key == "referer_it"){
+
+                } else if ($key == "office"){
+                    $office = Office::find($value);
+                    $office ? $webform_text .= $key . ": " . $office->name . "\n" : null;
+                } else {
+                    $webform_text .= $key . ": " . $value . "\n";
                 }
             }
 

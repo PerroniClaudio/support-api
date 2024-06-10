@@ -32,7 +32,9 @@ class TicketReportExportController extends Controller {
         $reports = TicketReportExport::where('company_id', $company->id)->where(
             'is_generated',
             true
-        )->get();
+        )
+        ->orderBy('created_at', 'DESC')
+        ->get();
 
         return response([
             'reports' => $reports,
