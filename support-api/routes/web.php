@@ -48,7 +48,7 @@ Route::get('/test', function () {
     return "test";
 });
 
-Route::get('/mailtest', function() {
+Route::get('/mailtest', function () {
 
     $tickets = Ticket::where("status", "!=", 5)->with("company", "ticketType")->orderBy("created_at", "desc")->get();
 
@@ -66,7 +66,7 @@ Route::get('/welcome', function () {
 
     // $user = User::find(82);
     // return $user->tickets->merge($user->refererTickets());
-    
+
     // return Ticket::find(73)->messages[0]->message;
     // return json_decode(Ticket::find(154)->messages[0]->message)->referer;
     // return $referer = User::find(json_decode(Ticket::find(108)->messages[0]->message)->referer);
@@ -163,3 +163,4 @@ Route::get('/factory', function () {
 });
 
 require __DIR__ . '/auth.php';
+require __DIR__ . '/webhook.php';
