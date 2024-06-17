@@ -12,7 +12,10 @@ class WebhookController extends Controller {
         switch ($request->header('X-Support-Webhook-Event')) {
             case 'ticket.new_live_academelearning':
                 // Handle ticket created event
-                StoreDgveryLive::dispatch($request->all());
+
+
+                dispatch(new StoreDgveryLive($request->all()));
+
                 break;
             default:
                 // Handle other events

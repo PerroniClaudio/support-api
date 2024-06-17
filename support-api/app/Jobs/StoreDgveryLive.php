@@ -14,18 +14,24 @@ use Illuminate\Queue\SerializesModels;
 class StoreDgveryLive implements ShouldQueue {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    private $payload;
+
     /**
      * Create a new job instance.
      */
-    public function __construct() {
+    public function __construct($payload) {
         //
+
+        $this->payload = $payload;
     }
 
     /**
      * Execute the job.
      */
-    public function handle(array $payload): void {
+    public function handle(): void {
         //
+
+        $payload = $this->payload;
 
         $ticketType = TicketType::find(652);
         $group = $ticketType->groups->first();
