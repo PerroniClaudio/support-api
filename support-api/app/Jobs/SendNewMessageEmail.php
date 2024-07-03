@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Mail\NewMessageEmail;
 use App\Mail\WelcomeEmail;
+use App\Models\Group;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -44,8 +45,10 @@ class SendNewMessageEmail implements ShouldQueue {
       $userLogoRedirectUrl = config('app.frontend_url');
       $adminLogoRedirectUrl = config('app.frontend_url') . '/support/admin';
       $supportMail = env('MAIL_TO_ADDRESS');
+      $group = Group::where('id', $this->ticket->group_id)->first();
+      $groupEmail = $group ? $group->email : null;
       
-      // Inviarlo all'utente che ha creato il ticket se non è admin e se non l'ha inviato lui (il messaggio)
+      // Inviarlo all'utente che ha creato il ticket se non è admin e se non ha inviato lui il messaggio
       if (!$ticketUser->is_admin && $ticketUser->id !== $this->user->id && $ticketUser->email) {
         Mail::to($ticketUser->email)->send(new NewMessageEmail('user', $this->ticket, $this->message, $link_user, $this->brand_url, $userLogoRedirectUrl, $this->user));
       }
@@ -68,6 +71,11 @@ class SendNewMessageEmail implements ShouldQueue {
       // Inviarlo al referente it se non l'ha inviato lui
       if($refererIT && $refererIT->id !== $this->user->id && $refererIT->email){
         Mail::to($refererIT->email)->send(new NewMessageEmail("referer_it", $this->ticket, $this->message, $link_user, $this->brand_url, $userLogoRedirectUrl, $this->user));
+      }
+
+      // Inviarlo al gruppo se non l'ha inviato un admin
+      if($groupEmail && !$this->user->is_admin){
+        Mail::to($groupEmail)->send(new NewMessageEmail("admin", $this->ticket, $this->message, $link_admin, $this->brand_url, $adminLogoRedirectUrl, $this->user));
       }
 
       // Inviarlo al supporto in ogni caso

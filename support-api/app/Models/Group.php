@@ -10,7 +10,8 @@ class Group extends Model {
 
     protected $fillable = [
         "name",
-        "parent_id"
+        "parent_id",
+        "email",
     ];
 
     // get parent group

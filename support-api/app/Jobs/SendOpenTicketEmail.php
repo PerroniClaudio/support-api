@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Mail\OpenTicketEmail;
+use App\Models\Group;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -36,11 +37,18 @@ class SendOpenTicketEmail implements ShouldQueue {
       $category = $ticketType->category;
       $adminLink = env('FRONTEND_URL') . '/support/admin/ticket/' . $this->ticket->id;
       $userlink = env('FRONTEND_URL') . '/support/user/ticket/' . $this->ticket->id;
+      $group = Group::where('id', $this->ticket->group_id)->first();
+      $groupEmail = $group ? $group->email : null;
 
       $supportMail = env('MAIL_TO_ADDRESS');
       // Inviarla anche a tutti i membri del gruppo?
-      // In ogni caso invia la mail al supporto
+      // In ogni caso invia la mail al supporto ed al gruppo di appartenenza.
       Mail::to($supportMail)->send(new OpenTicketEmail($this->ticket, $company, $ticketType, $category, $adminLink, $this->brand_url, "admin"));
+      if($groupEmail){
+        Mail::to($groupEmail)->send(new OpenTicketEmail($this->ticket, $company, $ticketType, $category, $adminLink, $this->brand_url, "admin"));
+      }
+      // Altrimenti si potrebbe inviare una mail al supporto per avvisare che il gruppo non ha un indirizzo email associato. Utile solo per i gruppi preesistenti.
+ 
       // Se l'utente che ha creato il ticket non è admin invia la mail anche a lui.
       if(!$ticketUser['is_admin']){
         if($ticketUser['email']){

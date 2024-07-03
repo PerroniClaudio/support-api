@@ -35,6 +35,7 @@ class GroupController extends Controller {
 
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:groups',
+            'email' => 'required|email',
         ]);
 
         $fields = $request->only((new Group())->getFillable());
@@ -69,6 +70,7 @@ class GroupController extends Controller {
     public function update(Request $request, Group $group) {
         $request->validate([
             'name' => 'required|string|max:255',
+            'email' => 'required|email',
         ]);
 
         if(!$request->user()->is_admin) {
