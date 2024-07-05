@@ -20,6 +20,7 @@ class TicketType extends Model {
         'warning',
         'it_referer_limited',
         'description',
+        'is_massive_enabled',
     ];
 
     public function tickets() {

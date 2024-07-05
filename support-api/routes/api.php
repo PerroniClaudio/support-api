@@ -184,6 +184,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('ticket', App\Http\Controllers\TicketController::class);
+    
+    Route::post(
+        "/ticketmassive",
+        [App\Http\Controllers\TicketController::class, "storeMassive"]
+    );
+
     Route::get(
         "/ticket/{ticket}/files",
         [App\Http\Controllers\TicketController::class, "files"]

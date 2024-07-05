@@ -209,8 +209,13 @@ class CompanyController extends Controller {
         ], 200);
     }
 
-    public function ticketTypes(Company $company) {
-        $ticketTypes = $company->ticketTypes()->with('category')->get();
+    public function ticketTypes(Company $company, Request $request) {
+        $isMassive = $request->query('is_massive');
+        if($isMassive) {
+            $ticketTypes = $company->ticketTypes()->where('is_massive_enabled', 1)->with('category')->get();
+        } else {
+            $ticketTypes = $company->ticketTypes()->where('is_massive_enabled', 0)->with('category')->get();
+        }
 
         return response([
             'companyTicketTypes' => $ticketTypes,

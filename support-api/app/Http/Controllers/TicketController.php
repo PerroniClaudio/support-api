@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Imports\TicketsImport;
 use App\Jobs\SendOpenTicketEmail;
 use App\Jobs\SendCloseTicketEmail;
 use App\Jobs\SendUpdateEmail;
@@ -17,7 +18,8 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache; // Otherwise no redis connection :)
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
-
+use Maatwebsite\Excel\Facades\Excel;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class TicketController extends Controller {
     /**
@@ -161,6 +163,40 @@ class TicketController extends Controller {
             'ticket' => $ticket,
         ], 201);
     }
+
+    /**
+     * Store newly created resources in storage, starting from a file.
+     */
+    public function storeMassive(Request $request) {
+        $request->validate([
+            'data' => 'required|string',
+            'file' => 'required|file|mimes:xlsx,csv',
+        ]);
+        
+        $user = $request->user();
+
+        if($user["is_admin"] != 1){
+            return response([
+                'message' => 'The user must be an admin.',
+            ], 401);
+        }
+        
+        $data = json_decode($request->data);
+
+        $additionalData = []; // I tuoi dati aggiuntivi
+        
+        $additionalData['user'] = $user;
+        $additionalData['formData'] = $data;
+
+        try {
+            Excel::import(new TicketsImport($additionalData), $request->file('file'));
+            return response()->json(['success' => true, 'message' => 'Importazione completata con successo.']);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Errore durante l\'importazione.\\n\\n' . $e->getMessage()], 500);
+        }
+
+    }
+
 
     /**
      * Display the specified resource.
