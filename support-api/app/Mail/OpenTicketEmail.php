@@ -29,25 +29,30 @@ class OpenTicketEmail extends Mailable
     {   
         // Utente che ha aperto il ticket
         $this->user = User::find($this->ticket->user_id);
-        TicketMessage::find($this->ticket->messages->first());
         $this->previewText = $company->name . ' - ' . ($this->user->is_admin ? "Supporto" : ($this->user->name . ' ' . $this->user->surname ?? '')) . ' - ' . $this->ticket->description . ' - ';
-
+        
         $firstMessage = $ticket->messages[0]->message;
         $data = json_decode($firstMessage, true);
         unset($data['description']);
         if(isset($data['office'])){
             $office = Office::find($data['office']);
-            $data["Sede"] = $office->name . " - " . $office->city . ", " . $office->address . " " . $office->number;
+            $data["Sede"] = $office 
+                ? $office->name . " - " . $office->city . ", " . $office->address . " " . $office->number
+                : $data['office'];
             unset($data['office']);
         }
         if(isset($data['referer_it'])){
             $refererIT = User::find($data['referer_it']);
-            $data["Referente IT"] = $refererIT->name . ' ' . $refererIT->surname ?? '';
+            $data["Referente IT"] = $refererIT
+                ? $refererIT->name . ' ' . $refererIT->surname ?? ''
+                : $data['referer_it'];
             unset($data['referer_it']);
         }
         if(isset($data['referer'])){
             $referer = User::find($data['referer']);
-            $data["Referente"] = $referer->name . ' ' . $referer->surname ?? '';
+            $data["Referente"] = $referer
+                ? $referer->name . ' ' . $referer->surname ?? ''
+                : $data['referer'];
             unset($data['referer']);
         }
 
