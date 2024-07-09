@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use App\Exports\RowsExport;
+use App\Jobs\SendOpenMassiveTicketEmail;
+use App\Models\TicketStatusUpdate;
 
 class TicketsImport implements ToCollection
 {
@@ -33,14 +35,24 @@ class TicketsImport implements ToCollection
     public function collection(Collection $rows)
     {
         $mergeRows = $this->additionalData['formData']->merge_rows;
+        $setStage = $this->additionalData['formData']->set_stage;
 
         $user = $this->additionalData['user'];
         $formData = $this->additionalData['formData'];
 
-        // Gestire qui le righe del file Excel
-        $generatedTickets = [];
+        $generatedTicketsError = []; // Per il messaggio di errore all'admin
+        
+        $generatedTicketsInfo = []; // Per il messaggio informativo all'utente
+        // [id => id, text => 'ID ticket, richiesta o problema - tipo di ticket. identificativo']
+        $brand_url = null;
 
+        // Gestire qui le righe del file Excel
         try{
+            $ticketStages = config('app.ticket_stages');
+            $ticketType = TicketType::find($formData->type_id);
+            $group = $ticketType->groups->first();
+            $groupId = $group ? $group->id : null;
+
             if($mergeRows){
     
                 $distinctValues = [];
@@ -55,9 +67,9 @@ class TicketsImport implements ToCollection
     
                     $formData->messageData->Identificativo = $currentValue;
     
-                    $ticketType = TicketType::find($formData->type_id);
-                    $group = $ticketType->groups->first();
-                    $groupId = $group ? $group->id : null;
+                    // $ticketType = TicketType::find($formData->type_id);
+                    // $group = $ticketType->groups->first();
+                    // $groupId = $group ? $group->id : null;
     
                     $ticket = Ticket::create([
                         'description' => $formData->description,
@@ -75,8 +87,12 @@ class TicketsImport implements ToCollection
                         'unread_mess_for_usr' => 1,
                     ]);
     
-                    $generatedTickets[] = 'Ticket ID: ' . $ticket->id . ' - Identificativo valore file import: ' . $currentValue . " - Tipo di apertura ticket: raggruppato";
-    
+                    $generatedTicketsError[] = 'ID ticket: ' . $ticket->id . ' - Identificativo valore file import: ' . $currentValue . " - Tipo di apertura ticket: raggruppato";
+                    $generatedTicketsInfo[] = [
+                        'id' => $ticket->id,
+                        'text' => 'ID ticket: ' . $ticket->id . ' - Identificativo: ' . $currentValue
+                    ];
+
                     cache()->forget('user_' . $user->id . '_tickets');
                     cache()->forget('user_' . $user->id . '_tickets_with_closed');
     
@@ -92,8 +108,10 @@ class TicketsImport implements ToCollection
                         'message' => $formData->description,
                     ]);
     
-                    $brand_url = $ticket->brandUrl();
-                    dispatch(new SendOpenTicketEmail($ticket, $brand_url));
+                    if(!$brand_url){
+                        $brand_url = $ticket->brandUrl();
+                    }
+                    // dispatch(new SendOpenTicketEmail($ticket, $brand_url));
     
                     // Salva il file come allegato del ticket
                     $filteredRows = $rows->filter(function ($row) use ($currentValue) {
@@ -122,6 +140,23 @@ class TicketsImport implements ToCollection
                         'mime_type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                         'size' => $size,
                     ]);
+
+                    // Modifica dello stato del ticket
+                    if($setStage){
+                        if($ticketStages[$setStage]){
+                            $ticket->fill([
+                                'status' => $setStage,
+                                // 'wait_end' => $setWaitEnd || null,
+                            ])->save();
+                            $update = TicketStatusUpdate::create([
+                                'ticket_id' => $ticket->id,
+                                'user_id' => $user->id,
+                                'content' => 'Stato del ticket modificato in "' . $ticketStages[$setStage] . '"',
+                                'type' => 'status',
+                            ]);
+                        }
+                        // La mail non la inviamo. Nemmeno una singola per tutti i ticket generati.
+                    }
                 }
     
             } else {
@@ -134,9 +169,9 @@ class TicketsImport implements ToCollection
     
                     $formData->messageData->Identificativo = $currentValue;
 
-                    $ticketType = TicketType::find($formData->type_id);
-                    $group = $ticketType->groups->first();
-                    $groupId = $group ? $group->id : null;
+                    // $ticketType = TicketType::find($formData->type_id);
+                    // $group = $ticketType->groups->first();
+                    // $groupId = $group ? $group->id : null;
     
                     $ticket = Ticket::create([
                         'description' => $formData->description,
@@ -154,8 +189,12 @@ class TicketsImport implements ToCollection
                         'unread_mess_for_usr' => 1,
                     ]);
     
-                    $generatedTickets[] = 'Ticket ID: ' . $ticket->id . ' - Identificativo valore file import: ' . $currentValue . " - Tipo di apertura ticket: suddiviso - Indice riga: " . $index;
-    
+                    $generatedTicketsError[] = 'ID ticket: ' . $ticket->id . ' - Identificativo valore file import: ' . $currentValue . " - Tipo di apertura ticket: suddiviso - Indice riga: " . $index;
+                    $generatedTicketsInfo[] = [
+                        'id' => $ticket->id,
+                        'text' => 'ID ticket: ' . $ticket->id . ' - ' . ($ticketType->category->is_problem ? 'Problema' : 'Richiesta') . ' - ' . $ticketType->name . '. Identificativo: ' . $currentValue
+                    ];
+
                     cache()->forget('user_' . $user->id . '_tickets');
                     cache()->forget('user_' . $user->id . '_tickets_with_closed');
 
@@ -171,8 +210,10 @@ class TicketsImport implements ToCollection
                         'message' => $formData->description,
                     ]);
     
-                    $brand_url = $ticket->brandUrl();
-                    dispatch(new SendOpenTicketEmail($ticket, $brand_url));
+                    if(!$brand_url){
+                        $brand_url = $ticket->brandUrl();
+                    }
+                    // dispatch(new SendOpenTicketEmail($ticket, $brand_url));
     
                     // Salva il file come allegato del ticket
                     $filteredRows = collect([$row]);
@@ -198,12 +239,32 @@ class TicketsImport implements ToCollection
                         'mime_type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                         'size' => $size,
                     ]);
+
+                    // Modifica dello stato del ticket
+                    if($setStage){
+                        if($ticketStages[$setStage]){
+                            $ticket->fill([
+                                'status' => $setStage,
+                                // 'wait_end' => $setWaitEnd || null,
+                            ])->save();
+                            $update = TicketStatusUpdate::create([
+                                'ticket_id' => $ticket->id,
+                                'user_id' => $user->id,
+                                'content' => 'Stato del ticket modificato in "' . $ticketStages[$setStage] . '"',
+                                'type' => 'status',
+                            ]);
+                        }
+                        // La mail non la inviamo. Nemmeno una singola per tutti i ticket generati.
+                    }
                     
                 }
             }
+
+            dispatch(new SendOpenMassiveTicketEmail($generatedTicketsInfo, $brand_url));
+
         } catch (\Exception $e) {
             $mailSubject = "Errore generazione ticket";
-            $mailContent = implode("\n\n", $generatedTickets) . "\n\n" . $e->getMessage();
+            $mailContent = implode("\n\n", $generatedTicketsError) . "\n\n" . $e->getMessage();
 
             // Questo dovrà poi andare nel suo file apposito
             // Send email to user
