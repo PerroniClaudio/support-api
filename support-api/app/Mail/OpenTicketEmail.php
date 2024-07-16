@@ -29,7 +29,7 @@ class OpenTicketEmail extends Mailable
     {   
         // Utente che ha aperto il ticket
         $this->user = User::find($this->ticket->user_id);
-        $this->previewText = $company->name . ' - ' . ($this->user->is_admin ? "Supporto" : ($this->user->name . ' ' . $this->user->surname ?? '')) . ' - ' . $this->ticket->description . ' - ';
+        $this->previewText = $this->company->name . ' - ' . ($this->user->is_admin ? "Supporto" : ($this->user->name . ' ' . $this->user->surname ?? '')) . ' - ' . $this->ticket->description . ' - ';
         
         $firstMessage = $ticket->messages[0]->message;
         $data = json_decode($firstMessage, true);
