@@ -34,21 +34,21 @@ class OpenTicketEmail extends Mailable
         $firstMessage = $ticket->messages[0]->message;
         $data = json_decode($firstMessage, true);
         unset($data['description']);
-        if(isset($data['office'])){
+        if(isset($data['office']) && $data['office'] != 0){
             $office = Office::find($data['office']);
             $data["Sede"] = $office 
                 ? $office->name . " - " . $office->city . ", " . $office->address . " " . $office->number
                 : $data['office'];
             unset($data['office']);
         }
-        if(isset($data['referer_it'])){
+        if(isset($data['referer_it']) && $data['referer_it'] != 0){
             $refererIT = User::find($data['referer_it']);
             $data["Referente IT"] = $refererIT
                 ? $refererIT->name . ' ' . $refererIT->surname ?? ''
                 : $data['referer_it'];
             unset($data['referer_it']);
         }
-        if(isset($data['referer'])){
+        if(isset($data['referer']) && $data['referer'] != 0){
             $referer = User::find($data['referer']);
             $data["Referente"] = $referer
                 ? $referer->name . ' ' . $referer->surname ?? ''
