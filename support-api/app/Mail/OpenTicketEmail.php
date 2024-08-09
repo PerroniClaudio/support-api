@@ -41,18 +41,22 @@ class OpenTicketEmail extends Mailable
                 : $data['office'];
             unset($data['office']);
         }
-        if(isset($data['referer_it']) && $data['referer_it'] != 0){
-            $refererIT = User::find($data['referer_it']);
-            $data["Referente IT"] = $refererIT
-                ? $refererIT->name . ' ' . $refererIT->surname ?? ''
-                : $data['referer_it'];
+        if(isset($data['referer_it'])){
+            if($data['referer_it'] != 0){
+                $refererIT = User::find($data['referer_it']);
+                $data["Referente IT"] = $refererIT
+                    ? $refererIT->name . ' ' . $refererIT->surname ?? ''
+                    : $data['referer_it'];
+            }
             unset($data['referer_it']);
         }
-        if(isset($data['referer']) && $data['referer'] != 0){
-            $referer = User::find($data['referer']);
-            $data["Referente"] = $referer
-                ? $referer->name . ' ' . $referer->surname ?? ''
-                : $data['referer'];
+        if(isset($data['referer'])){
+            if($data['referer'] != 0){
+                $referer = User::find($data['referer']);
+                $data["Referente"] = $referer
+                    ? $referer->name . ' ' . $referer->surname ?? ''
+                    : $data['referer'];
+            }
             unset($data['referer']);
         }
 
