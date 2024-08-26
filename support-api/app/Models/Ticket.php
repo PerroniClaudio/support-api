@@ -174,26 +174,42 @@ class Ticket extends Model {
         }
     }
 
-    public function waitingHours() {
+    // In base al tipo di ticket si dovranno includere o meno i sabati, le domeniche, tutte le ore del giorno o anche le festività 
+    public function waitingHours($includeSaturday = false, $includeSunday = false, $IncludeAllDayHours = false, $includeHolidays = false) {
         $waitingHours = 0;
+
+        // Array delle festività italiane
+        $holidays = [
+            '01-01', // Capodanno
+            '06-01', // Epifania
+            '25-04', // Festa della Liberazione
+            '01-05', // Festa dei Lavoratori
+            '02-06', // Festa della Repubblica
+            '15-08', // Ferragosto
+            '01-11', // Ognissanti
+            '08-12', // Immacolata Concezione
+            '25-12', // Natale
+            '26-12', // Santo Stefano
+        ];
 
         /*
             Se il ticket è stato in attesa almeno una volta bisogna calcolare il tempo totale in cui è rimasto in attesa.
         */
 
-        $statusUpdates = $this->statusUpdates()->where('type', 'status')->get();
+        $statusUpdates = $this->statusUpdates()->whereIn('type', ['status', 'closing'])->get();
 
         $hasBeenWaiting = false;
         $waitingRecords = [];
         $waitingEndingRecords = [];
+        $waitingMinutes = 0;
 
         for ($i = 0; $i < count($statusUpdates); $i++) {
             if (
-                (strpos($statusUpdates[$i]->content, 'in attesa') !== false) || (strpos($statusUpdates[$i]->content, 'risolto') !== false)
+                (strpos(strtolower($statusUpdates[$i]->content), 'in attesa') !== false) || (strpos(strtolower($statusUpdates[$i]->content), 'risolto') !== false)
             ) {
                 $hasBeenWaiting = true;
                 $waitingRecords[] = $statusUpdates[$i];
-                $waitingEndingRecords[] = $statusUpdates[$i + 1];
+                $waitingEndingRecords[] = $statusUpdates[$i + 1] ?? null;
             }
         }
 
@@ -202,10 +218,28 @@ class Ticket extends Model {
         }
 
         for ($i = 0; $i < count($waitingRecords); $i++) {
-            $waitingHours += $waitingRecords[$i]->created_at->diffInMinutes($waitingEndingRecords[$i]->created_at);
+            $start = $waitingRecords[$i]->created_at;
+            $end = $waitingEndingRecords[$i] != null ? $waitingEndingRecords[$i]->created_at : now();
+            $totalMinutes = $start->diffInMinutes($end);
+
+            $excludedMinutes = 0;
+            $current = $start->copy();
+
+            while ($current->lessThan($end)) {
+                $isExcludedDay = (!$includeSunday && $current->isSunday()) 
+                    || (!$includeSaturday && $current->isSaturday())
+                    || (!$includeHolidays && in_array($current->format('m-d'), $holidays));
+                $isExcludedHour = !$IncludeAllDayHours && ($current->hour >= 20 || $current->hour < 8);
+                if ($isExcludedHour || $isExcludedDay) {
+                    $excludedMinutes++;
+                }
+                $current->addMinute();
+            }
+
+            $waitingMinutes += ($totalMinutes - $excludedMinutes);
         }
 
-
+        $waitingHours = $waitingMinutes / 60;
 
         return $waitingHours;
     }
@@ -225,7 +259,7 @@ class Ticket extends Model {
 
         for ($i = 0; $i < count($statusUpdates); $i++) {
             if (
-                (strpos($statusUpdates[$i]->content, 'in attesa') !== false) || (strpos($statusUpdates[$i]->content, 'risolto') !== false)
+                (strpos(strtolower($statusUpdates[$i]->content), 'in attesa') !== false) || (strpos(strtolower($statusUpdates[$i]->content), 'risolto') !== false)
             ) {
                 $hasBeenWaiting = true;
                 $waitingRecords[] = $statusUpdates[$i];
