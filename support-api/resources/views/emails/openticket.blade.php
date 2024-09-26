@@ -3,7 +3,7 @@
 
 @if(in_array($mailType, ["user", "referer", "referer_it"]))
 <p style="font-size: 11px; line-height: 12px;">
-  Si prega di non rispondere a questa email. Per comunicare col supporto in merito a questo ticket, 
+  <span style="font-size: 14px;"><b>Si prega di non rispondere a questa email.</b></span> Per comunicare col supporto in merito a questo ticket, 
   accedere al portale tramite il bottone sottostante ed utilizzare l'apposita sezione di messaggistica 
   nella pagina di dettaglio del ticket. In alternativa all'utilizzo del bottone sottostante si può 
   accedere al portale e selezionare dalla lista il ticket desiderato o crearne uno nuovo. <br>

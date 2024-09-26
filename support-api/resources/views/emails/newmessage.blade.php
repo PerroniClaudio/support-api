@@ -4,6 +4,19 @@
 @else
 ## Nuovo messaggio {{ $sender->is_admin ? "al cliente " . $company->name : "dal cliente " . $company->name . ' - ' . $sender->name . ' ' . ($sender->surname ?? '') }}
 @endif
+
+@if(in_array($mailType, ["user", "referer", "referer_it"]))
+<p style="font-size: 11px; line-height: 12px;">
+  <span style="font-size: 14px;"><b>Si prega di non rispondere a questa email.</b></span> Per comunicare col supporto in merito a questo ticket, 
+  accedere al portale tramite il bottone sottostante ed utilizzare l'apposita sezione di messaggistica 
+  nella pagina di dettaglio del ticket. In alternativa all'utilizzo del bottone sottostante si può 
+  accedere al portale e selezionare dalla lista il ticket desiderato o crearne uno nuovo. <br>
+  Se il proprio account non è ancora attivo si devono seguire le indicazioni contenute nell'email di attivazione ricevuta. <br>
+  Si ricorda che in caso di password dimenticata, si può recuperare utilizzando il tasto apposito 
+  nella schermata di login ed indicando l'indirizzo email del proprio account (solitamente il proprio indirizzo email aziendale).
+</p>
+@endif
+
 @if($mailType == "referer")
 Buongiorno, <br><br>
 Questa mail ti è stata inviata perchè sei il referente in sede per il relativo ticket. <br><br>
