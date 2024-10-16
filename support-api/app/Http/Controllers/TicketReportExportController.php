@@ -232,14 +232,14 @@ class TicketReportExportController extends Controller {
 
         $pdf = Pdf::loadView('pdf.export', $data);
 
-        return $pdf->stream();
+        // return $pdf->stream();
+        return $pdf->download($name);
     }
 
     public function exportBatch(Request $request) {
         $cacheKey = 'batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to;
         $company = Company::find($request->company_id);
         $tickets_data = Cache::get($cacheKey);
-
 
         $tickets_by_day = [];
         $ticket_graph_data = [];
@@ -282,15 +282,13 @@ class TicketReportExportController extends Controller {
             'company' => $company,
             'ticket_graph_data' => $ticket_graph_data
         ];
-
-
-
-
+        
 
         Pdf::setOptions(['dpi' => 150, 'defaultFont' => 'sans-serif']);
         $pdf = Pdf::loadView('pdf.exportbatch', $data);
 
-        return $pdf->stream();
+        // return $pdf->stream();
+        return $pdf->download("Esportazione tickets");
 
     }
 
@@ -336,5 +334,4 @@ class TicketReportExportController extends Controller {
         return response()->json(['file' => $name]);
     }
 
-    
 }

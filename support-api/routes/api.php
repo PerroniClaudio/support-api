@@ -185,6 +185,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('ticket', App\Http\Controllers\TicketController::class);
     
+    Route::get(
+        "/data-owner/ticket/{ticket}",
+        [App\Http\Controllers\TicketController::class, "show"]
+    );
+
     Route::post(
         "/ticketmassive",
         [App\Http\Controllers\TicketController::class, "storeMassive"]
@@ -478,10 +483,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/stats", [App\Http\Controllers\TicketStatsController::class, "latestStats"]);
 });
 
-Route::get("/ticket-report/pdf/batch", [App\Http\Controllers\TicketReportExportController::class, "exportBatch"]);
-Route::get("/ticket-report/pdf/{ticket}", [App\Http\Controllers\TicketReportExportController::class, "exportpdf"]);
 
-
+Route::middleware(['auth:sanctum'])->group(function () {
+    // batch deve stare sopra altrimenti la route non viene trovata (viene interpretata come un id {ticket})
+    Route::get("/ticket-report/pdf/batch", [App\Http\Controllers\TicketReportExportController::class, "exportBatch"]);
+    Route::get("/ticket-report/pdf/{ticket}", [App\Http\Controllers\TicketReportExportController::class, "exportpdf"]);
+});
 
 /** 
  * Esportazioni
@@ -504,6 +511,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/ticket-report/user-stats", [App\Http\Controllers\TicketStatsController::class, "statsForCompany"]);
 });
 
-Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get("/template-export/{type}", [App\Http\Controllers\TemplatesExportController::class, "index"]);
-});
+// Sembra inesistente. commento per sicurezza e poi eliminiamo in un commit futuro
+// Route::middleware(['auth:sanctum'])->group(function () {
+//     Route::get("/template-export/{type}", [App\Http\Controllers\TemplatesExportController::class, "index"]);
+// });

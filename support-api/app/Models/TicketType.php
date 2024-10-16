@@ -21,6 +21,7 @@ class TicketType extends Model {
         'it_referer_limited',
         'description',
         'is_massive_enabled',
+        'expected_processing_time',
     ];
 
     public function tickets() {

@@ -27,7 +27,8 @@ class Ticket extends Model {
         'wait_end',
         'is_user_error',
         'unread_mess_for_adm',
-        'unread_mess_for_usr'
+        'unread_mess_for_usr',
+        'actual_processing_time',
     ];
 
     /* get the owner */

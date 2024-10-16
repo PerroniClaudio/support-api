@@ -248,13 +248,18 @@ class TicketController extends Controller {
             }
         }
 
-        // Può avere il ticket solo se admin e del gruppo associato, company admin e della stessa azienda del ticket, se è e della stessa azienda del ticket ed il creatore del ticket o se è il referente interno (non necessariamente company_admin).
+        // Può avere il ticket solo se: 
+        // admin e del gruppo associato, 
+        // company admin e della stessa azienda del ticket, 
+        // della stessa azienda del ticket ed il creatore del ticket o se è il referente interno (non necessariamente company_admin).
+        // titolare del dato dell'azienda del ticket.
         $authorized = false;
         if (
             ($user["is_admin"] == 1 && $groupIdExists) ||
             ($ticket->company_id == $user->company_id && $user["is_company_admin"] == 1) ||
             ($ticket->company_id == $user->company_id && $ticket->user_id == $user->id) ||
-            (($ticket->referer() ? $ticket->referer()->id == $user->id : false))
+            (($ticket->referer() ? $ticket->referer()->id == $user->id : false)) ||
+            ($ticket->company->data_owner_email == $user->email)
         ) {
             $authorized = true;
         }
@@ -498,6 +503,7 @@ class TicketController extends Controller {
 
         $ticket->update([
             'status' => 5, // Si può impostare l'array di stati e prendere l'indice di "Chiuso" da lì
+            'actual_processing_time' => $request->actualProcessingTime,
         ]);
 
         $update = TicketStatusUpdate::create([
@@ -510,12 +516,20 @@ class TicketController extends Controller {
 
         dispatch(new SendUpdateEmail($update));
 
-        // Controllare se si deve inviare la mail
+        // Controllare se si deve inviare la mail (l'invio al data_owner e al cliente sono separati per dare maggiore scelta all'admin)
         if ($request->sendMail == true) {
             // Invio mail al cliente
             // sendMail($dafeultMail, $fields['message']);
             $brand_url = $ticket->brandUrl();
             dispatch(new SendCloseTicketEmail($ticket, $fields['message'], $brand_url));
+        }
+        
+        // Controllare se si deve inviare la mail al data_owner (l'invio al data_owner e al cliente sono separati per dare maggiore scelta all'admin)
+        if ($request->sendToDataOwner == true && (isset($ticket->company->data_owner_email) && filter_var($ticket->company->data_owner_email, FILTER_VALIDATE_EMAIL))) {
+            // Invio mail al data_owner del cliente
+            // sendMail($dafeultMail, $fields['message']);
+            $brand_url = $ticket->brandUrl();
+            dispatch(new SendCloseTicketEmail($ticket, $fields['message'], $brand_url, true));
         }
 
         // Invalida la cache per chi ha creato il ticket e per i referenti.
@@ -794,8 +808,12 @@ class TicketController extends Controller {
 
         $webform_data = json_decode($ticket->messages()->first()->message);
 
-        $office = $ticket->company->offices()->where('id', $webform_data->office)->first();
-        $webform_data->office = $office ? $office->name : null;
+        if(isset($webform_data->office)){
+            $office = $ticket->company->offices()->where('id', $webform_data->office)->first();
+            $webform_data->office = $office ? $office->name : null;
+        } else {
+            $webform_data->office = null;
+        }
 
         if (isset($webform_data->referer)) {
             $referer = User::find($webform_data->referer);
@@ -840,6 +858,8 @@ class TicketController extends Controller {
         if ($closingUpdate) {
             $closingMessage = $closingUpdate->content;
         }
+
+        $ticket->ticket_type = $ticket->ticketType ?? null;
 
         return response([
             'data' => $ticket,
@@ -920,6 +940,8 @@ class TicketController extends Controller {
                 $closingMessage = $closingUpdate->content;
             }
 
+            $ticket->ticket_type = $ticket->ticketType ?? null;
+
             $tickets_data[] = [
                 'data' => $ticket,
                 'webform_data' => $webform_data,
@@ -933,7 +955,7 @@ class TicketController extends Controller {
         });
 
         return response([
-            'data' => $tickets_data,
+            'data' => $tickets_batch_data,
         ], 200);
     }
 }

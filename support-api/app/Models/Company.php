@@ -33,6 +33,9 @@ class Company extends Model {
         'sla_prob_solve_medium',
         'sla_prob_solve_high',
         'sla_prob_solve_critical',
+        'data_owner_name',
+        'data_owner_surname',
+        'data_owner_email',
     ];
 
     public function users() {

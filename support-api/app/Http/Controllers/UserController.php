@@ -375,7 +375,7 @@ class UserController extends Controller {
     public function getName($id, Request $request){
         $user = User::where('id', $id)->first();
 
-        if(!$request->user()["is_admin"] && $user["company_id"] != $request->user()["company_id"]){
+        if(!$request->user()["is_admin"] && ($user["company_id"] != $request->user()["company_id"]) && $user->company->data_owner_email != $request->user()->email){
             return response([
                 'message' => 'Unauthorized',
             ], 401);

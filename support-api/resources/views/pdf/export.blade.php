@@ -13,7 +13,7 @@
     <h1 class="main-header">Report Esteso Ticket #{{ $ticket->id }}</h1>
     <hr>
     <div class="box">
-        <p class="box-heading"><b>Descrizione<b></p>
+        <p class="box-heading"><b>Descrizione</b></p>
         <p>
             {{ $webform_data->description }}
         </p>
@@ -23,7 +23,7 @@
         <tbody>
             <tr>
                 <td style="vertical-align: top; width:50%;" class="box">
-                    <p class="box-heading"><b>Dati webform<b></p>
+                    <p class="box-heading"><b>Dati webform</b></p>
                     @foreach ($webform_data as $key => $value)
                         @switch($key)
                             @case('description')
@@ -47,7 +47,7 @@
                     @endforeach
                 </td>
                 <td style="vertical-align: top; width:50%;" class="box">
-                    <p class="box-heading"><b>Avanzamento<b></p>
+                    <p class="box-heading"><b>Avanzamento</b></p>
                     <table>
                         <thead>
                             <tr>
@@ -75,12 +75,47 @@
         </tbody>
     </table>
 
+    {{-- <div class="box" style="margin-top:.5rem;"> --}}
     <div class="box">
         <p class="box-heading"><b>Messaggio di chiusura</b></p>
         <p>
             {{ $closing_messages }}
         </p>
     </div>
+
+    {{-- Parte limitata agli admin (se si faranno pdf anche per l'utente) --}}
+    <table style="width:100%">
+        <tbody>
+            <tr>
+                <td style="vertical-align: top; width:50%;" class="box">
+                    <p class="box-heading"><b>Responsabilità<b></p>
+                    <p>
+                        {{ $ticket->is_user_error ? 'Cliente' : 'Supporto' }}
+                    </p>
+                </td>
+                <td style="vertical-align: top; width:50%;" class="box">
+                    <p class="box-heading"><b>Tempo di elaborazione previsto<b></p>
+                    <p>{{ $ticket->ticketType->expected_processing_time == null 
+                        ? 'Non impostato'
+                        : (
+                            $ticket->ticketType->expected_processing_time / 60 . ' ore' . 
+                            ($ticket->ticketType->expected_processing_time % 60 != 0 
+                                ? ' e ' . $ticket->ticketType->expected_processing_time % 60 . ' minuti' 
+                                : '' )
+                        ) 
+                    }}</p>
+                    <p class="box-heading"><b>Tempo di elaborazione effettivo</b></p>
+                    <p>{{ $ticket->actual_processing_time 
+                        ? $ticket->actual_processing_time / 60 . ' ore' . 
+                            ($ticket->actual_processing_time % 60 != 0 
+                                ? ' e ' . $ticket->actual_processing_time % 60 . ' minuti' 
+                                : '' )
+                        : 'Non impostato'    
+                    }}</p>
+                </td>
+            </tr>
+        </tbody>
+    </table>
 
     <h2>Note interne</h2>
     <hr>
@@ -95,6 +130,7 @@
             </div>
         @endforeach
     </div>
+{{-- Fine parte limitata agli admin --}}
 
     <h2>Messaggi</h2>
     <hr>

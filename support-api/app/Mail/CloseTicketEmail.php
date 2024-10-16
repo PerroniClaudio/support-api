@@ -23,7 +23,7 @@ class CloseTicketEmail extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct(public Ticket $ticket, public $message, public $link, public $brand_url)
+    public function __construct(public Ticket $ticket, public $message, public $link, public $brand_url, public $sendToDataOwner = false)
     {
         //
         $this->ticketType = TicketType::find($this->ticket->type_id);
