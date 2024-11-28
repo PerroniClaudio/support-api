@@ -19,7 +19,7 @@ class TimeOffRequest extends Model
         'batch_id'
     ];
 
-    public function type() {
+    public function type() { 
         return $this->belongsTo(TimeOffType::class, 'time_off_type_id');
     }
 
