@@ -12,6 +12,7 @@ use App\Models\TicketStatusUpdate;
 use App\Models\TicketFile;
 use App\Models\TicketType;
 use App\Models\User;
+use App\Models\Office;
 use App\Models\Group;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -20,6 +21,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use Illuminate\Support\Facades\Log;
 
 class TicketController extends Controller {
     /**
@@ -157,6 +159,23 @@ class TicketController extends Controller {
         ]);
 
         $brand_url = $ticket->brandUrl();
+
+        // Debug: qualche elemento col name non viene trovato
+        $firstMessage = $ticket->messages[0]->message;
+        $data = json_decode($firstMessage, true);
+        $ticketUser = $ticket->user;
+        $company = $ticket->company;
+        $ticketType =  $ticket->ticketType;
+        $debugString = 'DEBUG: Ticket ID: ' . $ticket->id 
+            . ' - Ticket User: ' . ($ticketUser->name ?? 'No name')
+            . (isset($data['office']) ? ' - Office set: ' . (Office::find($data['office'])->name ?? $data['office'])  : ' - Office not set')
+            . (isset($data['referer_it']) ? ' - Referer IT set: ' . (User::find($data['referer_it'])->name ?? $data['referer_it']) : ' - Referer IT not set, ')
+            . (isset($data['referer']) ? ($data['referer'] != '0' ? ' - Referer set: ' . (User::find($data['referer'])->name ?? $data['referer']) : ' - Referer set: ' . $data['referer']) : ' - Referer not set, ')
+            . (' - Ticket Type name: ' . ($ticketType->name ?? 'No name'))
+            . (' - Ticket company name: ' . ($company->name ?? 'No name'))
+        ;
+        Log::info($debugString);
+
         dispatch(new SendOpenTicketEmail($ticket, $brand_url));
 
         return response([

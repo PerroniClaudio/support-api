@@ -13,7 +13,7 @@
 
 Buongiorno,
 
-@if ($sendToDataOwner)
+@if ($sendToDataOwner == true)
 questa mail ti è stata inviata in quanto titolare del dato per l'azienda {{ $ticket->company->name }}. Condividiamo la chiusura di questo ticket e il link per accedere al dettaglio.
 @endif
 

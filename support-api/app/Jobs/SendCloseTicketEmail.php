@@ -50,17 +50,23 @@ class SendCloseTicketEmail implements ShouldQueue {
         
         // Inviare la mail di chiusura all'utente che l'ha aperto, se non è admin
         if(!$this->ticket->user['is_admin'] && $this->ticket->user->email){
-          Mail::to($this->ticket->user->email)->send(new CloseTicketEmail($this->ticket, $this->message, $userLink, $this->brand_url));
+          if(filter_var($this->ticket->user->email, FILTER_VALIDATE_EMAIL)) {
+            Mail::to($this->ticket->user->email)->send(new CloseTicketEmail($this->ticket, $this->message, $userLink, $this->brand_url));
+          }
         }
         
         // Inviare la mail di chiusura al referente IT
         if($refererIT && $refererIT->email){
-          Mail::to($refererIT->email)->send(new CloseTicketEmail($this->ticket, $this->message, $userLink, $this->brand_url));
+          if(filter_var($refererIT->email, FILTER_VALIDATE_EMAIL)) {
+            Mail::to($refererIT->email)->send(new CloseTicketEmail($this->ticket, $this->message, $userLink, $this->brand_url));
+          }
         } 
   
         // Inviare la mail di chiusura al referente in sede, se è diverso dal referente IT
         if($referer && ($refererIT ? $refererIT->id !== $referer->id : true) && $referer->email){
-          Mail::to($referer->email)->send(new CloseTicketEmail($this->ticket, $this->message, $userLink, $this->brand_url));
+          if(filter_var($referer->email, FILTER_VALIDATE_EMAIL)) {
+            Mail::to($referer->email)->send(new CloseTicketEmail($this->ticket, $this->message, $userLink, $this->brand_url));
+          }
         } 
       }
       

@@ -49,24 +49,30 @@ class SendOpenTicketEmail implements ShouldQueue {
       }
       // Altrimenti si potrebbe inviare una mail al supporto per avvisare che il gruppo non ha un indirizzo email associato. Utile solo per i gruppi preesistenti.
  
-      // Se l'utente che ha creato il ticket non è admin invia la mail anche a lui.
+      // Se l'utente che ha creato il ticket non è admin invia la mail anche a lui (se la sua è valida).
       if(!$ticketUser['is_admin']){
         if($ticketUser['email']){
-          Mail::to($ticketUser['email'])->send(new OpenTicketEmail($this->ticket, $company, $ticketType, $category, $userlink, $this->brand_url, "user"));
+          if(filter_var($ticketUser['email'], FILTER_VALIDATE_EMAIL)) {
+            Mail::to($ticketUser['email'])->send(new OpenTicketEmail($this->ticket, $company, $ticketType, $category, $userlink, $this->brand_url, "user"));
+          }
         }
       } 
 
       $referer = $this->ticket->referer();
       $refererIT = $this->ticket->refererIT();
 
-      // Se il referente in sede è impostato ed è diverso dall'utente che ha aperto il ticket, gli invia la mail.
+      // Se il referente in sede è impostato ed è diverso dall'utente che ha aperto il ticket, gli invia la mail (se la sua è valida).
       if($referer && $referer->id !== $ticketUser->id && $referer->email){
-        Mail::to($referer->email)->send(new OpenTicketEmail($this->ticket, $company, $ticketType, $category, $userlink, $this->brand_url, "referer"));
+        if(filter_var($referer->email, FILTER_VALIDATE_EMAIL)) {
+          Mail::to($referer->email)->send(new OpenTicketEmail($this->ticket, $company, $ticketType, $category, $userlink, $this->brand_url, "referer"));
+        }
       }
 
-      // Se il referente IT è impostato ed è diverso dall'utente e dalreferente in sede, gli invia la mail.
+      // Se il referente IT è impostato ed è diverso dall'utente e dal referente in sede, gli invia la mail (se la sua è valida).
       if($refererIT && ($referer ? $refererIT->id !== $referer->id : true) && $refererIT->id !== $ticketUser->id && $refererIT->email){
-        Mail::to($refererIT->email)->send(new OpenTicketEmail($this->ticket, $company, $ticketType, $category, $userlink, $this->brand_url, "referer_it"));
+        if(filter_var($refererIT->email, FILTER_VALIDATE_EMAIL)) {
+          Mail::to($refererIT->email)->send(new OpenTicketEmail($this->ticket, $company, $ticketType, $category, $userlink, $this->brand_url, "referer_it"));
+        }
       }
       
     }
