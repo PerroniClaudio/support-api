@@ -7,3 +7,4 @@ erp
 /redis/dump.rdb
 **/.DS_Store
 /nginx
+/sslcert/certificate.crt
