@@ -520,6 +520,29 @@ class TicketController extends Controller {
             'message' => 'required|string',
         ]);
 
+        if (!$request->user()->is_admin) {
+            return response([
+                'message' => 'Only admins can close tickets.',
+            ], 401);
+        }
+
+        $requestUser = $request->user();
+
+        if(!$ticket->handler){
+            $ticket->update([
+                'admin_user_id' => $requestUser->id,
+            ]);
+    
+            $adminUser = User::where('id', $requestUser->id)->first();
+    
+            $update = TicketStatusUpdate::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $requestUser->id,
+                'content' => "Modifica automatica: Ticket assegnato all'utente " . $requestUser->name . " " . ($requestUser->surname ?? ''),
+                'type' => 'assign',
+            ]);
+        }
+
         $ticket->update([
             'status' => 5, // Si può impostare l'array di stati e prendere l'indice di "Chiuso" da lì
             'actual_processing_time' => $request->actualProcessingTime,
@@ -527,7 +550,7 @@ class TicketController extends Controller {
 
         $update = TicketStatusUpdate::create([
             'ticket_id' => $ticket->id,
-            'user_id' => $request->user()->id,
+            'user_id' => $requestUser->id,
             'content' => $fields['message'],
             'type' => 'closing',
             'show_to_user' => $request->sendMail,
@@ -673,7 +696,7 @@ class TicketController extends Controller {
         $update = TicketStatusUpdate::create([
             'ticket_id' => $ticket->id,
             'user_id' => $request->user()->id,
-            'content' => "Ticket assegnato all'utente " . $adminUser->name . " " . $adminUser->surname,
+            'content' => "Ticket assegnato all'utente " . $adminUser->name . " " . ($adminUser->surname ?? ''),
             'type' => 'assign',
         ]);
 
