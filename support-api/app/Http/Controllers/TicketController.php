@@ -703,8 +703,13 @@ class TicketController extends Controller {
     }
 
     public function files(Ticket $ticket, Request $request) {
+        $isAdminRequest = $request->user()["is_admin"] == 1;
 
-        $files = TicketFile::where('ticket_id', $ticket->id)->get();
+        if ($isAdminRequest) {
+            $files = TicketFile::where('ticket_id', $ticket->id)->get();
+        } else {
+            $files = TicketFile::where(['ticket_id' => $ticket->id, 'is_deleted' => false])->get();
+        }
 
         return response([
             'files' => $files,
@@ -748,6 +753,58 @@ class TicketController extends Controller {
 
         return response([
             'url' => $url,
+        ], 200);
+    }
+
+    public function deleteFile($id, Request $request) {
+        $user = $request->user();
+
+        if ($user["is_admin"] != 1) {
+            return response([
+                'message' => 'Only admins can delete files.',
+            ], 401);
+        }
+
+        $ticketFile = TicketFile::where('id', $id)->first();
+
+        $success = $ticketFile->update([
+            'is_deleted' => true,
+        ]);
+
+        if(!$success){
+            return response([
+                'message' => 'Error deleting file.',
+            ], 500);
+        }
+
+        return response([
+            'message' => 'File deleted.',
+        ], 200);
+    }
+    
+    public function recoverFile($id, Request $request) {
+        $user = $request->user();
+
+        if ($user["is_admin"] != 1) {
+            return response([
+                'message' => 'Only admins can retcover files.',
+            ], 401);
+        }
+
+        $ticketFile = TicketFile::where('id', $id)->first();
+
+        $success = $ticketFile->update([
+            'is_deleted' => false,
+        ]);
+
+        if(!$success){
+            return response([
+                'message' => 'Error recovering file.',
+            ], 500);
+        }
+
+        return response([
+            'message' => 'File recovered.',
         ], 200);
     }
 

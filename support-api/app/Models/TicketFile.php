@@ -16,6 +16,7 @@ class TicketFile extends Model
         'extension',
         'mime_type',
         'size',
+        'is_deleted',
     ];
 
     public function ticket()
