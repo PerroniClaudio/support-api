@@ -74,7 +74,7 @@ class CompanyController extends Controller {
     public function show($id, Request $request) {
         $user = $request->user();
 
-        if ($user["is_admin"] != 1) {
+        if ($user["is_admin"] != 1 && $user["company_id"] != $id) {
             return response([
                 'message' => 'Unauthorized',
             ], 401);
