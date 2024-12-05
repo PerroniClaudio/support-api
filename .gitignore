@@ -8,3 +8,4 @@ erp
 **/.DS_Store
 /nginx
 /sslcert/certificate.crt
+/http/keys
