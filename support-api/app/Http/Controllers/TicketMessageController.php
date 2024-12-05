@@ -18,7 +18,7 @@ class TicketMessageController extends Controller
      */
     public function index($ticket_id, Request $request)
     {
-        //
+        // 
 
         $ticket = Ticket::where('id', $ticket_id)->get()->first();
 
