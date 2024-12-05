@@ -44,6 +44,50 @@ class TicketStats implements ShouldQueue {
         return $nightHours;
     }
 
+    // // Funzione da testare con dove viene utilizzata prima di pubblicarla
+    // private function getNightHours($start, $end) {
+
+    //     if ($start->diffInDays($end) != 0) {
+    //         $fullDaysHours = $start->diffInDays($end) > 1 ? (($start->diffInDays($end) - 1) * ($endHour + (24-$startHour))) : 0;
+
+    //         // Calcola ore primo giorno fino alla mezzanotte (finisce in un altro giorno)
+    //         $orePrimoGiorno = 0;
+    //         $orePrimoGiorno += $start->hour < $endHour ? ($endHour - $start->hour) : 0;
+    //         $orePrimoGiorno += $start->hour <= $startHour ? (24 - $startHour) : ($startHour - $start->hour);
+            
+    //         // Calcola ore ultimo giorno fino alla scadenza (inizia in un altro giorno)
+    //         $oreUltimoGiorno = 0;
+    //         $oreUltimoGiorno += $end->hour < $endHour ? $end->hour : ($endHour);
+    //         $oreUltimoGiorno += $end->hour <= $startHour ? 0 : ($end->hour - $startHour);
+
+    //         return $fullDaysHours + $orePrimoGiorno + $oreUltimoGiorno;
+    //     } else {
+    //         // Calcolo ore nel giorno stesso
+    //         $sameDayHours = 0;
+    //         // inizia prima delle 8
+    //         if ($start->hour < $endHour) {
+    //             // finisce prima delle 8
+    //             if ($end->hour < $endHour) {
+    //                 $sameDayHours += ($end->hour - $start->hour);
+    //             } else {
+    //                 $sameDayHours += ($endHour - $start->hour);
+    //                 if($end->hour > $startHour) {
+    //                     $sameDayHours += ($end->hour - $startHour);
+    //                 }
+    //             }
+    //         } else if ($end->hour > $startHour) { //altrimenti non serve calcolare
+    //             if($start->hour > $startHour) {
+    //                 $sameDayHours += ($end->hour - $start->hour);
+    //             } else {
+    //                 $sameDayHours += ($end->hour - $startHour);
+    //             }
+    //         }
+
+    //         return $sameDayHours;
+    //     }
+    // }
+
+    
     /**
      * Execute the job.
      */
