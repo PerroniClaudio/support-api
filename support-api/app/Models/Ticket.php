@@ -264,7 +264,9 @@ class Ticket extends Model {
             ) {
                 $hasBeenWaiting = true;
                 $waitingRecords[] = $statusUpdates[$i];
-                $waitingEndingRecords[] = $statusUpdates[$i + 1];
+                if(count($statusUpdates) > ($i + 1)) {
+                    $waitingEndingRecords[] = $statusUpdates[$i + 1];
+                }
             }
         }
 

@@ -41,7 +41,7 @@ class UserReportExport implements FromArray
         $tickets = Ticket::where('company_id', $this->report->company_id)->whereBetween('created_at', [
             $this->report->start_date,
             $this->report->end_date
-        ]);
+        ])->get();
 
         foreach ($tickets as $ticket) {
 
@@ -86,14 +86,16 @@ class UserReportExport implements FromArray
             $cambiamenti_stato = "";
             $cambiamenti_priorità = "";
 
-            for ($i = 0; $i < count($ticket->status_updates); $i++) {
-                if ($ticket->status_updates[$i]->type == 'closing') {
-                    $data_chiusura = $ticket->status_updates[$i]->created_at;
-                    $commento_chiusura = $ticket->status_updates[$i]->content;
-                } else if ($ticket->status_updates[$i]->type == 'status') {
-                    $cambiamenti_stato .= $ticket->status_updates[$i]->created_at . " - " . $ticket->status_updates[$i]->content . "\n";
-                } else if ($ticket->status_updates[$i]->type == 'sla') {
-                    $cambiamenti_priorità .= $ticket->status_updates[$i]->created_at . " - " . $ticket->status_updates[$i]->content . "\n";
+            if($ticket->statusUpdates){
+                for ($i = 0; $i < count($ticket->statusUpdates); $i++) {
+                    if ($ticket->statusUpdates[$i]->type == 'closing') {
+                        $data_chiusura = $ticket->statusUpdates[$i]->created_at;
+                        $commento_chiusura = $ticket->statusUpdates[$i]->content;
+                    } else if ($ticket->statusUpdates[$i]->type == 'status') {
+                        $cambiamenti_stato .= ((strlen($cambiamenti_stato) > 0) ? " - " : "") . $ticket->statusUpdates[$i]->created_at . " - " . $ticket->statusUpdates[$i]->content;
+                    } else if ($ticket->statusUpdates[$i]->type == 'sla') {
+                        $cambiamenti_priorità .= ((strlen($cambiamenti_priorità) > 0) ? " - " : "") . $ticket->statusUpdates[$i]->created_at . " - " . $ticket->statusUpdates[$i]->content;
+                    }
                 }
             }
 
