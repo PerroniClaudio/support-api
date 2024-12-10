@@ -903,6 +903,12 @@ class TicketController extends Controller {
 
     public function report(Ticket $ticket, Request $request) {
 
+        $user = $request->user();
+        if($user["is_admin"] != 1 && ($user["is_company_admin"] != 1 || $ticket->company_id != $user->company_id)){
+            return response([
+                'message' => 'The user must be an admin.',
+            ], 401);
+        }
         //? Webform
 
         $webform_data = json_decode($ticket->messages()->first()->message);
@@ -960,6 +966,12 @@ class TicketController extends Controller {
 
         $ticket->ticket_type = $ticket->ticketType ?? null;
 
+        // Nasconde i dati per gli admin se l'utente non è admin
+        if($user["is_admin"] != 1) {
+            $ticket->setRelation('status_updates', null);
+            $ticket->makeHidden(["admin_user_id", "group_id", "priority", "is_user_error", "actual_processing_time"]);
+        }
+
         return response([
             'data' => $ticket,
             'webform_data' => $webform_data,
@@ -970,7 +982,18 @@ class TicketController extends Controller {
 
     public function batchReport(Request $request) {
 
-        $cacheKey = 'batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to;
+        $user = $request->user();
+        if($user["is_admin"] != 1 && $user["is_company_admin"] != 1){
+            return response([
+                'message' => 'The user must be an admin.',
+            ], 401);
+        }
+
+        if($user["is_admin"] == 1){
+            $cacheKey = 'admin_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to;
+        } else {
+            $cacheKey = 'user_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to;
+        }
 
         if (Cache::has($cacheKey)) {
             $tickets_data = Cache::get($cacheKey);
@@ -1040,6 +1063,12 @@ class TicketController extends Controller {
             }
 
             $ticket->ticket_type = $ticket->ticketType ?? null;
+
+            // Nasconde i dati per gli admin se l'utente non è admin
+            if($user["is_admin"] != 1) {
+                $ticket->setRelation('status_updates', null);
+                $ticket->makeHidden(["admin_user_id", "group_id", "priority", "is_user_error", "actual_processing_time"]);
+            }
 
             $tickets_data[] = [
                 'data' => $ticket,

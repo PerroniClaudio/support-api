@@ -273,8 +273,21 @@ class CompanyController extends Controller {
         ], 200);
     }
 
-    public function tickets(Company $company) {
+    public function tickets(Company $company, Request $request) {
+        $user = $request->user();
+        if ($user["is_admin"] != 1 && $user["company_id"] != $company["id"]) {
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+        
         $tickets = $company->tickets()->with(['ticketType'])->orderBy('created_at', 'desc')->get();
+        
+        if($user["is_admin"] != 1) {
+            foreach ($tickets as $ticket) {
+                $ticket->makeHidden(["admin_user_id", "group_id", "priority", "is_user_error", "actual_processing_time"]);
+            }
+        }
 
         return response([
             'tickets' => $tickets,
