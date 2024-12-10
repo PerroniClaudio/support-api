@@ -237,7 +237,19 @@ class TicketReportExportController extends Controller {
     }
 
     public function exportBatch(Request $request) {
-        $cacheKey = 'batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to;
+        $user = $request->user();
+        if($user["is_admin"] != 1 && $user["is_company_admin"] != 1){
+            return response([
+                'message' => 'The user must be an admin.',
+            ], 401);
+        }
+
+        if($user["is_admin"] == 1){
+            $cacheKey = 'admin_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to;
+        } else {
+            $cacheKey = 'user_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to;
+        }
+        
         $company = Company::find($request->company_id);
         $tickets_data = Cache::get($cacheKey);
 
