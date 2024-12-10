@@ -57,7 +57,11 @@ class UserReportExport implements FromArray
                 $webform_text .= $key . ": " . $value . "\n";
 
                 if ($key == "referer") {
-                    $has_referer = true;
+                    if ($value != 0) {
+                        $has_referer = true;
+                    } else {
+                        unset($webform[$key]);
+                    }
                 }
          
                 if ($key == "referer_it") {
