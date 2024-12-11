@@ -16,6 +16,9 @@ use App\Models\TicketReportExport;
 class GenerateReport implements ShouldQueue {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    public $timeout = 360; // Timeout in seconds
+    public $tries = 2; // Number of attempts
+
     private $report;
 
     /**

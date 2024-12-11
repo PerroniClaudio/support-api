@@ -16,7 +16,9 @@ class GenerateUserReport implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public $timeout = 300; // Timeout in seconds
+    public $timeout = 360; // Timeout in seconds
+    public $tries = 2; // Number of attempts
+
 
     private $report;
 
