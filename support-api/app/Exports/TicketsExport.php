@@ -13,7 +13,6 @@ class TicketsExport implements FromArray {
     private $company_id;
     private $start_date;
     private $end_date;
-    private $job_id;
 
     public function __construct($company_id, $start_date, $end_date) {
         $this->company_id = $company_id;
