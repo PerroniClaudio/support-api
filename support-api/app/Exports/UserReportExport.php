@@ -105,7 +105,7 @@ class UserReportExport implements FromArray
 
             $this_ticket = [
                 $ticket->id,
-                $ticket->user->name . " " . $ticket->user->surname,
+                $ticket->user->is_admin ? "Supporto" : $ticket->user->name . " " . $ticket->user->surname,
                 $referer_name,
                 $referer_it_name,
                 $ticket->ticketType->category->is_problem ? "Problema" : "Richiesta",
