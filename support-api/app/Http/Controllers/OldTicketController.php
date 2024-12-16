@@ -86,6 +86,9 @@ class OldTicketController extends Controller {
 
         $old_ticket_messages = OldTicketMessage::query()
             ->when($search, function (Builder $q, $value) {
+                /** 
+                 * @disregard Intelephense non rileva il metodo whereIn
+                 */
                 return $q->whereIn('id', OldTicketMessage::search($value)->keys());
             })->get();
 
