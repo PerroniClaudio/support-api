@@ -60,40 +60,6 @@ Route::get('/mailtest', function () {
 
 Route::get('/welcome', function () {
     return "welcome";
-
-    // return App\Models\Group::find(1)->level();
-    // return App\Models\Group::find(1)->children;
-    // return App\Models\Group::find(1)->getAllChildren();
-
-    // $user = User::find(82);
-    // return $user->tickets->merge($user->refererTickets());
-
-    // return Ticket::find(73)->messages[0]->message;
-    // return json_decode(Ticket::find(154)->messages[0]->message)->referer;
-    // return $referer = User::find(json_decode(Ticket::find(108)->messages[0]->message)->referer);
-    // return Ticket::find(73)->handler;
-    // if($referer){
-    //     return $referer;
-    // }
-
-    // $update = App\Models\TicketStatusUpdate::find(143);
-    // dispatch(new App\Jobs\SendUpdateEmail($update));
-    // return $update;
-
-    // $user = User::find(13);
-    // $ticket = Ticket::where('id', 91)->first();
-    // $company = $ticket->company;
-    // $ticketType =  $ticket->ticketType;
-    // $category =  $ticketType->category;
-    // $brand_url = $ticket->brandUrl();
-    // dispatch(new App\Jobs\SendOpenTicketEmail($ticket, $brand_url));
-    // $brand_url = $ticket->brandUrl();
-    // dispatch(new SendCloseTicketEmail($ticket, 'Messaggio di chiusura', $brand_url));
-    // // dispatch(new SendWelcomeEmail($user, "URL non serve"));
-    // dispatch(new SendNewMessageEmail($ticket, $user, "URL non serve"));
-    // return "mail sent";
-
-
 });
 
 Route::get('/factory', function () {
@@ -162,6 +128,9 @@ Route::get('/factory', function () {
 
 
 });
+
+
+Route::get('/import', [App\Http\Controllers\OldTicketController::class, 'import'])->name('import');
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/webhook.php';

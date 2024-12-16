@@ -7,6 +7,7 @@ use App\Http\Controllers\TicketMessageController;
 use App\Http\Controllers\TicketStatusUpdateController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\GroupController;
+use App\Http\Controllers\OldTicketController;
 
 /*
 |--------------------------------------------------------------------------
@@ -101,6 +102,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
         [TicketMessageController::class, "index"]
     );
 });
+
+
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::post(
@@ -518,6 +521,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/ticket-report/user-stats", [App\Http\Controllers\TicketStatsController::class, "statsForCompany"]);
 });
+
+Route::middleware(['auth:sanctum'])->group(function () {
+
+
+    Route::get("/old-ticket-search", [App\Http\Controllers\OldTicketController::class, "search"]);
+
+});
+
+
 
 // Sembra inesistente. commento per sicurezza e poi eliminiamo in un commit futuro
 // Route::middleware(['auth:sanctum'])->group(function () {

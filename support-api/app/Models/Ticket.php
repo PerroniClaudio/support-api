@@ -5,9 +5,10 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
+use Laravel\Scout\Searchable;
 
 class Ticket extends Model {
-    use HasFactory;
+    use HasFactory, Searchable;
 
     protected $fillable = [
         'company_id',
@@ -30,6 +31,14 @@ class Ticket extends Model {
         'unread_mess_for_usr',
         'actual_processing_time',
     ];
+
+    public function toSearchableArray() {
+        return [
+            'description' => $this->description,
+            'status' => $this->status,
+            'type' => $this->type,
+        ];
+    }
 
     /* get the owner */
 
@@ -227,7 +236,7 @@ class Ticket extends Model {
             $current = $start->copy();
 
             while ($current->lessThan($end)) {
-                $isExcludedDay = (!$includeSunday && $current->isSunday()) 
+                $isExcludedDay = (!$includeSunday && $current->isSunday())
                     || (!$includeSaturday && $current->isSaturday())
                     || (!$includeHolidays && in_array($current->format('m-d'), $holidays));
                 $isExcludedHour = !$IncludeAllDayHours && ($current->hour >= 20 || $current->hour < 8);
@@ -264,7 +273,7 @@ class Ticket extends Model {
             ) {
                 $hasBeenWaiting = true;
                 $waitingRecords[] = $statusUpdates[$i];
-                if(count($statusUpdates) > ($i + 1)) {
+                if (count($statusUpdates) > ($i + 1)) {
                     $waitingEndingRecords[] = $statusUpdates[$i + 1];
                 }
             }
