@@ -74,6 +74,7 @@ class OldTicketController extends Controller {
     }
 
     public function search(Request $request) {
+
         $search = $request->input('q');
 
         $old_tickets = OldTicket::query()

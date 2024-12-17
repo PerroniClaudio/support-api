@@ -23,6 +23,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Illuminate\Support\Facades\Log;
 
+
 class TicketController extends Controller {
     /**
      * Display a listing of the resource.
@@ -34,14 +35,14 @@ class TicketController extends Controller {
         // Deve comprendere i ticket chiusi?
         $withClosed = $request->query('with-closed') == 'true' ? true : false;
 
-        if($withClosed){
+        if ($withClosed) {
             $cacheKey = 'user_' . $user->id . '_tickets_with_closed';
         } else {
             $cacheKey = 'user_' . $user->id . '_tickets';
         }
         $tickets = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($user, $withClosed) {
             if ($user["is_company_admin"] == 1) {
-                
+
                 if ($withClosed) {
                     $ticketsTemp = $user->company->tickets;
                 } else {
@@ -166,14 +167,13 @@ class TicketController extends Controller {
         $ticketUser = $ticket->user;
         $company = $ticket->company;
         $ticketType =  $ticket->ticketType;
-        $debugString = 'DEBUG: Ticket ID: ' . $ticket->id 
+        $debugString = 'DEBUG: Ticket ID: ' . $ticket->id
             . ' - Ticket User: ' . ($ticketUser->name ?? 'No name')
             . (isset($data['office']) ? ' - Office set: ' . (Office::find($data['office'])->name ?? $data['office'])  : ' - Office not set')
             . (isset($data['referer_it']) ? ' - Referer IT set: ' . (User::find($data['referer_it'])->name ?? $data['referer_it']) : ' - Referer IT not set, ')
             . (isset($data['referer']) ? ($data['referer'] != '0' ? ' - Referer set: ' . (User::find($data['referer'])->name ?? $data['referer']) : ' - Referer set: ' . $data['referer']) : ' - Referer not set, ')
             . (' - Ticket Type name: ' . ($ticketType->name ?? 'No name'))
-            . (' - Ticket company name: ' . ($company->name ?? 'No name'))
-        ;
+            . (' - Ticket company name: ' . ($company->name ?? 'No name'));
         Log::info($debugString);
 
         dispatch(new SendOpenTicketEmail($ticket, $brand_url));
@@ -191,19 +191,19 @@ class TicketController extends Controller {
             'data' => 'required|string',
             'file' => 'required|file|mimes:xlsx,csv',
         ]);
-        
+
         $user = $request->user();
 
-        if($user["is_admin"] != 1){
+        if ($user["is_admin"] != 1) {
             return response([
                 'message' => 'The user must be an admin.',
             ], 401);
         }
-        
+
         $data = json_decode($request->data);
 
         $additionalData = []; // I tuoi dati aggiuntivi
-        
+
         $additionalData['user'] = $user;
         $additionalData['formData'] = $data;
 
@@ -213,7 +213,6 @@ class TicketController extends Controller {
         } catch (\Exception $e) {
             return response()->json(['success' => false, 'message' => 'Errore durante l\'importazione.\\n\\n' . $e->getMessage()], 500);
         }
-
     }
 
 
@@ -294,7 +293,7 @@ class TicketController extends Controller {
         if ($user["is_admin"] == 1) {
             // $ticket->setUsersMessagesAsRead();
             // solo se l'admin è anche il gestore del ticket.
-            if(isset($ticket->admin_user_id) && $ticket->admin_user_id == $user->id && $ticket->unread_mess_for_adm > 0){
+            if (isset($ticket->admin_user_id) && $ticket->admin_user_id == $user->id && $ticket->unread_mess_for_adm > 0) {
                 $ticket->update(['unread_mess_for_adm' => 0]);
                 cache()->forget('user_' . $user->id . '_tickets');
                 cache()->forget('user_' . $user->id . '_tickets_with_closed');
@@ -528,13 +527,13 @@ class TicketController extends Controller {
 
         $requestUser = $request->user();
 
-        if(!$ticket->handler){
+        if (!$ticket->handler) {
             $ticket->update([
                 'admin_user_id' => $requestUser->id,
             ]);
-    
+
             $adminUser = User::where('id', $requestUser->id)->first();
-    
+
             $update = TicketStatusUpdate::create([
                 'ticket_id' => $ticket->id,
                 'user_id' => $requestUser->id,
@@ -565,7 +564,7 @@ class TicketController extends Controller {
             $brand_url = $ticket->brandUrl();
             dispatch(new SendCloseTicketEmail($ticket, $fields['message'], $brand_url));
         }
-        
+
         // Controllare se si deve inviare la mail al data_owner (l'invio al data_owner e al cliente sono separati per dare maggiore scelta all'admin)
         if ($request->sendToDataOwner == true && (isset($ticket->company->data_owner_email) && filter_var($ticket->company->data_owner_email, FILTER_VALIDATE_EMAIL))) {
             // Invio mail al data_owner del cliente
@@ -794,7 +793,7 @@ class TicketController extends Controller {
             'is_deleted' => true,
         ]);
 
-        if(!$success){
+        if (!$success) {
             return response([
                 'message' => 'Error deleting file.',
             ], 500);
@@ -804,7 +803,7 @@ class TicketController extends Controller {
             'message' => 'File deleted.',
         ], 200);
     }
-    
+
     public function recoverFile($id, Request $request) {
         $user = $request->user();
 
@@ -820,7 +819,7 @@ class TicketController extends Controller {
             'is_deleted' => false,
         ]);
 
-        if(!$success){
+        if (!$success) {
             return response([
                 'message' => 'Error recovering file.',
             ], 500);
@@ -868,7 +867,7 @@ class TicketController extends Controller {
         $groups = $user->groups;
 
         $withClosed = $request->query('with-closed') == 'true' ? true : false;
-        
+
         // $tickets = Ticket::where("status", "!=", 5)->whereIn('group_id', $groups->pluck('id'))->with('user')->get();
         if ($withClosed) {
             $tickets = Ticket::whereIn('group_id', $groups->pluck('id'))->with('user')->get();
@@ -904,7 +903,7 @@ class TicketController extends Controller {
     public function report(Ticket $ticket, Request $request) {
 
         $user = $request->user();
-        if($user["is_admin"] != 1 && ($user["is_company_admin"] != 1 || $ticket->company_id != $user->company_id)){
+        if ($user["is_admin"] != 1 && ($user["is_company_admin"] != 1 || $ticket->company_id != $user->company_id)) {
             return response([
                 'message' => 'The user must be an admin.',
             ], 401);
@@ -913,7 +912,7 @@ class TicketController extends Controller {
 
         $webform_data = json_decode($ticket->messages()->first()->message);
 
-        if(isset($webform_data->office)){
+        if (isset($webform_data->office)) {
             $office = $ticket->company->offices()->where('id', $webform_data->office)->first();
             $webform_data->office = $office ? $office->name : null;
         } else {
@@ -967,7 +966,7 @@ class TicketController extends Controller {
         $ticket->ticket_type = $ticket->ticketType ?? null;
 
         // Nasconde i dati per gli admin se l'utente non è admin
-        if($user["is_admin"] != 1) {
+        if ($user["is_admin"] != 1) {
             $ticket->setRelation('status_updates', null);
             $ticket->makeHidden(["admin_user_id", "group_id", "priority", "is_user_error", "actual_processing_time"]);
         }
@@ -983,13 +982,13 @@ class TicketController extends Controller {
     public function batchReport(Request $request) {
 
         $user = $request->user();
-        if($user["is_admin"] != 1 && $user["is_company_admin"] != 1){
+        if ($user["is_admin"] != 1 && $user["is_company_admin"] != 1) {
             return response([
                 'message' => 'The user must be an admin.',
             ], 401);
         }
 
-        if($user["is_admin"] == 1){
+        if ($user["is_admin"] == 1) {
             $cacheKey = 'admin_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to;
         } else {
             $cacheKey = 'user_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to;
@@ -1065,7 +1064,7 @@ class TicketController extends Controller {
             $ticket->ticket_type = $ticket->ticketType ?? null;
 
             // Nasconde i dati per gli admin se l'utente non è admin
-            if($user["is_admin"] != 1) {
+            if ($user["is_admin"] != 1) {
                 $ticket->setRelation('status_updates', null);
                 $ticket->makeHidden(["admin_user_id", "group_id", "priority", "is_user_error", "actual_processing_time"]);
             }

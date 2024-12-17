@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('ticket_files', function (Blueprint $table) {
-            $table->boolean('is_deleted')->default(false);
+        Schema::table('type_form_fields', function (Blueprint $table) {
+            $table->string('options', 1000)->nullable()->change();
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('ticket_files', function (Blueprint $table) {
-            $table->dropColumn('is_deleted');
+        Schema::table('type_form_fields', function (Blueprint $table) {
+            $table->string('options', 255)->nullable()->change();
         });
     }
 };

@@ -73,18 +73,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
         '/user/frontend/logo',
         [App\Http\Controllers\UserController::class, "getFrontendLogoUrl"]
     );
-    
+
     Route::get(
         '/user/export-template',
         [App\Http\Controllers\UserController::class, "exportTemplate"]
     );
-    
+
     Route::post(
         '/user/import',
         [App\Http\Controllers\UserController::class, "importUsers"]
     );
-
-    
 });
 
 
@@ -187,7 +185,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('ticket', App\Http\Controllers\TicketController::class);
-    
+
+    Route::get("/old-ticket-search", [App\Http\Controllers\OldTicketController::class, "search"]);
+
+
     Route::get(
         "/data-owner/ticket/{ticket}",
         [App\Http\Controllers\TicketController::class, "show"]
@@ -302,6 +303,7 @@ Route::middleware(['auth:sanctum'])->get(
 );
 
 Route::middleware(['auth:sanctum'])->group(function () {
+
 
     Route::get(
         "/ticket-type/all",
@@ -523,11 +525,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {
-
-
-    Route::get("/old-ticket-search", [App\Http\Controllers\OldTicketController::class, "search"]);
-
 });
+
+
 
 
 
