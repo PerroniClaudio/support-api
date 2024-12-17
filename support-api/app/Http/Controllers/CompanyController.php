@@ -225,10 +225,15 @@ class CompanyController extends Controller {
     public function brands(Company $company) {
         $brands = $company->brands()->each(function (Brand $brand) {
             $brand->withGUrl();
-        })->toArray();
+        });
+
+        $brandsArray = array();
+        foreach ($brands as $brand) {
+            $brandsArray[] = $brand;
+        }
 
         return response([
-            'brands' => $brands,
+            'brands' => $brandsArray,
         ], 200);
     }
 
