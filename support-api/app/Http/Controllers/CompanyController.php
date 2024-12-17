@@ -225,7 +225,7 @@ class CompanyController extends Controller {
     public function brands(Company $company) {
         $brands = $company->brands()->each(function (Brand $brand) {
             $brand->withGUrl();
-        });
+        })->toArray();
 
         return response([
             'brands' => $brands,
