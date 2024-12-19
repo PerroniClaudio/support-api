@@ -187,6 +187,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::resource('ticket', App\Http\Controllers\TicketController::class);
 
     Route::get("/old-ticket-search", [App\Http\Controllers\OldTicketController::class, "search"]);
+    Route::get("/ticket-search", [App\Http\Controllers\TicketController::class, "search"]);
 
 
     Route::get(

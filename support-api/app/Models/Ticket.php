@@ -37,6 +37,9 @@ class Ticket extends Model {
             'description' => $this->description,
             'status' => $this->status,
             'type' => $this->type,
+            'user_name' => $this->user->name,
+            'user_surname' => $this->user->surname,
+            'company' => $this->company->name,
         ];
     }
 

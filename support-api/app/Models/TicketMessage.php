@@ -4,10 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Laravel\Scout\Searchable;
 
-class TicketMessage extends Model
-{
-    use HasFactory;
+class TicketMessage extends Model {
+    use HasFactory, Searchable;
 
     protected $fillable = [
         'ticket_id',
@@ -16,17 +16,21 @@ class TicketMessage extends Model
         'attachment'
     ];
 
+    public function toSearchableArray() {
+        return [
+            'message' => $this->message,
+        ];
+    }
+
     /* get the owner */
 
-    public function user()
-    {
+    public function user() {
         return $this->belongsTo(User::class);
     }
 
     /* get the ticket */
 
-    public function ticket()
-    {
+    public function ticket() {
         return $this->belongsTo(Ticket::class);
     }
 }

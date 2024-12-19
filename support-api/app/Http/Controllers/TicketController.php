@@ -14,6 +14,7 @@ use App\Models\TicketType;
 use App\Models\User;
 use App\Models\Office;
 use App\Models\Group;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Cache; // Otherwise no redis connection :)
@@ -1084,5 +1085,51 @@ class TicketController extends Controller {
         return response([
             'data' => $tickets_batch_data,
         ], 200);
+    }
+
+    public function search(Request $request) {
+
+        $search = $request->query('q');
+
+        $tickets = Ticket::query()->when($search, function (Builder $q, $value) {
+            /** 
+             * @disregard Intelephense non rileva il metodo whereIn
+             */
+            return $q->whereIn('id', Ticket::search($value)->keys());
+        })->with(['messages', 'company'])->get();
+
+        $tickets_messages = TicketMessage::query()->when($search, function (Builder $q, $value) {
+            /** 
+             * @disregard Intelephense non rileva il metodo whereIn
+             */
+            return $q->whereIn('id', TicketMessage::search($value)->keys());
+        })->get();
+
+        $ticket_ids_with_messages = $tickets_messages->pluck('ticket_id')->unique();
+        $tickets_with_messages = Ticket::whereIn('id', $ticket_ids_with_messages)->with(['messages', 'company'])->get();
+        $tickets = $tickets->merge($tickets_with_messages);
+
+
+        $tickets = $tickets->map(function ($ticket) {
+
+            $messages_map = $ticket->messages->map(function ($message) {
+                return [
+                    'id' => $message->id,
+                    'message' => $message->message,
+                ];
+            });
+
+            return [
+                'id' => $ticket->id,
+                'ticket_opened_by' => $ticket->user->name . " " . $ticket->user->surname,
+                'company' => $ticket->company->name,
+                'description' => $ticket->description,
+                'messages' => $messages_map,
+            ];
+        });
+
+
+
+        return response()->json($tickets);
     }
 }
