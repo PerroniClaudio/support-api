@@ -1,0 +1,26 @@
+name: Auto Pull To GCP
+
+on: 
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Configure Git safe directory
+        run: git config --global --add safe.directory /server2/support-api
+
+      - id: "auth"
+        uses: "google-github-actions/auth@v2"
+        with:
+          credentials_json: "${{ secrets.GCP_SA_KEY }}"
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Connect to VM and pull changes
+        run: |
+          gcloud compute ssh ${{ secrets.VM_INSTANCE_NAME }} --zone ${{ secrets.VM_ZONE }} --command="sudo git config --global --add safe.directory /server2/support-api && cd /server2/support-api && sudo git pull origin main && sh /server2/laradock/start.sh"
