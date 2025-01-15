@@ -61,7 +61,7 @@ class HardwareController extends Controller
             'model' => 'required|string',
             'serial_number' => 'required|string',
             'company_asset_number' => 'nullable|string',
-            'sale_date' => 'nullable|date',
+            'purchase_date' => 'nullable|date',
             'company_id' => 'nullable|int',
             'hardware_type_id' => 'nullable|int',
         ]);        

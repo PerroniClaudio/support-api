@@ -16,7 +16,7 @@ class Hardware extends Model {
     'model',
     'serial_number',
     'company_asset_number',
-    'sale_date',
+    'purchase_date',
     'company_id',
     'hardware_type_id'
   ];
