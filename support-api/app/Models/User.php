@@ -119,4 +119,8 @@ class User extends Authenticatable
         return $this->hasMany(BusinessTrip::class);
     }
 
+    public function hardware() {
+        return $this->hasMany(Hardware::class);
+    }
+
 }

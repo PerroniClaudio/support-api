@@ -73,4 +73,9 @@ class Company extends Model {
             return Brand::where('id', $ticketType->brand_id)->first();
         })->unique('id');
     }
+
+    public function hardware() {
+        return $this->hasMany(Hardware::class);
+    }
+    
 }
