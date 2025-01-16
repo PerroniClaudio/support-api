@@ -9,9 +9,10 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Mail\OtpEmail;
 use Illuminate\Support\Facades\Mail;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class User extends Authenticatable {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, TwoFactorAuthenticatable;
 
     /**
      * The attributes that are mass assignable.
