@@ -7,9 +7,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Mail\OtpEmail;
+use Illuminate\Support\Facades\Mail;
 
-class User extends Authenticatable
-{
+class User extends Authenticatable {
     use HasApiTokens, HasFactory, Notifiable;
 
     /**
@@ -58,8 +59,7 @@ class User extends Authenticatable
      * Get the company that owns the user.
      */
 
-    public function company()
-    {
+    public function company() {
         return $this->belongsTo(Company::class);
     }
 
@@ -67,8 +67,7 @@ class User extends Authenticatable
      * get user's tickets
      */
 
-    public function tickets()
-    {
+    public function tickets() {
         return $this->hasMany(Ticket::class)->with(['user' => function ($query) {
             $query->select(['id', 'name', 'surname', 'is_admin', 'company_id', 'is_company_admin', 'is_deleted']); // Specify the columns you want to include
         }]);
@@ -77,8 +76,7 @@ class User extends Authenticatable
     /**
      * get user's tickets as referer (seen in the webform message)
      */
-    public function refererTickets()
-    {
+    public function refererTickets() {
         $filteredTickets = $this->company->tickets->filter(function ($ticket) {
             return $ticket->referer() && ($ticket->referer()->id == $this->id);
         });
@@ -93,8 +91,7 @@ class User extends Authenticatable
      * get user's groups
      */
 
-    public function groups()
-    {
+    public function groups() {
         return $this->belongsToMany(Group::class, 'user_groups', 'user_id', 'group_id');
     }
 
@@ -102,8 +99,7 @@ class User extends Authenticatable
      * get user's attendances
      */
 
-    public function attendances()
-    {
+    public function attendances() {
         return $this->hasMany(Attendance::class);
     }
 
@@ -119,4 +115,15 @@ class User extends Authenticatable
         return $this->hasMany(BusinessTrip::class);
     }
 
+    public function createOtp() {
+        $otp = Otp::create([
+            'email' => $this->email,
+            'otp' => rand(1000, 9999),
+            'expires_at' => now()->addMinutes(120),
+        ]);
+
+        Mail::to($this->email)->send(new OtpEmail($otp->otp));
+
+        return $otp;
+    }
 }
