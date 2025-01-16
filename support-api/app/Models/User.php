@@ -117,11 +117,6 @@ class User extends Authenticatable {
         return $this->hasMany(BusinessTrip::class);
     }
 
-
-
-    // public function hardware() {
-    //     return $this->belongsToMany(Hardware::class, 'hardware_user', 'user_id', 'hardware_id');
-    // }
     public function hardware() {
         return $this->belongsToMany(Hardware::class, 'hardware_user', 'user_id', 'hardware_id')
             ->using(HardwareUser::class)
@@ -138,9 +133,5 @@ class User extends Authenticatable {
         Mail::to($this->email)->send(new OtpEmail($otp->otp));
 
         return $otp;
-    }
-
-    public function hardware() {
-        return $this->belongsToMany(Hardware::class, 'hardware_user', 'user_id', 'hardware_id');
     }
 }
