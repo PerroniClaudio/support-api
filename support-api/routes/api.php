@@ -526,6 +526,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get("/hardware-types", [App\Http\Controllers\HardwareTypeController::class, "index"]);
+    
+});
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get("/hardware-list", [App\Http\Controllers\HardwareController::class, "index"]);
+    Route::post("/hardware", [App\Http\Controllers\HardwareController::class, "store"]);
 });
 
 

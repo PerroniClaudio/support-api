@@ -126,4 +126,8 @@ class User extends Authenticatable {
 
         return $otp;
     }
+
+    public function hardware() {
+        return $this->hasMany(Hardware::class);
+    }
 }
