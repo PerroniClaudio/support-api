@@ -9,10 +9,9 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use App\Mail\OtpEmail;
 use Illuminate\Support\Facades\Mail;
-use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class User extends Authenticatable {
-    use HasApiTokens, HasFactory, Notifiable, TwoFactorAuthenticatable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -118,6 +117,17 @@ class User extends Authenticatable {
         return $this->hasMany(BusinessTrip::class);
     }
 
+
+
+    // public function hardware() {
+    //     return $this->belongsToMany(Hardware::class, 'hardware_user', 'user_id', 'hardware_id');
+    // }
+    public function hardware() {
+        return $this->belongsToMany(Hardware::class, 'hardware_user', 'user_id', 'hardware_id')
+            ->using(HardwareUser::class)
+            ->withPivot('created_by', 'created_at', 'updated_at');
+    }
+
     public function createOtp() {
         $otp = Otp::create([
             'email' => $this->email,
@@ -129,14 +139,4 @@ class User extends Authenticatable {
 
         return $otp;
     }
-
-    // public function hardware() {
-    //     return $this->belongsToMany(Hardware::class, 'hardware_user', 'user_id', 'hardware_id');
-    // }
-    public function hardware() {
-        return $this->belongsToMany(Hardware::class, 'hardware_user', 'user_id', 'hardware_id')
-                    ->using(HardwareUser::class)
-                    ->withPivot('created_by', 'created_at', 'updated_at');
-    }
-    
 }
