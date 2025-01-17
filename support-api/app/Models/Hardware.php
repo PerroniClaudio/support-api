@@ -18,12 +18,27 @@ class Hardware extends Model {
     'company_asset_number',
     'purchase_date',
     'company_id',
-    'hardware_type_id'
+    'hardware_type_id',
+    'ownership_type',
+    'ownership_type_note',
+    'notes',
   ];
 
   protected static function boot()
     {
         parent::boot();
+
+        // Aggiunge un log quando vene creato un nuovo hardware, se company_id è diverso da null
+        static::created(function ($model) {
+            if ($model->company_id != null) {
+                HardwareCompanyAuditLog::create([
+                    'type' => 'create',
+                    'hardware_id' => $model->id,
+                    'new_company_id' => $model->company_id,
+                    'modified_by' => auth()->id(),
+                ]);
+            }
+        });
 
         // Aggiunge un log quando viene modificato il campo company_id
         static::updating(function ($model) {
