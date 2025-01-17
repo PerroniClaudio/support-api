@@ -3,6 +3,7 @@
 use App\Jobs\SendCloseTicketEmail;
 use App\Jobs\SendNewMessageEmail;
 use App\Jobs\SendWelcomeEmail;
+use App\Mail\OtpEmail;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\StatusUpdateMail;
@@ -39,24 +40,13 @@ Route::get('/info', function () {
 });
 
 Route::get('/testmail', function () {
-    $user = User::find(1);
-    $ticket = Ticket::find(1);
-
-    Mail::to('c.perroni@ifortech.com')->send(new StatusUpdateMail($ticket, 1, $user));
+    Mail::to('c.perroni@ifortech.com')->send(new OtpEmail(2345));
 });
 
 Route::get('/test', function () {
     return "test";
 });
 
-Route::get('/mailtest', function () {
-
-    $tickets = Ticket::where("status", "!=", 5)->with("company", "ticketType")->orderBy("created_at", "desc")->get();
-
-    Mail::to("c.perroni@ifortech.com")->send(new \App\Mail\PlatformActivityMail($tickets));
-
-    return [];
-});
 
 Route::get('/welcome', function () {
     return "welcome";

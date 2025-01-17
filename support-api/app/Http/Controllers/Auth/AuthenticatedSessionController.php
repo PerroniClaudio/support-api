@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\Otp;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
@@ -35,12 +36,15 @@ class AuthenticatedSessionController extends Controller {
                 'message' => 'Le credenziali non corrispondono',
             ], 401);
         }
-        
+
         if ($user['is_deleted'] == 1) {
             return response([
                 'message' => 'Utente disabilitato',
             ], 401);
         }
+
+        $user->createOtp();
+
 
         $request->authenticate();
 
@@ -83,5 +87,41 @@ class AuthenticatedSessionController extends Controller {
         $request->session()->regenerate();
 
         return response()->noContent();
+    }
+
+    public function validateOtp(Request $request) {
+
+        $user = Auth::user();
+
+        $otp = Otp::where([
+            'email' => $user->email,
+            'otp' => $request->otp,
+        ])->latest()->first();
+
+        if ($otp) {
+
+            if ($otp->isExpired()) {
+                return response([
+                    'message' => 'OTP scaduto',
+                ], 401);
+            }
+
+            return response()->json([
+                'success' => true,
+            ], 200);
+        } else {
+            return response([
+                'message' => 'OTP non valido',
+            ], 401);
+        }
+    }
+
+    public function resendOtp(Request $request) {
+        $user = User::find(Auth::user()->id);
+        $user->createOtp();
+
+        return response()->json([
+            'success' => true,
+        ], 200);
     }
 }
