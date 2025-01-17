@@ -31,7 +31,7 @@ use Illuminate\Support\Facades\Schema;
 */
 
 Route::get('/', function () {
-    return ['Laravel' => app()->version()];
+    return ['Laravel' => app()->version(), 'timezone' => config('app.timezone'), 'current_time' => now()];
 });
 
 Route::get('/info', function () {
