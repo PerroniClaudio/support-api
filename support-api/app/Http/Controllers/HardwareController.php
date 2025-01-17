@@ -2,7 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Company;
 use App\Models\Hardware;
+use App\Models\HardwareType;
+use App\Models\HardwareUserAuditLog;
+use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class HardwareController extends Controller
@@ -12,22 +17,22 @@ class HardwareController extends Controller
      */
     public function index(Request $request)
     {
-        $user = $request->user();
-        if ($user->is_admin) {
+        $authUser = $request->user();
+        if ($authUser->is_admin) {
             $hardwareList = Hardware::with(['hardwareType', 'company'])->get();
             return response([
                 'hardwareList' => $hardwareList,
             ], 200);
         }
         
-        if($user->is_company_admin) {
-            $hardwareList = Hardware::where('company_id', $user->company_id)->with(['hardwareType', 'company'])->get();
+        if($authUser->is_company_admin) {
+            $hardwareList = Hardware::where('company_id', $authUser->company_id)->with(['hardwareType', 'company'])->get();
             return response([
                 'hardwareList' => $hardwareList,
             ], 200);
         }
 
-        $hardwareList = Hardware::where('company_id', $user->company_id)->where('user_id', $user->id)->with(['hardwareType', 'company'])->get();
+        $hardwareList = Hardware::where('company_id', $authUser->company_id)->where('user_id', $authUser->id)->with(['hardwareType', 'company'])->get();
         return response([
             'hardwareList' => $hardwareList,
         ], 200);
@@ -48,13 +53,14 @@ class HardwareController extends Controller
      */
     public function store(Request $request)
     {
-        $user = $request->user();
+        $authUser = $request->user();
      
-        if (!$user->is_admin) {
+        if (!$authUser->is_admin) {
             return response([
                 'message' => 'You are not allowed to create hardware',
             ], 403);
         }
+    
 
         $data = $request->validate([
             'make' => 'required|string',
@@ -64,10 +70,49 @@ class HardwareController extends Controller
             'purchase_date' => 'nullable|date',
             'company_id' => 'nullable|int',
             'hardware_type_id' => 'nullable|int',
+            'ownership_type' => 'nullable|string',
+            'ownership_type_note' => 'nullable|string',
+            'notes' => 'nullable|string',
+            'users' => 'nullable|array',
         ]);        
 
+        if (isset($data['company_id']) && !Company::find($data['company_id'])) {
+            return response([
+                'message' => 'Company not found',
+            ], 404);
+        }
+
+        // Aggiungere le associazioni utenti
+        if (isset($data['company_id']) && !empty($data['users']) ) {
+            $isFail = User::whereIn('id', $data['users'])->where('company_id', '!=', $data['company_id'])->exists();
+            if ($isFail) {
+                return response([
+                    'message' => 'One or more users do not belong to the specified company',
+                ], 400);
+            }
+
+        }
+        
         $hardware = Hardware::create($data);
 
+        if (!empty($data['users'])) {
+            // Non so perchè ma non crea i log in automatico, quindi devo aggiungerli manualmente
+            // $hardware->users()->attach($data['users']);
+            
+            foreach ($data['users'] as $userId) {
+                $hardware->users()->attach($userId, [
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now(),
+                ]);
+                HardwareUserAuditLog::create([
+                    'type' => 'created',
+                    'modified_by' => $authUser->id,
+                    'hardware_id' => $hardware->id,
+                    'user_id' => $userId,
+                ]);
+            }
+        }
+        
         return response([
             'hardware' => $hardware,
         ], 201);
@@ -76,9 +121,34 @@ class HardwareController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Hardware $hardware)
+    public function show(Request $request, Hardware $hardware)
     {
-        //
+        $authUser = $request->user();
+        if (!$authUser->is_admin 
+            && !($authUser->is_company_admin && $hardware->company_id == $authUser->company_id) 
+            && !(in_array($authUser->id, $hardware->users->pluck('id')->toArray()))) {
+            return response([
+                'message' => 'You are not allowed to view this hardware',
+            ], 403);
+        }
+        if($authUser->is_admin || $authUser->is_company_admin) {
+            // $hardware->load(['company', 'hardwareType', 'users']);
+            $hardware->load([
+                'company' => function ($query) {$query->select('id', 'name');}, 
+                'hardwareType', 
+                'users' => function ($query) {
+                    $query->select('user_id as id', 'name', 'surname', 'email', 'is_company_admin', 'is_deleted'); // Limit user data sent to frontend
+            }]);
+        } else {
+            $hardware->load([
+                'company' => function ($query) {$query->select('id', 'name');}, 
+                'hardwareType', 'users' => function ($query) {
+                    $query->select('user_id as id', 'name', 'surname', 'email', 'is_company_admin', 'is_deleted'); // Limit user data sent to frontend
+            }]);
+        }
+        return response([
+            'hardware' => $hardware,
+        ], 200);
     }
 
     /**

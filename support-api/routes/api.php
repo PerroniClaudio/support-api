@@ -527,12 +527,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/hardware-types", [App\Http\Controllers\HardwareTypeController::class, "index"]);
+    Route::post("/hardware-types", [App\Http\Controllers\HardwareTypeController::class, "store"]);
+    Route::patch("/hardware-types/{hardwareType}", [App\Http\Controllers\HardwareTypeController::class, "update"]);
+    Route::delete("/hardware-types/{hardwareType}", [App\Http\Controllers\HardwareTypeController::class, "destroy"]);
     
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/hardware-list", [App\Http\Controllers\HardwareController::class, "index"]);
     Route::post("/hardware", [App\Http\Controllers\HardwareController::class, "store"]);
+    Route::get("/hardware/{hardware}", [App\Http\Controllers\HardwareController::class, "show"]);
 });
 
 

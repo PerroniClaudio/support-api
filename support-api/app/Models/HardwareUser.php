@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class HardwareUser extends Pivot
 {
+    public $timestamps = true;
     protected $table = 'hardware_user';
 
     protected static function boot()
