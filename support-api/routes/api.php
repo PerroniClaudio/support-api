@@ -8,6 +8,7 @@ use App\Http\Controllers\TicketStatusUpdateController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\OldTicketController;
+use App\Http\Controllers\TwoFactorChallengeController;
 
 /*
 |--------------------------------------------------------------------------
@@ -530,7 +531,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post("/hardware-types", [App\Http\Controllers\HardwareTypeController::class, "store"]);
     Route::patch("/hardware-types/{hardwareType}", [App\Http\Controllers\HardwareTypeController::class, "update"]);
     Route::delete("/hardware-types/{hardwareType}", [App\Http\Controllers\HardwareTypeController::class, "destroy"]);
-    
 });
 
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -538,10 +538,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post("/hardware", [App\Http\Controllers\HardwareController::class, "store"]);
     Route::get("/hardware/{hardware}", [App\Http\Controllers\HardwareController::class, "show"]);
 });
-
-
-
-
 
 // Sembra inesistente. commento per sicurezza e poi eliminiamo in un commit futuro
 // Route::middleware(['auth:sanctum'])->group(function () {
