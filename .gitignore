@@ -9,3 +9,4 @@ erp
 /nginx
 /sslcert/certificate.crt
 /html/keys
+data.ms
