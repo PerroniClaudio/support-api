@@ -139,4 +139,8 @@ class User extends Authenticatable {
 
         return $otp;
     }
+
+    public function hardware() {
+        return $this->belongsToMany(Hardware::class, 'hardware_user', 'user_id', 'hardware_id');
+    }
 }
