@@ -16,7 +16,11 @@ use App\Models\TicketReportExport;
 use App\Models\TicketStats;
 use App\Models\TicketType;
 use App\Models\TicketTypeCategory;
+
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Log;
+use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticatedSessionController;
 
 
 /*
@@ -129,3 +133,7 @@ Route::get('/import', [App\Http\Controllers\OldTicketController::class, 'import'
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/webhook.php';
+
+Route::middleware(['throttle:5,1', 'auth:sanctum'])->group(function () {
+    Route::post('/two-factor-authentication-challenge', [App\Http\Controllers\UserController::class, 'twoFactorChallenge'])->name('two-factor-challenge-user');
+});

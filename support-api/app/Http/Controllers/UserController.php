@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Facades\Excel;
+use PragmaRX\Google2FA\Google2FA;
 
 class UserController extends Controller {
     //
@@ -239,7 +240,7 @@ class UserController extends Controller {
             $disabled = $user->update([
                 'is_deleted' => true,
             ]);
-            if($disabled){
+            if ($disabled) {
                 return response([
                     'deleted_user' => $id,
                 ], 200);
@@ -264,7 +265,7 @@ class UserController extends Controller {
                 'message' => 'Error',
             ], 404);
         }
-        
+
         $user = User::where('id', $id)->first();
         $enabled = $user->update([
             'is_deleted' => 0,
@@ -372,10 +373,10 @@ class UserController extends Controller {
         ], 200);
     }
 
-    public function getName($id, Request $request){
+    public function getName($id, Request $request) {
         $user = User::where('id', $id)->first();
 
-        if(!$request->user()["is_admin"] && ($user["company_id"] != $request->user()["company_id"]) && $user->company->data_owner_email != $request->user()->email){
+        if (!$request->user()["is_admin"] && ($user["company_id"] != $request->user()["company_id"]) && $user->company->data_owner_email != $request->user()->email) {
             return response([
                 'message' => 'Unauthorized',
             ], 401);
@@ -393,7 +394,7 @@ class UserController extends Controller {
         $brands = $request->user()->company->brands()->toArray();
 
         // Filtra i brand omonimo alle aziende interne ed utilizza quello dell'azienda interna con l'id piu basso
-        $sameNameSuppliers = array_filter($suppliers, function($supplier) use ($brands) {
+        $sameNameSuppliers = array_filter($suppliers, function ($supplier) use ($brands) {
             $brandNames = array_column($brands, 'name');
             return in_array($supplier['name'], $brandNames);
         });
@@ -401,16 +402,16 @@ class UserController extends Controller {
         $selectedBrand = '';
 
         // Se ci sono aziende interne allora prende quella con l'id più basso e recupera il marchio omonimo, altrimenti usa il marchio con l'id più basso.
-        if(!empty($sameNameSuppliers)){
-            usort($sameNameSuppliers, function($a, $b) {
+        if (!empty($sameNameSuppliers)) {
+            usort($sameNameSuppliers, function ($a, $b) {
                 return $a['id'] <=> $b['id'];
             });
             $selectedSupplier = reset($sameNameSuppliers);
-            $selectedBrand = array_values(array_filter($brands, function($brand) use ($selectedSupplier) {
+            $selectedBrand = array_values(array_filter($brands, function ($brand) use ($selectedSupplier) {
                 return $brand['name'] === $selectedSupplier['name'];
             }))[0];
         } else {
-            usort($brands, function($a, $b) {
+            usort($brands, function ($a, $b) {
                 return $a['id'] <=> $b['id'];
             });
 
@@ -421,7 +422,7 @@ class UserController extends Controller {
         $url = config('app.url') . '/api/brand/' . $selectedBrand['id'] . '/logo';
 
         // $url = $request->user()->company->frontendLogoUrl;
-        
+
         return response([
             'urlLogo' => $url,
         ], 200);
@@ -456,5 +457,20 @@ class UserController extends Controller {
         ], 200);
     }
 
-}
+    public function twoFactorChallenge(Request $request) {
+        $user = Auth::user();
 
+        $google2fa = new Google2FA();
+        $secret = decrypt($user->two_factor_secret);
+
+        if (!$google2fa->verifyKey($secret, $request->code)) {
+            return response([
+                'message' => 'Invalid code',
+            ], 401);
+        }
+
+        return response([
+            'success' => true,
+        ], 200);
+    }
+}
