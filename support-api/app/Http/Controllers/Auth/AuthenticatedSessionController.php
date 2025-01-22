@@ -43,9 +43,6 @@ class AuthenticatedSessionController extends Controller {
             ], 401);
         }
 
-        $user->createOtp();
-
-
         $request->authenticate();
 
         $request->session()->regenerate();
@@ -87,41 +84,5 @@ class AuthenticatedSessionController extends Controller {
         $request->session()->regenerate();
 
         return response()->noContent();
-    }
-
-    public function validateOtp(Request $request) {
-
-        $user = Auth::user();
-
-        $otp = Otp::where([
-            'email' => $user->email,
-            'otp' => $request->otp,
-        ])->latest()->first();
-
-        if ($otp) {
-
-            if ($otp->isExpired()) {
-                return response([
-                    'message' => 'OTP scaduto',
-                ], 401);
-            }
-
-            return response()->json([
-                'success' => true,
-            ], 200);
-        } else {
-            return response([
-                'message' => 'OTP non valido',
-            ], 401);
-        }
-    }
-
-    public function resendOtp(Request $request) {
-        $user = User::find(Auth::user()->id);
-        $user->createOtp();
-
-        return response()->json([
-            'success' => true,
-        ], 200);
     }
 }

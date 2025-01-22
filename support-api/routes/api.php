@@ -30,15 +30,20 @@ Route::middleware(['auth:sanctum'])->group(function () {
         }
     );
 
+    Route::post('/onboarding', [App\Http\Controllers\UserController::class, "onboarding"]);
+
+
     Route::get(
         '/user/all',
         [App\Http\Controllers\UserController::class, "allUsers"]
     );
 
+
     Route::post(
         '/user',
         [App\Http\Controllers\UserController::class, "store"]
     );
+
 
     Route::patch(
         '/user',

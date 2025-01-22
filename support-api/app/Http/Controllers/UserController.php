@@ -473,4 +473,28 @@ class UserController extends Controller {
             'success' => true,
         ], 200);
     }
+
+    public function onboarding(Request $request) {
+        $user = User::find(Auth::user()->id);
+
+        $validated = $request->validate([
+            'email' => 'required|email',
+            'phone' => 'required|string|max:20',
+            'name' => 'required|string',
+            'surname' => 'required|string',
+            'office' => 'required|exists:offices,id',
+        ]);
+
+        $user->update([
+            'email' => $validated['email'],
+            'phone' => $validated['phone'],
+            'name' => $validated['name'],
+            'surname' => $validated['surname'],
+            'office_id' => $validated['office'],
+        ]);
+
+        return response([
+            'user' => $user,
+        ], 200);
+    }
 }
