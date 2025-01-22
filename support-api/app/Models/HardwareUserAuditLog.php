@@ -10,7 +10,7 @@ class HardwareUserAuditLog extends Model {
   protected $table = 'hardware_user_audit_log';
 
   protected $fillable = [
-    'type',
+    'type', // created (assegnazione), deleted (rimozione), updated (aggiornamento)
     'modified_by',
     'hardware_id',
     'user_id',

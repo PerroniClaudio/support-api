@@ -129,6 +129,6 @@ class User extends Authenticatable {
     }
 
     public function hardware() {
-        return $this->hasMany(Hardware::class);
+        return $this->belongsToMany(Hardware::class, 'hardware_user', 'user_id', 'hardware_id');
     }
 }

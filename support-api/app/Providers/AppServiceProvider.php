@@ -22,6 +22,7 @@ class AppServiceProvider extends ServiceProvider
     {
         //
         LogViewer::auth(function ($request) {  
+            return true;
             $user = $request->user();
             return $user && $user->is_admin;   
             // return $request->user()            

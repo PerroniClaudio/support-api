@@ -536,6 +536,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/hardware-list", [App\Http\Controllers\HardwareController::class, "index"]);
     Route::post("/hardware", [App\Http\Controllers\HardwareController::class, "store"]);
+    Route::patch("/hardware/{hardware}", [App\Http\Controllers\HardwareController::class, "update"]);
+    Route::patch("/hardware-users/{hardware}", [App\Http\Controllers\HardwareController::class, "updateHardwareUsers"]); //lato utente
+    Route::get("/user-hardware/{user}", [App\Http\Controllers\HardwareController::class, "userHardwareList"]); //lato utente
+    Route::post("/delete-hardware-user", [App\Http\Controllers\HardwareController::class, "deleteHardwareUser"]); //rimuovi un'associazione utente-hardware
     Route::get("/hardware/{hardware}", [App\Http\Controllers\HardwareController::class, "show"]);
 });
 

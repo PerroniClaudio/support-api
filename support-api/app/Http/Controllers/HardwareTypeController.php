@@ -10,13 +10,24 @@ class HardwareTypeController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $hardwareTypes = HardwareType::all();
-
+        
+        $authUser = $request->user();
+        if ($authUser->is_admin) {
+            $hardwareTypes = HardwareType::all();
+            return response([
+                'hardwareTypes' => $hardwareTypes,
+            ], 200);
+        }
+        
+        $hardwareTypes = HardwareType::whereHas('hardware', function ($query) use ($authUser) {
+            $query->where('company_id', $authUser->company_id);
+        })->get();
         return response([
             'hardwareTypes' => $hardwareTypes,
         ], 200);
+
     }
 
     /**
