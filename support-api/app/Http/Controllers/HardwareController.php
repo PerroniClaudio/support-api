@@ -202,12 +202,6 @@ class HardwareController extends Controller {
             }
         }
 
-        if ($data['is_exclusive_use'] && count($data['users']) > 1) {
-            return response([
-                'message' => 'This hardware can be associated to only one user. Hardware not created.',
-            ], 400);
-        }
-
         $hardware = Hardware::create($data);
 
         if ($hardware->company_id) {
@@ -221,6 +215,9 @@ class HardwareController extends Controller {
         }
 
         if (!empty($data['users'])) {
+            // Non so perchè ma non crea i log in automatico, quindi devo aggiungerli manualmente
+            // $hardware->users()->attach($data['users']);
+
             foreach ($data['users'] as $userId) {
                 $hardware->users()->syncWithoutDetaching($userId, [
                     'created_at' => Carbon::now(),
@@ -352,6 +349,20 @@ class HardwareController extends Controller {
 
         // Aggiorna l'hardware
         $hardware->update($data);
+
+        if ($hardware->company_id != $oldCompanyId) {
+            $logType = $oldCompanyId ? ($hardware->company_id ? 'updated' : 'deleted') : 'created';
+            $oldData = $oldCompanyId ? json_encode(['company_id' => $oldCompanyId]) : null;
+            $newData = $hardware->company_id ? json_encode(['company_id' => $hardware->company_id]) : null;
+            HardwareAuditLog::create([
+                'modified_by' => $authUser->id,
+                'hardware_id' => $hardware->id,
+                'log_subject' => 'hardware_company',
+                'log_type' => $logType,
+                'old_data' => $oldData,
+                'new_data' => $newData,
+            ]);
+        }
 
         // Aggiorna gli utenti associati
         // Non so perchè ma non crea i log in automatico, quindi devo aggiungerli manualmente
@@ -510,6 +521,12 @@ class HardwareController extends Controller {
 
         $company = $hardware->company;
 
+        if (!isEmpty($data['users']) && !$company) {
+            return response([
+                'message' => 'Hardware must be associated with a company to add users',
+            ], 404);
+        }
+
         if ($company && !isEmpty($data['users'])) {
             $isFail = User::whereIn('id', $data['users'])->where('company_id', '!=', $company->id)->exists();
             if ($isFail) {
@@ -550,146 +567,6 @@ class HardwareController extends Controller {
                 'hardware_id' => $hardware->id,
                 'user_id' => $userId,
             ]);
-        }
-
-        return response([
-            'message' => 'Hardware users updated successfully',
-        ], 200);
-    }
-
-    public function deleteHardwareUser(Request $request) {
-        $data = $request->validate([
-            'hardware_id' => 'required|int',
-            'user_id' => 'required|int',
-        ]);
-
-        $hardware = Hardware::find($request->hardware_id);
-        if (!$hardware) {
-            return response([
-                'message' => 'Hardware not found',
-            ], 404);
-        }
-
-        $authUser = $request->user();
-        if (!$authUser->is_admin && !($authUser->is_company_admin && ($hardware->company_id == $authUser->company_id))) {
-            return response([
-                'message' => 'You are not allowed to update hardware users',
-            ], 403);
-        }
-
-        $user = User::find($data['user_id']);
-        if (!$user) {
-            return response([
-                'message' => 'User not found',
-            ], 404);
-        }
-
-        if (!$hardware->users->contains($user)) {
-            return response([
-                'message' => 'User not associated with hardware',
-            ], 400);
-        }
-
-        $hardware->users()->detach($user->id);
-        HardwareUserAuditLog::create([
-            'type' => 'deleted',
-            'modified_by' => $authUser->id,
-            'hardware_id' => $hardware->id,
-            'user_id' => $user->id,
-        ]);
-
-        return response([
-            'message' => 'User removed from hardware successfully',
-        ], 200);
-    }
-
-    public function userHardwareList(Request $request, User $user) {
-        $authUser = $request->user();
-        if (!$authUser->is_admin && !($authUser->company_id != $user->company_id) && !($authUser->id == $user->id)) {
-            return response([
-                'message' => 'You are not allowed to view this user hardware',
-            ], 403);
-        }
-
-        $hardwareList = $user->hardware()->with(['hardwareType', 'company'])->get();
-        return response([
-            'hardwareList' => $hardwareList,
-        ], 200);
-    }
-
-    public function assignHardwareToUser(Request $request) {
-        $hardware = Hardware::find($hardware->id);
-        if (!$hardware) {
-            return response([
-                'message' => 'Hardware not found',
-            ], 404);
-        }
-
-        $authUser = $request->user();
-        if (!($authUser->is_company_admin && ($hardware->company_id == $authUser->company_id)) && !$authUser->is_admin) {
-            return response([
-                'message' => 'You are not allowed to update hardware users',
-            ], 403);
-        }
-
-        $data = $request->validate([
-            'users' => 'nullable|array',
-        ]);
-
-
-        $company = $hardware->company;
-
-        if (!isEmpty($data['users']) && !$company) {
-            return response([
-                'message' => 'Hardware must be associated with a company to add users',
-            ], 404);
-        }
-
-        if ($company && !isEmpty($data['users'])) {
-            $isFail = User::whereIn('id', $data['users'])->where('company_id', '!=', $company->id)->exists();
-            if ($isFail) {
-                return response([
-                    'message' => 'One or more selected users do not belong to the specified company',
-                ], 400);
-            }
-        }
-
-        $users = User::whereIn('id', $data['users'])->get();
-        if ($users->count() != count($data['users'])) {
-            return response([
-                'message' => 'One or more users not found',
-            ], 404);
-        }
-
-        $usersToRemove = $hardware->users->pluck('id')->diff($data['users']);
-        $usersToAdd = collect($data['users'])->diff($hardware->users->pluck('id'));
-
-        // Solo l'admin può rimuovere associazioni hardware-user
-        if (!$authUser->is_admin && count($usersToRemove) > 0) {
-            return response([
-                'message' => 'You are not allowed to remove users from hardware',
-            ], 403);
-        }
-
-        // L'hardware ad uso sclusivo può essere associato a un solo utente
-        if (
-            $hardware->is_exclusive_use &&
-            (count($usersToAdd) > 0 &&
-                (($hardware->users->count() - count($usersToRemove) + count($usersToAdd)) > 1)
-            )
-        ) {
-            return response([
-                'message' => 'This hardware can be associated to only one user.',
-            ], 400);
-        }
-
-
-        foreach ($usersToAdd as $userId) {
-            $hardware->users()->attach($userId);
-        }
-
-        foreach ($usersToRemove as $userId) {
-            $hardware->users()->detach($userId);
         }
 
         return response([
