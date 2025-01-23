@@ -497,4 +497,47 @@ class UserController extends Controller {
             'user' => $user,
         ], 200);
     }
+
+    public function updateProfile(Request $request) {
+        $user = User::find(Auth::user()->id);
+
+        $validated = $request->validate([
+            'phone' => 'required|string|max:20',
+            'name' => 'required|string',
+            'surname' => 'required|string',
+        ]);
+
+        $user->update([
+            'phone' => $validated['phone'],
+            'name' => $validated['name'],
+            'surname' => $validated['surname'],
+        ]);
+
+        return response([
+            'user' => $user,
+        ], 200);
+    }
+
+    public function passwordUpdate(Request $request) {
+        $user = User::find(Auth::user()->id);
+
+        $validated = $request->validate([
+            'password' => 'required|string',
+            'new_password' => 'required|string',
+        ]);
+
+        if (!Hash::check($validated['password'], $user->password)) {
+            return response([
+                'message' => 'Invalid password',
+            ], 400);
+        }
+
+        $user->update([
+            'password' => Hash::make($validated['new_password']),
+        ]);
+
+        return response([
+            'user' => $user,
+        ], 200);
+    }
 }
