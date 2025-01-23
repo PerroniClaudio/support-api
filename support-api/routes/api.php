@@ -211,9 +211,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
         [App\Http\Controllers\TicketController::class, "files"]
     );
 
+    // Questa route non viene usata al momento. se serve, provare prima l'altra (storeFiles)
     Route::post(
         "/ticket/{ticket}/file",
         [App\Http\Controllers\TicketController::class, "storeFile"]
+    );
+    
+    Route::post(
+        "/ticket/{ticket}/files",
+        [App\Http\Controllers\TicketController::class, "storeFiles"]
     );
 
     Route::post(

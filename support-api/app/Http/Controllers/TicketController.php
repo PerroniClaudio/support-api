@@ -761,6 +761,58 @@ class TicketController extends Controller {
         }
     }
 
+    public function storeFiles($id, Request $request) {
+
+        if ($request->hasFile('files')) {
+            $files = $request->file('files');
+            $storedFiles = [];
+            $count = 0;
+            if (is_array($files)) {
+                foreach ($files as $file) {
+                    $file_name = time() . '_' . $file->getClientOriginalName();
+                    $path = "tickets/" . $id . "/" . $file_name;
+                    $storeFile = $file->storeAs("tickets/" . $id . "/", $file_name, "gcs");
+                    $ticketFile = TicketFile::create([
+                        'ticket_id' => $id,
+                        'filename' => $file->getClientOriginalName(),
+                        'path' => $path,
+                        'extension' => $file->getClientOriginalExtension(),
+                        'mime_type' => $file->getMimeType(),
+                        'size' => $file->getSize(),
+                    ]);
+    
+                    $storedFiles[] = $ticketFile;
+                    $count++;
+                }
+            } else {
+                $file_name = time() . '_' . $files->getClientOriginalName();
+                $path = "tickets/" . $id . "/" . $file_name;
+                $storeFile = $files->storeAs("tickets/" . $id . "/", $file_name, "gcs");
+                $ticketFile = TicketFile::create([
+                    'ticket_id' => $id,
+                    'filename' => $files->getClientOriginalName(),
+                    'path' => $path,
+                    'extension' => $files->getClientOriginalExtension(),
+                    'mime_type' => $files->getMimeType(),
+                    'size' => $files->getSize(),
+                ]);
+    
+                $storedFiles[] = $ticketFile;
+                $count++;
+            }
+            
+
+            return response([
+                'ticketFiles' => $storedFiles,
+                'filesCount' => $count,
+            ], 200);
+        }
+
+        return response([
+            'message' => 'No files uploaded.',
+        ], 400);
+    }
+
     public function generatedSignedUrlForFile($id) {
 
         $ticketFile = TicketFile::where('id', $id)->first();
