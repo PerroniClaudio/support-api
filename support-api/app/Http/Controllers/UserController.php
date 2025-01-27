@@ -463,16 +463,41 @@ class UserController extends Controller {
         $google2fa = new Google2FA();
         $secret = decrypt($user->two_factor_secret);
 
-        if (!$google2fa->verifyKey($secret, $request->code)) {
-            return response([
-                'message' => 'Invalid code',
-            ], 401);
-        }
+        if (isset($request->code)) {
+            if (!$google2fa->verifyKey($secret, $request->code)) {
+                return response([
+                    'message' => 'Invalid code',
+                ], 401);
+            }
 
-        return response([
-            'success' => true,
-        ], 200);
+            return response([
+                'success' => true,
+            ], 200);
+        } else if (isset($request->recovery_code)) {
+            $codes = $user->recoveryCodes();
+
+            $hash = false;
+            foreach ($codes as $code) {
+                if (hash_equals($code, $request->recovery_code)) {
+                    $hash = true;
+                    break;
+                }
+            }
+
+            if (!$hash) {
+                return response([
+                    'message' => 'Invalid recovery code',
+                ], 401);
+            }
+
+
+            return response([
+                'success' => true,
+            ], 200);
+        }
     }
+
+
 
     public function onboarding(Request $request) {
         $user = User::find(Auth::user()->id);
