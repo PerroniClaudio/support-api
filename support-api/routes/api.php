@@ -547,11 +547,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/hardware-list", [App\Http\Controllers\HardwareController::class, "index"]);
+    Route::get("/hardware-list-full", [App\Http\Controllers\HardwareController::class, "hardwareListWithTrashed"]);
     Route::post("/hardware", [App\Http\Controllers\HardwareController::class, "store"]);
+    Route::delete("/hardware/{hardware}", [App\Http\Controllers\HardwareController::class, "destroy"]);
+    Route::post("/hardware-restore/{hardware}", [App\Http\Controllers\HardwareController::class, "restore"]);
+    Route::delete("/hardware-trashed/{hardware}", [App\Http\Controllers\HardwareController::class, "destroyTrashed"]);
     Route::patch("/hardware/{hardware}", [App\Http\Controllers\HardwareController::class, "update"]);
     Route::patch("/hardware-users/{hardware}", [App\Http\Controllers\HardwareController::class, "updateHardwareUsers"]); //lato utente
+    Route::delete("/hardware-user/{hardware}/{user}", [App\Http\Controllers\HardwareController::class, "deleteHardwareUser"]);
     Route::get("/user-hardware/{user}", [App\Http\Controllers\HardwareController::class, "userHardwareList"]); //lato utente
-    Route::post("/delete-hardware-user", [App\Http\Controllers\HardwareController::class, "deleteHardwareUser"]); //rimuovi un'associazione utente-hardware
     Route::get("/hardware/{hardware}", [App\Http\Controllers\HardwareController::class, "show"]);
 });
 

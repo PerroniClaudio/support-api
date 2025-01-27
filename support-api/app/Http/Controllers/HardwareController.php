@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Company;
 use App\Models\Hardware;
+use App\Models\HardwareAuditLog;
 use App\Models\HardwareType;
-use App\Models\HardwareUserAuditLog;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -35,6 +35,43 @@ class HardwareController extends Controller
         }
 
         $hardwareList = Hardware::where('company_id', $authUser->company_id)->where('user_id', $authUser->id)->with(['hardwareType', 'company'])->get();
+        return response([
+            'hardwareList' => $hardwareList,
+        ], 200);
+    }
+
+    public function hardwareListWithTrashed(Request $request)
+    {
+
+        $authUser = $request->user();
+
+        if (!$authUser->is_admin) {
+            return response([
+                'message' => 'You are not allowed to view this hardware',
+            ], 403);
+        }
+
+        $hardwareList = Hardware::withTrashed()->with(['hardwareType', 'company'])->get();
+        return response([
+            'hardwareList' => $hardwareList,
+        ], 200);
+
+        // Se servisse anche per gli utenti 
+        // if ($authUser->is_admin) {
+        //     $hardwareList = Hardware::withTrashed()->with(['hardwareType', 'company'])->get();
+        //     return response([
+        //         'hardwareList' => $hardwareList,
+        //     ], 200);
+        // }
+        // if($authUser->is_company_admin) {
+        //     $hardwareList = Hardware::withTrashed()->where('company_id', $authUser->company_id)->with(['hardwareType', 'company'])->get();
+        //     return response([
+        //         'hardwareList' => $hardwareList,
+        //     ], 200);
+        // }
+
+        // $hardwareList = Hardware::withTrashed()->where('company_id', $authUser->company_id)->where('user_id', $authUser->id)->with(['hardwareType', 'company'])->get();
+        
         return response([
             'hardwareList' => $hardwareList,
         ], 200);
@@ -106,11 +143,12 @@ class HardwareController extends Controller
                     'created_at' => Carbon::now(),
                     'updated_at' => Carbon::now(),
                 ]);
-                HardwareUserAuditLog::create([
-                    'type' => 'created',
+                HardwareAuditLog::create([
                     'modified_by' => $authUser->id,
                     'hardware_id' => $hardware->id,
-                    'user_id' => $userId,
+                    'log_subject' => 'hardware_user',
+                    'log_type' => 'created',
+                    'new_data' => json_encode(['user_id' => $userId]),
                 ]);
             }
         }
@@ -123,9 +161,23 @@ class HardwareController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Request $request, Hardware $hardware)
+    public function show(Request $request,  $hardwareId)
     {
         $authUser = $request->user();
+        $hardware = null;
+
+        if ($authUser->is_admin){
+            $hardware = Hardware::withTrashed()->find($hardwareId);
+        } else {
+            $hardware = Hardware::find($hardwareId);
+        }
+        
+        if(!$hardware) {
+            return response([
+                'message' => 'Hardware not found',
+            ], 404);
+        }
+        
         if (!$authUser->is_admin 
             && !($authUser->is_company_admin && $hardware->company_id == $authUser->company_id) 
             && !(in_array($authUser->id, $hardware->users->pluck('id')->toArray()))) {
@@ -133,8 +185,14 @@ class HardwareController extends Controller
                 'message' => 'You are not allowed to view this hardware',
             ], 403);
         }
+
+        
+        
         if($authUser->is_admin || $authUser->is_company_admin) {
             // $hardware->load(['company', 'hardwareType', 'users']);
+            // if (!$hardware) {
+            //     $hardware = Hardware::withTrashed()->find($hardware->id);
+            // }
             $hardware->load([
                 'company' => function ($query) {$query->select('id', 'name');}, 
                 'hardwareType', 
@@ -144,7 +202,8 @@ class HardwareController extends Controller
         } else {
             $hardware->load([
                 'company' => function ($query) {$query->select('id', 'name');}, 
-                'hardwareType', 'users' => function ($query) {
+                'hardwareType', 
+                'users' => function ($query) {
                     $query->select('user_id as id', 'name', 'surname', 'email', 'is_company_admin', 'is_deleted'); // Limit user data sent to frontend
             }]);
         }
@@ -220,21 +279,23 @@ class HardwareController extends Controller
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ]);
-            HardwareUserAuditLog::create([
-                'type' => 'created',
+            HardwareAuditLog::create([
                 'modified_by' => $authUser->id,
                 'hardware_id' => $hardware->id,
-                'user_id' => $userId,
+                'log_subject' => 'hardware_user',
+                'log_type' => 'created',
+                'new_data' => json_encode(['user_id' => $userId]),
             ]);
         }
 
         foreach ($usersToRemove as $userId) {
             $hardware->users()->detach($userId);
-            HardwareUserAuditLog::create([
-                'type' => 'deleted',
+            HardwareAuditLog::create([
                 'modified_by' => $authUser->id,
                 'hardware_id' => $hardware->id,
-                'user_id' => $userId,
+                'log_subject' => 'hardware_user',
+                'log_type' => 'deleted',
+                'old_data' => json_encode(['user_id' => $userId]),
             ]);
         }
         
@@ -247,7 +308,7 @@ class HardwareController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Request $request)
+    public function destroy($hardwareId, Request $request)
     {
         // Soft delete: delete(); Hard delete: forceDelete();
         // Senza soft deleted ::find(1), o il metodo che si vuole; con soft deleted ::withTrashed()->find(1); 
@@ -259,19 +320,90 @@ class HardwareController extends Controller
             ], 403);
         }
 
-        if ($request->with_force) {
-            $hardware = Hardware::withTrashed()->find($request->id);
-            $hardware->forceDelete();
+        $hardware = Hardware::findOrFail($hardwareId);
+        if (!$hardware) {
             return response([
-                'message' => 'Hardware deleted successfully',
-            ], 200);
-        } else {
-            $hardware = Hardware::find($request->id);
-            $hardware->delete();
+                'message' => 'Hardware not found',
+            ], 404);
+        }
+        $hardware->delete();
+        HardwareAuditLog::create([
+            'modified_by' => $user->id,
+            'hardware_id' => null,
+            'log_subject' => 'hardware',
+            'log_type' => 'delete',
+            'old_data' => json_encode($hardware->toArray()),
+            'new_data' => null,
+        ]);
+        return response([
+            'message' => 'Hardware soft deleted successfully',
+        ], 200);
+
+    }
+    
+    public function destroyTrashed($hardwareId, Request $request)
+    {
+        // Soft delete: delete(); Hard delete: forceDelete();
+        // Senza soft deleted ::find(1), o il metodo che si vuole; con soft deleted ::withTrashed()->find(1); 
+    
+        $user = $request->user();
+        if (!$user->is_admin) {
             return response([
-                'message' => 'Hardware soft deleted successfully',
-            ], 200);
-        }        
+                'message' => 'You are not allowed to delete hardware',
+            ], 403);
+        }
+
+        $hardware = Hardware::withTrashed()->findOrFail($hardwareId);
+        if (!$hardware) {
+            return response([
+                'message' => 'Hardware not found',
+            ], 404);
+        }
+        $hardware->forceDelete();
+        HardwareAuditLog::create([
+            'modified_by' => $user->id,
+            'hardware_id' => null,
+            'log_subject' => 'hardware',
+            'log_type' => 'permanent-delete',
+            'old_data' => json_encode($hardware->toArray()),
+            'new_data' => null,
+        ]);
+        return response([
+            'message' => 'Hardware deleted successfully',
+        ], 200);
+
+    }
+    
+    public function restore($hardwareId, Request $request)
+    {
+        // Soft delete: delete(); Hard delete: forceDelete();
+        // Senza soft deleted ::find(1), o il metodo che si vuole; con soft deleted ::withTrashed()->find(1); 
+    
+        $user = $request->user();
+        if (!$user->is_admin) {
+            return response([
+                'message' => 'You are not allowed to delete hardware',
+            ], 403);
+        }
+
+        $hardware = Hardware::withTrashed()->findOrFail($hardwareId);
+        if (!$hardware) {
+            return response([
+                'message' => 'Hardware not found',
+            ], 404);
+        }
+        $hardware->restore();
+        HardwareAuditLog::create([
+            'modified_by' => $user->id,
+            'hardware_id' => $hardwareId,
+            'log_subject' => 'hardware',
+            'log_type' => 'restored',
+            'old_data' => null,
+            'new_data' => json_encode($hardware->toArray()),
+        ]);
+        return response([
+            'message' => 'Hardware deleted successfully',
+        ], 200);
 
     }
 
@@ -327,21 +459,23 @@ class HardwareController extends Controller
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ]);
-            HardwareUserAuditLog::create([
-                'type' => 'created',
+            HardwareAuditLog::create([
                 'modified_by' => $authUser->id,
                 'hardware_id' => $hardware->id,
-                'user_id' => $userId,
+                'log_subject' => 'hardware_user',
+                'log_type' => 'created',
+                'new_data' => json_encode(['user_id' => $userId]),
             ]);
         }
 
         foreach ($usersToRemove as $userId) {
             $hardware->users()->detach($userId);
-            HardwareUserAuditLog::create([
-                'type' => 'deleted',
+            HardwareAuditLog::create([
                 'modified_by' => $authUser->id,
                 'hardware_id' => $hardware->id,
-                'user_id' => $userId,
+                'log_subject' => 'hardware_user',
+                'log_type' => 'deleted',
+                'old_data' => json_encode(['user_id' => $userId]),
             ]);
         }
 
@@ -350,17 +484,19 @@ class HardwareController extends Controller
         ], 200);
     }
 
-    public function deleteHardwareUser(Request $request)
+    public function deleteHardwareUser($hardwareId, $userId, Request $request)
     {
-        $data = $request->validate([
-            'hardware_id' => 'required|int',
-            'user_id' => 'required|int',
-        ]);
+        $hardware = Hardware::findOrFail($hardwareId);
+        $user = User::findOrFail($userId);
 
-        $hardware = Hardware::find($request->hardware_id);
         if (!$hardware) {
             return response([
                 'message' => 'Hardware not found',
+            ], 404);
+        }
+        if (!$user) {
+            return response([
+                'message' => 'User not found',
             ], 404);
         }
 
@@ -371,32 +507,24 @@ class HardwareController extends Controller
             ], 403);
         }
 
-        $user = User::find($data['user_id']);
-        if (!$user) {
-            return response([
-                'message' => 'User not found',
-            ], 404);
-        }
-
         if (!$hardware->users->contains($user)) {
             return response([
                 'message' => 'User not associated with hardware',
             ], 400);
         }
 
-        $hardware->users()->detach($user->id);
-        HardwareUserAuditLog::create([
-            'type' => 'deleted',
+        $hardware->users()->detach($userId);
+
+        HardwareAuditLog::create([
             'modified_by' => $authUser->id,
             'hardware_id' => $hardware->id,
-            'user_id' => $user->id,
+            'log_subject' => 'hardware_user',
+            'log_type' => 'deleted',
+            'old_data' => json_encode(['user_id' => $user->id]),
         ]);
-        
-        return response([
-            'message' => 'User removed from hardware successfully',
-        ], 200);
-    }
 
+        return response()->json(['message' => 'User detached from hardware successfully'], 200);
+    }
     public function userHardwareList(Request $request, User $user)
     {
         $authUser = $request->user();

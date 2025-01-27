@@ -16,20 +16,24 @@ class HardwareUser extends Pivot
         // Aggiunge i log quando si creano o rimuovono associazioni hardware_user
 
         static::created(function ($model) {
-            HardwareUserAuditLog::create([
-                'type' => 'created',
+            HardwareAuditLog::create([
+                'log_subject' => 'hardware_user',
+                'log_type' => 'create',
                 'modified_by' => auth()->id(),
                 'hardware_id' => $model->hardware_id,
-                'user_id' => $model->user_id,
+                'old_data' => null,
+                'new_data' => json_encode($model->toArray()),
             ]);
         });
 
         static::deleted(function ($model) {
-            HardwareUserAuditLog::create([
-                'type' => 'deleted',
+            HardwareAuditLog::create([
+                'log_subject' => 'hardware_user',
+                'log_type' => 'delete',
                 'modified_by' => auth()->id(),
                 'hardware_id' => $model->hardware_id,
-                'user_id' => $model->user_id,
+                'old_data' => json_encode($model->toArray()),
+                'new_data' => null,
             ]);
         });
     }

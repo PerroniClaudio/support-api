@@ -4,9 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Hardware extends Model {
-  use HasFactory;
+  use SoftDeletes, HasFactory;
 
   // Specifica il nome della tabella
   protected $table = 'hardware';
@@ -31,35 +32,38 @@ class Hardware extends Model {
         // Aggiunge un log quando vene creato un nuovo hardware, se company_id è diverso da null
         static::created(function ($model) {
             if ($model->company_id != null) {
-                HardwareCompanyAuditLog::create([
-                    'type' => 'create',
-                    'hardware_id' => $model->id,
-                    'new_company_id' => $model->company_id,
-                    'modified_by' => auth()->id(),
+                HardwareAuditLog::create([
+                  'log_subject' => 'hardware',
+                  'log_type' => 'create',
+                  'modified_by' => auth()->id(),
+                  'hardware_id' => $model->id,
+                  'old_data' => null,
+                  'new_data' => json_encode($model->toArray()),
                 ]);
             }
         });
 
         // Aggiunge un log quando viene modificato il campo company_id
         static::updating(function ($model) {
-            if ($model->isDirty('company_id')) {
-                $oldCompanyId = $model->getOriginal('company_id');
-                $newCompanyId = $model->company_id;
+          if ($model->isDirty('company_id')) {
+              $oldCompanyId = $model->getOriginal('company_id');
+              $newCompanyId = $model->company_id;
 
-                $type = $oldCompanyId == null
-                    ? 'create'
-                    : ($newCompanyId == null
-                        ? 'delete'
-                        : 'update');
+              $type = $oldCompanyId == null
+                  ? 'create'
+                  : ($newCompanyId == null
+                      ? 'delete'
+                      : 'update');
 
-                HardwareCompanyAuditLog::create([
-                    'type' => $type,
-                    'hardware_id' => $model->id,
-                    'old_company_id' => $oldCompanyId,
-                    'new_company_id' => $newCompanyId,
-                    'modified_by' => auth()->id(),
-                ]);
-            }
+              HardwareAuditLog::create([
+                'log_subject' => 'hardware',
+                'log_type' => $type,
+                'modified_by' => auth()->id(),
+                'hardware_id' => $model->id,
+                'old_data' => in_array($type, ['delete', 'update']) ? json_encode($model->getOriginal()) : null,
+                'new_data' => in_array($type, ['create', 'update']) ? json_encode($model->toArray()) : null,
+              ]);
+          }
         });
     }
 
