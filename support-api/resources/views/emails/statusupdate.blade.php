@@ -10,7 +10,7 @@ L'utente {{ $user->name }} ha fatto un update.
 Azienda: {{ $company->name }} <br>
 Categoria: {{ $category->name }} <br>
 Tipo di ticket: {{ $ticketType->name }} <br>
-Responsabilità: {{ $ticket->is_user_error ? 'Cliente' : 'Supporto' }} <br><br>
+Responsabilità del dato: {{ $ticket->is_user_error ? 'Cliente' : 'Supporto' }} <br><br>
 Update: <br>
 {{ $update->content }} <br><br>
 

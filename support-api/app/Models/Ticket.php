@@ -30,6 +30,9 @@ class Ticket extends Model {
         'unread_mess_for_adm',
         'unread_mess_for_usr',
         'actual_processing_time',
+        'is_form_correct',
+        'was_user_self_sufficient',
+        'is_user_error_problem',
     ];
 
     public function toSearchableArray() {

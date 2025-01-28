@@ -88,30 +88,53 @@
         <tbody>
             <tr>
                 <td style="vertical-align: top; width:50%;" class="box">
-                    <p class="box-heading"><b>Responsabilità<b></p>
+                    <p class="box-heading"><b>Responsabilità del dato<b></p>
                     <p>
                         {{ $ticket->is_user_error ? 'Cliente' : 'Supporto' }}
                     </p>
                 </td>
                 <td style="vertical-align: top; width:50%;" class="box">
+                    <p class="box-heading"><b>Form corretto<b></p>
+                    <p>
+                        {{ $ticket->is_form_correct ? 'Si' : 'No' }}
+                    </p>
+                </td>
+
+            </tr>
+            <tr>
+                <td style="vertical-align: top; width:50%;" class="box">
+                    <p class="box-heading"><b>Cliente autonomo<b></p>
+                    <p>
+                        {{ $ticket->was_user_self_sufficient ? 'Si' : 'No' }}
+                    </p>
+                </td>
+                @if ($ticket->ticketType->category->is_problem)
+                    <td style="vertical-align: top; width:50%;" class="box">
+                        <p class="box-heading"><b>Responsabilità del problema<b></p>
+                        <p>
+                            {{ $ticket->is_user_error_problem ? 'Cliente' : 'Supporto' }}
+                        </p>
+                    </td>
+                @endif
+            </tr>
+            <tr>
+                <td style="vertical-align: top; width:50%;" class="box">
                     <p class="box-heading"><b>Tempo di elaborazione previsto<b></p>
-                    <p>{{ $ticket->ticketType->expected_processing_time == null 
+                    <p>{{ $ticket->ticketType->expected_processing_time == null
                         ? 'Non impostato'
-                        : (
-                            $ticket->ticketType->expected_processing_time / 60 . ' ore' . 
-                            ($ticket->ticketType->expected_processing_time % 60 != 0 
-                                ? ' e ' . $ticket->ticketType->expected_processing_time % 60 . ' minuti' 
-                                : '' )
-                        ) 
-                    }}</p>
+                        : $ticket->ticketType->expected_processing_time / 60 .
+                            ' ore' .
+                            ($ticket->ticketType->expected_processing_time % 60 != 0
+                                ? ' e ' . $ticket->ticketType->expected_processing_time % 60 . ' minuti'
+                                : '') }}
+                    </p>
                     <p class="box-heading"><b>Tempo di elaborazione effettivo</b></p>
-                    <p>{{ $ticket->actual_processing_time 
-                        ? $ticket->actual_processing_time / 60 . ' ore' . 
-                            ($ticket->actual_processing_time % 60 != 0 
-                                ? ' e ' . $ticket->actual_processing_time % 60 . ' minuti' 
-                                : '' )
-                        : 'Non impostato'    
-                    }}</p>
+                    <p>{{ $ticket->actual_processing_time
+                        ? $ticket->actual_processing_time / 60 .
+                            ' ore' .
+                            ($ticket->actual_processing_time % 60 != 0 ? ' e ' . $ticket->actual_processing_time % 60 . ' minuti' : '')
+                        : 'Non impostato' }}
+                    </p>
                 </td>
             </tr>
         </tbody>
@@ -130,7 +153,7 @@
             </div>
         @endforeach
     </div>
-{{-- Fine parte limitata agli admin --}}
+    {{-- Fine parte limitata agli admin --}}
 
     <h2>Messaggi</h2>
     <hr>
@@ -139,25 +162,26 @@
             @if ($loop->first)
                 @continue
             @endif
-       
-                <table style="width:100%">
-                    <tr>
-                        <td style="vertical-align: top; width:70%;">
-                            @if ($value->user->is_admin == 1)
-                                <p><b>Supporto - Update</b></p>
-                            @else
-                                <p><b>{{ $value->user->name }} {{ $value->user->surname }}</b></p>
-                            @endif
-                        </td>
-                        <td style="vertical-align: top; width:30%;">
-                            <p style="text-align: right">{{ $value->created_at->format('d/m/Y H:i') }}</p>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td colspan="2"> <p>{{ $value->message }}</p></td>
-                    </tr>
-                </table>
 
+            <table style="width:100%">
+                <tr>
+                    <td style="vertical-align: top; width:70%;">
+                        @if ($value->user->is_admin == 1)
+                            <p><b>Supporto - Update</b></p>
+                        @else
+                            <p><b>{{ $value->user->name }} {{ $value->user->surname }}</b></p>
+                        @endif
+                    </td>
+                    <td style="vertical-align: top; width:30%;">
+                        <p style="text-align: right">{{ $value->created_at->format('d/m/Y H:i') }}</p>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="2">
+                        <p>{{ $value->message }}</p>
+                    </td>
+                </tr>
+            </table>
         @endforeach
     </div>
 

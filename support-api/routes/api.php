@@ -217,7 +217,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         "/ticket/{ticket}/file",
         [App\Http\Controllers\TicketController::class, "storeFile"]
     );
-    
+
     Route::post(
         "/ticket/{ticket}/files",
         [App\Http\Controllers\TicketController::class, "storeFiles"]
@@ -226,6 +226,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post(
         "/ticket/{ticket}/priority-update",
         [App\Http\Controllers\TicketController::class, "updateTicketPriority"]
+    );
+
+    Route::get(
+        "/ticket/{ticket}/blame",
+        [App\Http\Controllers\TicketController::class, "getTicketBlame"]
+    );
+    Route::post(
+        "/ticket/{ticket}/blame",
+        [App\Http\Controllers\TicketController::class, "updateTicketBlame"]
     );
 
     Route::post(
