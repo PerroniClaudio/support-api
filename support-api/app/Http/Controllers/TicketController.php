@@ -513,9 +513,21 @@ class TicketController extends Controller {
         ], 200);
     }
 
+    public function getTicketBlame(Ticket $ticket) {
+        return response([
+            'is_user_error' => $ticket['is_user_error'],
+            'is_form_correct' => $ticket['is_form_correct'],
+            'was_user_self_sufficient' => $ticket['was_user_self_sufficient'],
+            'is_user_error_problem' => $ticket['is_user_error_problem'],
+        ], 200);
+    }
+
     public function updateTicketBlame(Ticket $ticket, Request $request) {
         $fields = $request->validate([
             'is_user_error' => 'required|boolean',
+            'was_user_self_sufficient' => 'required|boolean',
+            'is_form_correct' => 'required|boolean',
+            'is_user_error_problem' => 'boolean',
         ]);
 
         if ($request->user()["is_admin"] != 1) {
@@ -527,7 +539,10 @@ class TicketController extends Controller {
         // $old_value = $ticket['is_user_error'] ? 'Cliente' : 'Supporto';
 
         $ticket->update([
-            'is_user_error' => $fields['is_user_error']
+            'is_user_error' => $fields['is_user_error'],
+            'was_user_self_sufficient' => $fields['was_user_self_sufficient'],
+            'is_form_correct' => $fields['is_form_correct'],
+            'is_user_error_problem' => $fields['is_user_error_problem'],
         ]);
 
         // $new_value = $fields['is_user_error'] ? 'Cliente' : 'Supporto';
@@ -813,7 +828,7 @@ class TicketController extends Controller {
                         'mime_type' => $file->getMimeType(),
                         'size' => $file->getSize(),
                     ]);
-    
+
                     $storedFiles[] = $ticketFile;
                     $count++;
                 }
@@ -829,11 +844,11 @@ class TicketController extends Controller {
                     'mime_type' => $files->getMimeType(),
                     'size' => $files->getSize(),
                 ]);
-    
+
                 $storedFiles[] = $ticketFile;
                 $count++;
             }
-            
+
 
             return response([
                 'ticketFiles' => $storedFiles,
@@ -1014,6 +1029,9 @@ class TicketController extends Controller {
             $referer_it = User::find($webform_data->referer_it);
             $webform_data->referer_it = $referer_it ? $referer_it->name . " " . $referer_it->surname : null;
         }
+
+
+        $ticket->ticketType->category = $ticket->ticketType->category->get();
 
         //? Avanzamento
 

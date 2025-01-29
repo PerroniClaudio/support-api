@@ -1,13 +1,13 @@
 {
     "inter": {
-        "100": "\/var\/www\/storage\/fonts\/inter_100_0919dd1e8f1f330c6a8894e030756398",
-        "200": "\/var\/www\/storage\/fonts\/inter_200_6c4145425c3acc9920c72ae89b2a52c6",
-        "300": "\/var\/www\/storage\/fonts\/inter_300_ffc5f81dee6c59552a98700cb9ce21c6",
-        "normal": "\/var\/www\/storage\/fonts\/inter_normal_3ba32a48b7860dfb008d0b1457da683a",
-        "500": "\/var\/www\/storage\/fonts\/inter_500_5227956572435006df168ae4e07c5148",
-        "600": "\/var\/www\/storage\/fonts\/inter_600_d0d96b12edf8a78fd85c552d12762fb0",
-        "bold": "\/var\/www\/storage\/fonts\/inter_bold_868976cd8a549429e4b1d38e6b1b6bed",
-        "800": "\/var\/www\/storage\/fonts\/inter_800_1909e5290c7f23524b9891a4fa9896a2",
-        "900": "inter_900_c8ebc381046ae1c8d6cd66e9478246ac"
+        "100": "\/var\/www\/html\/server\/support-api\/storage\/fonts\/inter_100_e28ff0ba5d2b1a0d9870187024e25b42",
+        "200": "\/var\/www\/html\/server\/support-api\/storage\/fonts\/inter_200_41f0a41abc8b62e51f17b943bd70d428",
+        "300": "\/var\/www\/html\/server\/support-api\/storage\/fonts\/inter_300_e4c9b64172e62d24ee5f222199ce2d2c",
+        "normal": "\/var\/www\/html\/server\/support-api\/storage\/fonts\/inter_normal_4f95092608a03c140dccd33606c19f31",
+        "500": "\/var\/www\/html\/server\/support-api\/storage\/fonts\/inter_500_3f435dc727a887d3a9c0ddd0afecf691",
+        "600": "\/var\/www\/html\/server\/support-api\/storage\/fonts\/inter_600_9bfe13c942a9c8fb0ff92d25ab822ed4",
+        "bold": "\/var\/www\/html\/server\/support-api\/storage\/fonts\/inter_bold_8e796d6a87340143ae66c4104836364f",
+        "800": "\/var\/www\/html\/server\/support-api\/storage\/fonts\/inter_800_1f24dcc117b8d8932c4dfdec9bc3668b",
+        "900": "inter_900_142a98341c04a09a1eaffe623d19a992"
     }
 }
