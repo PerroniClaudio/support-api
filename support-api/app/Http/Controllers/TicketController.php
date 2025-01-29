@@ -14,6 +14,8 @@ use App\Models\TicketType;
 use App\Models\User;
 use App\Models\Office;
 use App\Models\Group;
+use App\Models\Hardware;
+use App\Models\HardwareAuditLog;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -160,6 +162,32 @@ class TicketController extends Controller {
             // 'is_read' => 0
         ]);
 
+        // Associazioni ticket-hardware
+        $hardwareFields = $ticketType->typeHardwareFormField();
+        $addedHardware = [];
+        foreach ($hardwareFields as $field) {
+            if (isset($request['messageData'][$field->field_label])) {
+                $hardwareIds = $request['messageData'][$field->field_label];
+                foreach ($hardwareIds as $id) {
+                    $hardware = Hardware::find($id);
+                    if ($hardware) {
+                        $ticket->hardware()->syncWithoutDetaching($id);
+                        $addedHardware[] = $id;
+                    }
+                }
+            }
+        }
+        HardwareAuditLog::create([
+            'modified_by' => $user->id,
+            'log_subject' => 'hardware_ticket',
+            'log_type' => 'created',
+            'new_data' => json_encode([
+                'ticket_id' => $ticket->id,
+                'hardware_ids' => $addedHardware,
+            ]),
+        ]);
+
+
         $brand_url = $ticket->brandUrl();
 
         // Debug: qualche elemento col name non viene trovato
@@ -237,9 +265,14 @@ class TicketController extends Controller {
         //     ];
         // });
 
-        $ticket = Ticket::where('id', $id)->with(['ticketType' => function ($query) {
-            $query->with('category');
-        }, 'company', 'user', 'files'])->first();
+        $ticket = Ticket::where('id', $id)->with([
+            'ticketType' => function ($query) {
+                $query->with('category');
+            }, 
+            'hardware' => function ($query) {
+                $query->with('hardwareType');
+            },
+            'company', 'user', 'files'])->first();
 
         if ($ticket == null) {
             return response([
@@ -1180,8 +1213,32 @@ class TicketController extends Controller {
             ];
         });
 
-
-
         return response()->json($tickets);
     }
+
+    // public function hardware(Request $request, Ticket $ticket) {
+    //     $authUser = $request->user();
+
+    //     $authorized = false;
+    //     if (
+    //         $authUser->is_admin ||
+    //         ($ticket->company_id == $authUser->company_id && $authUser["is_company_admin"] == 1) ||
+    //         ($ticket->company_id == $authUser->company_id && $ticket->user_id == $authUser->id) ||
+    //         (($ticket->referer() ? $ticket->referer()->id == $authUser->id : false)) ||
+    //         ($ticket->company->data_owner_email == $authUser->email)
+    //     ) {
+    //         $authorized = true;
+    //     }
+
+    //     if (!$authorized) {
+    //         return response([
+    //             'message' => 'Unauthorized',
+    //         ], 401);
+    //     }
+
+    //     $hardware = $ticket->hardware;
+
+    //     return response()->json($tickets);
+    // }
+
 }

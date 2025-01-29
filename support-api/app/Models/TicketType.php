@@ -41,6 +41,10 @@ class TicketType extends Model {
         return $this->hasMany(TypeFormFields::class, 'ticket_type_id');
     }
 
+    public function typeHardwareFormField() {
+        return $this->hasMany(TypeFormFields::class, 'ticket_type_id')->where('field_type', 'hardware')->get();
+    }
+
     // public function companies() {
     //     return $this->belongsToMany(Company::class, 'company_ticket_types')->withPivot('sla_taking_charge', 'sla_resolving');
     // }
@@ -60,6 +64,10 @@ class TicketType extends Model {
 
     public function brand() {
         return $this->belongsTo(Brand::class, 'brand_id');
+    }
+
+    public function hardwareTypes() {
+        return $this->belongsToMany(HardwareType::class, 'hardware_type_ticket_type', 'ticket_type_id', 'hardware_type_id');
     }
 
 }

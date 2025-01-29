@@ -208,6 +208,11 @@ Route::middleware(['auth:sanctum'])->group(function () {
     );
 
     Route::get(
+        "/ticket/{ticket}/hardware",
+        [App\Http\Controllers\TicketController::class, "hardware"]
+    );
+
+    Route::get(
         "/ticket/{ticket}/files",
         [App\Http\Controllers\TicketController::class, "files"]
     );
@@ -547,6 +552,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/hardware-list", [App\Http\Controllers\HardwareController::class, "index"]);
+    Route::get("/company-hardware-list/{company}", [App\Http\Controllers\HardwareController::class, "companyHardwareList"]);
     Route::get("/hardware-list-full", [App\Http\Controllers\HardwareController::class, "hardwareListWithTrashed"]);
     Route::post("/hardware", [App\Http\Controllers\HardwareController::class, "store"]);
     Route::delete("/hardware/{hardware}", [App\Http\Controllers\HardwareController::class, "destroy"]);

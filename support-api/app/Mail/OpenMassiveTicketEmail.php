@@ -77,6 +77,9 @@ class OpenMassiveTicketEmail extends Mailable
 
         $formText = '';
         foreach($data as $key => $value) {
+            if (is_array($value)) {
+                $value = implode(', ', $value);
+            }
             $formText .= htmlspecialchars($key . ': ' . $value, ENT_QUOTES, 'UTF-8', false) . '<br>';
         }
         $this->form = $formText;

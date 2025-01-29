@@ -334,6 +334,9 @@ class TicketTypeController extends Controller {
             'field_label' => 'required',
             'required' => 'required',
             'placeholder' => 'required',
+            'hardware_limit' => 'required_if:field_type,hardware|integer',
+            'include_no_type_hardware' => 'required_if:field_type,hardware|boolean',
+            'hardware_types' => 'required_if:field_type,hardware|array|exists:hardware_types,id|nullable',
         ]);
 
         $fillableFields = array_merge(
@@ -341,6 +344,11 @@ class TicketTypeController extends Controller {
         );
     
         $formField = TypeFormFields::create($fillableFields);
+
+        if ($request['field_type'] == 'hardware') {
+            $formField->hardwareTypes()->sync($validated['hardware_types']);
+            // $formField->load('hardwareTypes');
+        }
 
         return response([
             'formField' => $formField,

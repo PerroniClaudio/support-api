@@ -40,6 +40,20 @@ class HardwareController extends Controller
         ], 200);
     }
 
+    public function companyHardwareList(Request $request, Company $company){
+        $authUser = $request->user();
+        if (!$authUser->is_admin && !($authUser->is_company_admin && $company->id == $authUser->company_id)) {
+            return response([
+                'message' => 'You are not allowed to view this hardware',
+            ], 403);
+        }
+
+        $hardwareList = Hardware::where('company_id', $company->id)->with(['hardwareType', 'company'])->get();
+        return response([
+            'hardwareList' => $hardwareList,
+        ], 200);
+    }
+
     public function hardwareListWithTrashed(Request $request)
     {
 

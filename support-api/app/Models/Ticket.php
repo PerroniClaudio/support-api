@@ -87,6 +87,10 @@ class Ticket extends Model {
         return User::find(0);
     }
 
+    public function hardware() {
+        return $this->belongsToMany(Hardware::class);
+    }
+
     /** get  messages  */
 
     public function messages() {

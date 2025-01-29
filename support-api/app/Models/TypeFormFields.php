@@ -23,9 +23,17 @@ class TypeFormFields extends Model
         'validation_message',
         'help_text',
         'order',
+        'hardware_limit',
+        'include_no_type_hardware',
     ];
 
     public function ticketType() {
         return $this->belongsTo(TicketType::class);
     }
+
+    public function hardwareTypes()
+    {
+        return $this->belongsToMany(HardwareType::class, 'type_form_field_hardware_type', 'type_form_field_id', 'hardware_type_id');
+    }
+
 }
