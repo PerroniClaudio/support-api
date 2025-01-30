@@ -578,7 +578,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 Route::middleware(['auth:sanctum'])->group(function () {
 
+    Route::get('/files/search', [App\Http\Controllers\WikiObjectController::class, "search"]);
     Route::get("/files/{folder}", [App\Http\Controllers\WikiObjectController::class, "index"]);
+    Route::post("/files", [App\Http\Controllers\WikiObjectController::class, "store"]);
 });
 
 // Sembra inesistente. commento per sicurezza e poi eliminiamo in un commit futuro
