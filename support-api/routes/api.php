@@ -577,6 +577,18 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/hardware-tickets/{hardware}", [App\Http\Controllers\HardwareController::class, "hardwareTickets"]);
 });
 
+/** documentazione */
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/files/public/search', [App\Http\Controllers\WikiObjectController::class, "searchPublic"]);
+    Route::get("/files/public/{folder}", [App\Http\Controllers\WikiObjectController::class, "public"]);
+
+    Route::get('/wiki-files/{wikiObject}', [App\Http\Controllers\WikiObjectController::class, "downloadFile"]);
+    Route::get('/files/search', [App\Http\Controllers\WikiObjectController::class, "search"]);
+    Route::get("/files/{folder}", [App\Http\Controllers\WikiObjectController::class, "index"]);
+    Route::post("/files", [App\Http\Controllers\WikiObjectController::class, "store"]);
+});
+
 // Sembra inesistente. commento per sicurezza e poi eliminiamo in un commit futuro
 // Route::middleware(['auth:sanctum'])->group(function () {
 //     Route::get("/template-export/{type}", [App\Http\Controllers\TemplatesExportController::class, "index"]);
