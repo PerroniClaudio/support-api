@@ -12,6 +12,92 @@ class WikiObjectController extends Controller {
     /**
      * Display a listing of the resource.
      */
+    public function public(Request $request) {
+
+        $user = $request->user();
+
+        if (isset($request->filter) && ($request->filter != 'all')) {
+
+            $filters = json_decode($request->filter, true);
+
+            $mimeTypeIn = [];
+            $createdAtFilter = [];
+
+            foreach ($filters as $key => $value) {
+                switch ($key) {
+                    case 'pdf':
+                        if ($value) {
+                            $mimeTypeIn[] = "application/pdf";
+                        }
+                        break;
+                    case 'word':
+                        if ($value) {
+                            $mimeTypeIn[] = "application/msword";
+                            $mimeTypeIn[] = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+                        }
+                        break;
+                    case 'excel':
+                        if ($value) {
+                            $mimeTypeIn[] = "application/vnd.ms-excel";
+                            $mimeTypeIn[] = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+                        }
+                        break;
+                    case 'powerpoint':
+                        if ($value) {
+                            $mimeTypeIn[] = "application/vnd.ms-powerpoint";
+                            $mimeTypeIn[] = "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+                        }
+                        break;
+                    case 'archive':
+                        if ($value) {
+                            $mimeTypeIn[] = "application/zip";
+                        }
+                        break;
+                    case 'dateFrom':
+                        if ($value) {
+                            $createdAtFilter[] = ['created_at', '>=', $value];
+                        }
+                        break;
+                    case 'dateTo':
+                        if ($value) {
+                            $createdAtFilter[] = ['created_at', '<=', $value];
+                        }
+                        break;
+                }
+            }
+
+            if (count($mimeTypeIn) == 0) {
+                $mimeTypeIn = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-powerpoint', 'application/vnd.openxmlformats-officedocument.presentationml.presentation', 'application/zip'];
+            }
+
+            if (count($createdAtFilter) == 0) {
+                $createdAtFilter = [['created_at', '>=', '2000-01-01']];
+            }
+
+            $wikiObjects = WikiObject::where('type', 'file')
+                ->whereIn('mime_type', $mimeTypeIn)
+                ->where($createdAtFilter)
+                ->where('is_public', 1)
+                ->with('user')
+                ->orderBy('created_at', 'asc')
+                ->get();
+        } else {
+
+            $folder = base64_decode($request->folder);
+            $wikiObjects = WikiObject::where('path', $folder)
+                ->where('is_public', 1)
+                ->with('user')
+                ->orderByRaw("type = 'folder' DESC")
+                ->orderBy('created_at', 'asc')
+                ->get();
+        }
+
+
+        return response([
+            'files' => $wikiObjects,
+        ], 200);
+    }
+
     public function index(Request $request) {
 
         $user = $request->user();
@@ -189,6 +275,9 @@ class WikiObjectController extends Controller {
     }
 
     public function downloadFile(WikiObject $wikiObject) {
+
+
+
         /**
          * @disregard P1009 Undefined type
          */
@@ -221,6 +310,24 @@ class WikiObjectController extends Controller {
 
         return response([
             'message' => 'WikiObject soft deleted successfully.',
+        ], 200);
+    }
+
+    public function searchPublic(Request $request) {
+        $user = $request->user();
+
+
+        $search = $request->search;
+
+        $wikiObjects = WikiObject::query()->when($search, function (Builder $q, $value) {
+            /** 
+             * @disregard Intelephense non rileva il metodo whereIn
+             */
+            return $q->whereIn('id', WikiObject::search($value)->keys());
+        })->where('is_public', 1)->with('user')->get();
+
+        return response([
+            'files' => $wikiObjects,
         ], 200);
     }
 

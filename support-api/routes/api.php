@@ -577,7 +577,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 /** documentazione */
 
 Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/files/public/search', [App\Http\Controllers\WikiObjectController::class, "searchPublic"]);
+    Route::get("/files/public/{folder}", [App\Http\Controllers\WikiObjectController::class, "public"]);
 
+    Route::get('/wiki-files/{wikiObject}', [App\Http\Controllers\WikiObjectController::class, "downloadFile"]);
     Route::get('/files/search', [App\Http\Controllers\WikiObjectController::class, "search"]);
     Route::get("/files/{folder}", [App\Http\Controllers\WikiObjectController::class, "index"]);
     Route::post("/files", [App\Http\Controllers\WikiObjectController::class, "store"]);
