@@ -336,7 +336,7 @@ class TicketTypeController extends Controller {
             'placeholder' => 'required',
             'hardware_limit' => 'required_if:field_type,hardware|integer',
             'include_no_type_hardware' => 'required_if:field_type,hardware|boolean',
-            'hardware_types' => 'required_if:field_type,hardware|array|exists:hardware_types,id|nullable',
+            'hardware_types' => 'array|exists:hardware_types,id|nullable',
         ]);
 
         $fillableFields = array_merge(

@@ -6,9 +6,11 @@ use App\Models\Company;
 use App\Models\Hardware;
 use App\Models\HardwareAuditLog;
 use App\Models\HardwareType;
+use App\Models\TypeFormFields;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Faker\Factory as Faker;
 
 use function PHPUnit\Framework\isEmpty;
 
@@ -34,7 +36,10 @@ class HardwareController extends Controller
             ], 200);
         }
 
-        $hardwareList = Hardware::where('company_id', $authUser->company_id)->where('user_id', $authUser->id)->with(['hardwareType', 'company'])->get();
+        $hardwareList = Hardware::where('company_id', $authUser->company_id)->whereHas('users', function ($query) use ($authUser) {
+            $query->where('user_id', $authUser->id);
+        })->with(['hardwareType', 'company'])->get();
+        
         return response([
             'hardwareList' => $hardwareList,
         ], 200);
@@ -42,13 +47,63 @@ class HardwareController extends Controller
 
     public function companyHardwareList(Request $request, Company $company){
         $authUser = $request->user();
-        if (!$authUser->is_admin && !($authUser->is_company_admin && $company->id == $authUser->company_id)) {
+        if (!$authUser->is_admin && !($authUser->is_company_admin && ($company->id == $authUser->company_id))) {
             return response([
                 'message' => 'You are not allowed to view this hardware',
             ], 403);
         }
 
         $hardwareList = Hardware::where('company_id', $company->id)->with(['hardwareType', 'company'])->get();
+        return response([
+            'hardwareList' => $hardwareList,
+        ], 200);
+    }
+    
+    public function formFieldHardwareList(Request $request, TypeFormFields $typeFormField){
+        $authUser = $request->user();
+
+        if(!$typeFormField) {
+            return response([
+                'message' => 'Type form field not found',
+            ], 404);
+        }
+
+        $company = $typeFormField->ticketType->company;
+        if (!$authUser->is_admin && !(!!$company && ($company->id == $authUser->company_id))) {
+            return response([
+                'message' => 'You are not allowed to view this hardware',
+            ], 403);
+        }
+
+        $hardwareList = [];
+
+        // Con una query unica
+        // Costruisci la query di base
+        if ($authUser->is_admin || $authUser->is_company_admin) {
+            $query = Hardware::where('company_id', $company->id);
+        } else {
+            $query = $authUser->hardware();
+        }
+        // Aggiungi le relazioni
+        $query->with(['hardwareType', 'company']);
+        // Se necessario rimuove gli hardware che non hanno il tipo associato
+        if (!$typeFormField->include_no_type_hardware) {
+            $query->whereNotNull('hardware_type_id');
+        }
+        // Se necessario limitare a determinati tipi di hardware (tenendo conto dell'hardware che non ha un tipo associato)
+        if ($typeFormField->hardwareTypes->count() > 0) {
+            $hardwareTypeIds = $typeFormField->hardwareTypes->pluck('id')->toArray();
+            $query->where(function ($query) use ($hardwareTypeIds, $typeFormField) {
+                $query->whereIn('hardware_type_id', $hardwareTypeIds);
+                if ($typeFormField->include_no_type_hardware) {
+                    $query->orWhereNull('hardware_type_id');
+                }
+            });
+        }
+
+        // Esegui la query
+        $hardwareList = $query->get();
+
         return response([
             'hardwareList' => $hardwareList,
         ], 200);
@@ -193,7 +248,7 @@ class HardwareController extends Controller
         }
         
         if (!$authUser->is_admin 
-            && !($authUser->is_company_admin && $hardware->company_id == $authUser->company_id) 
+            && !($authUser->is_company_admin && ($hardware->company_id == $authUser->company_id)) 
             && !(in_array($authUser->id, $hardware->users->pluck('id')->toArray()))) {
             return response([
                 'message' => 'You are not allowed to view this hardware',
@@ -539,6 +594,7 @@ class HardwareController extends Controller
 
         return response()->json(['message' => 'User detached from hardware successfully'], 200);
     }
+
     public function userHardwareList(Request $request, User $user)
     {
         $authUser = $request->user();
@@ -554,24 +610,117 @@ class HardwareController extends Controller
         ], 200);
     }
 
-    public function assignHardwareToUser(Request $request)
-    {
-        
+    public function fakeHardwareField (Request $request){
+
+        $faker = Faker::create();
+
+        $fakeCompany = (object) [
+            'id' => 1,
+            'name' => $faker->word,
+        ];
+
+        // Genera dati fittizi per HardwareType
+        $fakeHardwareTypes = collect(range(1, 5))->map(function ($index) use ($faker) {
+            return (object) [
+                'id' => $index,
+                'name' => $faker->word,
+            ];
+        });
+
+        // Genera dati fittizi per Hardware
+        $fakeHardwareList = collect(range(1, 5))->map(function ($index) use ($faker, $fakeCompany, $fakeHardwareTypes) {
+            $type = $fakeHardwareTypes->random(); 
+            return [
+                'id' => $index,
+                'make' => $faker->word,
+                'model' => $faker->word,
+                'serial_number' => $faker->uuid,
+                'company_id' => 1,
+                'hardware_type_id' => $type->id,
+                'created_at' => now(),
+                'updated_at' => now(),
+                'hardwareType' => [
+                    'id' => $type->id,
+                    'name' => $type->name,
+                ],
+                'company' => [
+                    'id' => $fakeCompany->id,
+                    'name' => $fakeCompany->name,
+                ],
+            ];
+        });
+
+        return response([
+            'company' => $fakeCompany,
+            'hardwareTypes' => $fakeHardwareTypes,
+            'hardware' => $fakeHardwareList,
+        ], 200);
+
     }
 
-    public function removeHardwareFromUser(Request $request)
+    public function hardwareTickets(Request $request, Hardware $hardware)
     {
-        
-    }
+        $authUser = $request->user();
+        if (!$authUser->is_admin 
+            && !($authUser->is_company_admin && ($hardware->company_id == $authUser->company_id)) 
+            && !($hardware->users->contains($authUser))) {
+            return response([
+                'message' => 'You are not allowed to view this hardware tickets',
+            ], 403);
+        }
 
-    public function assignHardwareToCompany(Request $request)
-    {
-        
-    }
+        if($authUser->is_admin){
+            $tickets = $hardware->tickets()->with([
+                'ticketType', 
+                'company', 
+                'user' => function ($query) {
+                    $query->select('id', 'name', 'surname', 'email', 'is_admin', 'is_company_admin', 'company_id', 'is_deleted');
+                }
+            ])->get();
+            return response([
+                'tickets' => $tickets,
+            ], 200);
+        }
 
-    public function removeHardwareFromCompany(Request $request)
-    {
-        
+        // Non sappiamo se l'hardware può passare da un'azienda all'altra.
+        if($authUser->is_company_admin){
+            $tickets = $hardware->tickets()->where('company_id', $hardware->company_id)->with([
+                'ticketType', 
+                'company', 
+                'user' => function ($query) {
+                    $query->select('id', 'name', 'surname', 'email', 'is_admin', 'is_company_admin', 'company_id', 'is_deleted');
+                }
+            ])->get();
+            return response([
+                'tickets' => $tickets,
+            ], 200);
+        }
+
+        // Qui devono vedersi tutti i ticket collegati a questo hardware, aperti dall'utente o in cui è associato come referente
+        if($hardware->users->contains($authUser)){
+            $tickets = $hardware->tickets()
+                ->with([
+                'ticketType', 
+                'company', 
+                'user' => function ($query) {
+                    $query->select('id', 'name', 'surname', 'email', 'is_admin', 'is_company_admin', 'company_id', 'is_deleted');
+                }
+            ])->get();
+
+            $tickets = $tickets->filter(function ($ticket) use ($authUser) {
+                return $ticket->user_id == $authUser->id || (!!$ticket->referer() && $ticket->referer()->id == $authUser->id);
+            });
+
+            $tickets = $tickets->values()->toArray();
+
+            return response([
+                'tickets' => $tickets,
+            ], 200);
+        }
+       
+        return response([
+            'message' => 'You are not allowed to view this hardware tickets',
+        ], 403);
     }
     
 }

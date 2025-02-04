@@ -562,6 +562,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/hardware-list", [App\Http\Controllers\HardwareController::class, "index"]);
     Route::get("/company-hardware-list/{company}", [App\Http\Controllers\HardwareController::class, "companyHardwareList"]);
+    Route::get("/form-field-hardware-list/{typeFormField}", [App\Http\Controllers\HardwareController::class, "formFieldHardwareList"]);
     Route::get("/hardware-list-full", [App\Http\Controllers\HardwareController::class, "hardwareListWithTrashed"]);
     Route::post("/hardware", [App\Http\Controllers\HardwareController::class, "store"]);
     Route::delete("/hardware/{hardware}", [App\Http\Controllers\HardwareController::class, "destroy"]);
@@ -572,6 +573,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete("/hardware-user/{hardware}/{user}", [App\Http\Controllers\HardwareController::class, "deleteHardwareUser"]);
     Route::get("/user-hardware/{user}", [App\Http\Controllers\HardwareController::class, "userHardwareList"]); //lato utente
     Route::get("/hardware/{hardware}", [App\Http\Controllers\HardwareController::class, "show"]);
+    Route::get("/fake-hardware-field", [App\Http\Controllers\HardwareController::class, "fakeHardwareField"]);
+    Route::get("/hardware-tickets/{hardware}", [App\Http\Controllers\HardwareController::class, "hardwareTickets"]);
 });
 
 // Sembra inesistente. commento per sicurezza e poi eliminiamo in un commit futuro

@@ -64,12 +64,14 @@ class Ticket extends Model {
     public function referer() {
         // Si usa newQueryWithoutRelationships per evitare di caricare i messaggi, che non servono
         $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
-        $messages = $ticketWithoutMessages->messages;
-        if (count($messages) > 0) {
-            $message_obj = json_decode($messages[0]->message);
-            // Controllo se esiste la proprietà, perchè nei ticket vecchi non c'è e può dare errore.
-            if (isset($message_obj->referer)) {
-                return User::find($message_obj->referer);
+        if(!!$ticketWithoutMessages){
+            $messages = $ticketWithoutMessages->messages;
+            if (count($messages) > 0) {
+                $message_obj = json_decode($messages[0]->message);
+                // Controllo se esiste la proprietà, perchè nei ticket vecchi non c'è e può dare errore.
+                if (isset($message_obj->referer)) {
+                    return User::find($message_obj->referer);
+                }
             }
         }
         return User::find(0);
