@@ -563,6 +563,8 @@ class TicketController extends Controller {
 
         $fields = $request->validate([
             'message' => 'required|string',
+            'actualProcessingTime' => 'required|int',
+            'workMode' => 'required|string',
         ]);
 
         if (!$request->user()->is_admin) {
@@ -591,6 +593,7 @@ class TicketController extends Controller {
         $ticket->update([
             'status' => 5, // Si può impostare l'array di stati e prendere l'indice di "Chiuso" da lì
             'actual_processing_time' => $request->actualProcessingTime,
+            'work_mode' => $request->workMode,
         ]);
 
         $update = TicketStatusUpdate::create([

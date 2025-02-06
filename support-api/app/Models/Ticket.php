@@ -33,6 +33,7 @@ class Ticket extends Model {
         'is_form_correct',
         'was_user_self_sufficient',
         'is_user_error_problem',
+        'work_mode',
     ];
 
     public function toSearchableArray() {
