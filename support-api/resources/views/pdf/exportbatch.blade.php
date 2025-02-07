@@ -134,6 +134,7 @@
         
     @foreach($tickets as $ticket) 
     <div id="ticket-{{ $ticket['data']['id']}}">
+        {{-- Questa non è la versione estesa <h1 class="main-header">Report Esteso Ticket #{{ $ticket['data']['id']}}</h1> --}}
         <h1 class="main-header">Report Esteso Ticket #{{ $ticket['data']['id']}}</h1>
         <hr>
         <div class="box">
