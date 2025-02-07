@@ -215,4 +215,12 @@ return [
         "sla" => "Cambio SLA",
         "blame" => "Cambio responsabilità",
     ],
+
+    /* 
+        Modalità di lavoro
+    */
+    'work_modes' => [
+        "on_site" => "Dal cliente",
+        "remote" => "In remoto",
+    ],
 ];

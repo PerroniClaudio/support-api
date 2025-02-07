@@ -166,7 +166,11 @@
                                 @break
 
                                 @default
-                                    <p><b>{{ $key }}</b><br> {{ $value }}</p>
+                                    @if(is_array($value))
+                                        <p><b>{{ $key }}</b><br> {{ implode(', ', $value) }}</p>
+                                    @else
+                                        <p><b>{{ $key }}</b><br> {{ $value }}</p>
+                                    @endif
                             @endswitch
                         @endforeach
                     </td>

@@ -35,7 +35,12 @@ class UserReportExport implements FromArray
             "SLA Prevista risoluzione",
             "Cambi di priorità",
             "SLA Aggiornata presa in carico",
-            "SLA Aggiornata risoluzione"
+            "SLA Aggiornata risoluzione",
+            "Modalità di lavoro",
+            // "Form corretto",
+            // "Cliente autonomo",
+            // "Responsabilità del dato", // nel db per ora è is_user_error perchè veniva usato in un altro modo
+            // "Responsabilità del problema"
         ];
 
         $tickets = Ticket::where('company_id', $this->report->company_id)->whereBetween('created_at', [
@@ -54,7 +59,7 @@ class UserReportExport implements FromArray
             $referer_it_name = "";
 
             foreach ($webform as $key => $value) {
-                $webform_text .= $key . ": " . $value . "\n";
+                $webform_text .= $key . ": " . (is_array($value) ? implode(', ', $value) : $value) . "\n";
 
                 if ($key == "referer") {
                     if ($value != 0) {
@@ -103,6 +108,7 @@ class UserReportExport implements FromArray
                 }
             }
 
+            $workModes = config('app.work_modes');
             $this_ticket = [
                 $ticket->id,
                 $ticket->user->is_admin ? "Supporto" : $ticket->user->name . " " . $ticket->user->surname,
@@ -119,7 +125,12 @@ class UserReportExport implements FromArray
                 $ticket->ticketType->default_sla_solve,
                 $cambiamenti_priorità,
                 $ticket->sla_take,
-                $ticket->sla_solve
+                $ticket->sla_solve,
+                $workModes && $ticket->work_mode ? $workModes[$ticket->work_mode] : $ticket->work_mode,
+                // $ticket->is_form_correct ? "Si" : "No",
+                // $ticket->was_user_self_sufficient ? "Si" : "No",
+                // $ticket->is_user_error ? "Cliente" : "Supporto", // nel db per ora è is_user_error perchè veniva usato in un altro modo
+                // $ticket->ticketType->is_problem ? ($ticket->is_user_error_problem ? "Cliente" : "Supporto") : "-"
             ];
             
             $ticket_data[] = $this_ticket;

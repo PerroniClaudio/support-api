@@ -32,7 +32,22 @@ class TicketsExport implements FromArray {
         ])->get();
 
         $ticket_data = [];
-        $headers = ["ID", "Autore", "Referente", "Data", "Tipologia", "Webform", "Chiusura", "Tempo in attesa (ore)", "Numero di volte in attesa"];
+        $headers = [
+            "ID",
+            "Autore",
+            "Referente",
+            "Data",
+            "Tipologia",
+            "Webform",
+            "Chiusura",
+            "Tempo in attesa (ore)",
+            "Numero di volte in attesa",
+            "Modalità di lavoro",
+            "Form corretto",
+            "Cliente autonomo",
+            "Responsabilità del dato", // nel db per ora è is_user_error perchè veniva usato in un altro modo
+            "Responsabilità del problema"
+        ];
 
         foreach ($tickets as $ticket) {
 
@@ -42,16 +57,18 @@ class TicketsExport implements FromArray {
             $has_referer = false;
             $referer_name = "";
             
-            foreach ($webform as $key => $value) {
-                if ($key == "referer") {
-                    $has_referer = true;
-                } else if ($key == "referer_it"){
-
-                } else if ($key == "office"){
-                    $office = Office::find($value);
-                    $office ? $webform_text .= $key . ": " . $office->name . "\n" : null;
-                } else {
-                    $webform_text .= $key . ": " . $value . "\n";
+            if(isset($webform)){
+                foreach ($webform as $key => $value) {
+                    if ($key == "referer") {
+                        $has_referer = true;
+                    } else if ($key == "referer_it"){
+    
+                    } else if ($key == "office"){
+                        $office = Office::find($value);
+                        $office ? $webform_text .= $key . ": " . $office->name . "\n" : null;
+                    } else {
+                        $webform_text .= $key . ": " . (is_array($value) ? implode(', ', $value) : $value) . "\n";
+                    }
                 }
             }
 
@@ -64,7 +81,8 @@ class TicketsExport implements FromArray {
 
             $waiting_times = $ticket->waitingTimes();
             $waiting_hours = $ticket->waitingHours();
-
+            
+            $workModes = config('app.work_modes');
             $this_ticket = [
                 $ticket->id,
                 $ticket->user->name . " " . $ticket->user->surname,
@@ -74,7 +92,12 @@ class TicketsExport implements FromArray {
                 $webform_text,
                 $ticket->created_at,
                 $waiting_hours,
-                $waiting_times
+                $waiting_times,
+                $workModes && $ticket->work_mode ? $workModes[$ticket->work_mode] : $ticket->work_mode,
+                $ticket->is_form_correct ? "Si" : "No",
+                $ticket->was_user_self_sufficient ? "Si" : "No",
+                $ticket->is_user_error ? "Cliente" : "Supporto", // nel db per ora è is_user_error perchè veniva usato in un altro modo
+                $ticket->ticketType->is_problem ? ($ticket->is_user_error_problem ? "Cliente" : "Supporto") : "-"
             ];
 
             foreach ($ticket->messages as $message) {

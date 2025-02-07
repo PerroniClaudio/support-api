@@ -42,7 +42,13 @@
                             @break
 
                             @default
-                                <p><b>{{ $key }}</b><br> {{ $value }}</p>
+                                <p><b>{{ $key }}</b><br> 
+                                    @if(is_array($value))
+                                        {{ implode(', ', $value) }}</p>
+                                    @else
+                                        {{ $value }}</p>
+                                    @endif
+                                </p>
                         @endswitch
                     @endforeach
                 </td>
@@ -134,6 +140,14 @@
                             ' ore' .
                             ($ticket->actual_processing_time % 60 != 0 ? ' e ' . $ticket->actual_processing_time % 60 . ' minuti' : '')
                         : 'Non impostato' }}
+                    </p>
+                </td>
+            </tr>
+            <tr>
+                <td style="vertical-align: top; width:50%;" class="box">
+                    <p class="box-heading"><b>Modalità di lavoro<b></p>
+                    <p>
+                        {{ $ticket->work_mode ?? 'Non definita' }}
                     </p>
                 </td>
             </tr>

@@ -88,7 +88,17 @@ class GenericExport implements FromArray {
     public function array(): array {
 
         $ticket_data = [];
-        $headers = ["ID", "Autore", "Referente", "Data", "Tipologia", "Webform", "Chiusura", "Tempo in attesa (ore)", "Numero di volte in attesa"];
+        $headers = [
+            "ID",
+            "Autore",
+            "Referente",
+            "Data",
+            "Tipologia",
+            "Webform",
+            "Chiusura",
+            "Tempo in attesa (ore)",
+            "Numero di volte in attesa"
+        ];
 
         if($this->report->company_id != 1){
             $tickets = Ticket::where('company_id', $this->report->company_id)->whereBetween('created_at', [
@@ -129,11 +139,13 @@ class GenericExport implements FromArray {
             $has_referer = false;
             $referer_name = "";
 
-            foreach ($webform as $key => $value) {
-                $webform_text .= $key . ": " . $value . "\n";
-
-                if ($key == "referer") {
-                    $has_referer = true;
+            if(isset($webform)){
+                foreach ($webform as $key => $value) {
+                    $webform_text .= $key . ": " . (is_array($value) ? implode(', ', $value) : $value) . "\n";
+    
+                    if ($key == "referer") {
+                        $has_referer = true;
+                    }
                 }
             }
 
