@@ -19,6 +19,7 @@ use App\Models\HardwareAuditLog;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache; // Otherwise no redis connection :)
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Log;
@@ -113,100 +114,116 @@ class TicketController extends Controller {
             'type_id' => 'required|int',
         ]);
 
-        $ticketType = TicketType::find($fields['type_id']);
-        $group = $ticketType->groups->first();
-        $groupId = $group ? $group->id : null;
+        DB::beginTransaction();
 
-        $ticket = Ticket::create([
-            'description' => $fields['description'],
-            'type_id' => $fields['type_id'],
-            'group_id' => $groupId,
-            'user_id' => $user->id,
-            'status' => '0',
-            'company_id' => isset($request['company']) && $user["is_admin"] == 1 ? $request['company'] : $user->company_id,
-            'file' => null,
-            'duration' => 0,
-            'sla_take' => $ticketType['default_sla_take'],
-            'sla_solve' => $ticketType['default_sla_solve'],
-            'priority' => $ticketType['default_priority'],
-            'unread_mess_for_adm' => $user["is_admin"] == 1 ? 0 : 1,
-            'unread_mess_for_usr' => $user["is_admin"] == 1 ? 1 : 0,
-        ]);
-
-        if ($request->file('file') != null) {
-            $file = $request->file('file');
-            $file_name = time() . '_' . $file->getClientOriginalName();
-            $storeFile = $file->storeAs("tickets/" . $ticket->id . "/", $file_name, "gcs");
-            $ticket->update([
-                'file' => $file_name,
+        try {
+            $ticketType = TicketType::find($fields['type_id']);
+            $group = $ticketType->groups->first();
+            $groupId = $group ? $group->id : null;
+    
+            $ticket = Ticket::create([
+                'description' => $fields['description'],
+                'type_id' => $fields['type_id'],
+                'group_id' => $groupId,
+                'user_id' => $user->id,
+                'status' => '0',
+                'company_id' => isset($request['company']) && $user["is_admin"] == 1 ? $request['company'] : $user->company_id,
+                'file' => null,
+                'duration' => 0,
+                'sla_take' => $ticketType['default_sla_take'],
+                'sla_solve' => $ticketType['default_sla_solve'],
+                'priority' => $ticketType['default_priority'],
+                'unread_mess_for_adm' => $user["is_admin"] == 1 ? 0 : 1,
+                'unread_mess_for_usr' => $user["is_admin"] == 1 ? 1 : 0,
             ]);
-        }
-
-        cache()->forget('user_' . $user->id . '_tickets');
-        cache()->forget('user_' . $user->id . '_tickets_with_closed');
-
-        TicketMessage::create([
-            'ticket_id' => $ticket->id,
-            'user_id' => $user->id,
-            'message' => json_encode($request['messageData']),
-            // 'is_read' => 1
-        ]);
-
-        TicketMessage::create([
-            'ticket_id' => $ticket->id,
-            'user_id' => $user->id,
-            'message' => $fields['description'],
-            // 'is_read' => 0
-        ]);
-
-        // Associazioni ticket-hardware
-        $hardwareFields = $ticketType->typeHardwareFormField();
-        $addedHardware = [];
-        foreach ($hardwareFields as $field) {
-            if (isset($request['messageData'][$field->field_label])) {
-                $hardwareIds = $request['messageData'][$field->field_label];
-                foreach ($hardwareIds as $id) {
-                    $hardware = Hardware::find($id);
-                    if ($hardware) {
-                        $ticket->hardware()->syncWithoutDetaching($id);
-                        $addedHardware[] = $id;
+    
+            if ($request->file('file') != null) {
+                $file = $request->file('file');
+                $file_name = time() . '_' . $file->getClientOriginalName();
+                $storeFile = $file->storeAs("tickets/" . $ticket->id . "/", $file_name, "gcs");
+                $ticket->update([
+                    'file' => $file_name,
+                ]);
+            }
+    
+            // cache()->forget('user_' . $user->id . '_tickets');
+            // cache()->forget('user_' . $user->id . '_tickets_with_closed');
+    
+            TicketMessage::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $user->id,
+                'message' => json_encode($request['messageData']),
+                // 'is_read' => 1
+            ]);
+    
+            TicketMessage::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $user->id,
+                'message' => $fields['description'],
+                // 'is_read' => 0
+            ]);
+    
+            // Associazioni ticket-hardware
+            $hardwareFields = $ticketType->typeHardwareFormField();
+            $addedHardware = [];
+            foreach ($hardwareFields as $field) {
+                if (isset($request['messageData'][$field->field_label])) {
+                    $hardwareIds = $request['messageData'][$field->field_label];
+                    foreach ($hardwareIds as $id) {
+                        $hardware = Hardware::find($id);
+                        if ($hardware) {
+                            $ticket->hardware()->syncWithoutDetaching($id);
+                            $addedHardware[] = $id;
+                        }
                     }
                 }
             }
+            HardwareAuditLog::create([
+                'modified_by' => $user->id,
+                'log_subject' => 'hardware_ticket',
+                'log_type' => 'created',
+                'new_data' => json_encode([
+                    'ticket_id' => $ticket->id,
+                    'hardware_ids' => $addedHardware,
+                ]),
+            ]);
+
+            DB::commit();
+
+            cache()->forget('user_' . $user->id . '_tickets');
+            cache()->forget('user_' . $user->id . '_tickets_with_closed');
+    
+            $brand_url = $ticket->brandUrl();
+    
+            // Debug: qualche elemento col name non viene trovato
+            $firstMessage = $ticket->messages[0]->message;
+            $data = json_decode($firstMessage, true);
+            $ticketUser = $ticket->user;
+            $company = $ticket->company;
+            $ticketType =  $ticket->ticketType;
+            $debugString = 'DEBUG: Ticket ID: ' . $ticket->id
+                . ' - Ticket User: ' . ($ticketUser->name ?? 'No name')
+                . (isset($data['office']) ? ' - Office set: ' . (Office::find($data['office'])->name ?? $data['office'])  : ' - Office not set')
+                . (isset($data['referer_it']) ? ' - Referer IT set: ' . (User::find($data['referer_it'])->name ?? $data['referer_it']) : ' - Referer IT not set, ')
+                . (isset($data['referer']) ? ($data['referer'] != '0' ? ' - Referer set: ' . (User::find($data['referer'])->name ?? $data['referer']) : ' - Referer set: ' . $data['referer']) : ' - Referer not set, ')
+                . (' - Ticket Type name: ' . ($ticketType->name ?? 'No name'))
+                . (' - Ticket company name: ' . ($company->name ?? 'No name'));
+            Log::info($debugString);
+    
+            dispatch(new SendOpenTicketEmail($ticket, $brand_url));
+    
+            return response([
+                'ticket' => $ticket,
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Errore durante la creazione del ticket. Request: ' . json_encode($request) . ' - Errore: ' . $e->getMessage());
+            
+            return response([
+                'message' => 'Errore durante la creazione del ticket: ' . $e->getMessage(),
+            ], 500);
         }
-        HardwareAuditLog::create([
-            'modified_by' => $user->id,
-            'log_subject' => 'hardware_ticket',
-            'log_type' => 'created',
-            'new_data' => json_encode([
-                'ticket_id' => $ticket->id,
-                'hardware_ids' => $addedHardware,
-            ]),
-        ]);
-
-
-        $brand_url = $ticket->brandUrl();
-
-        // Debug: qualche elemento col name non viene trovato
-        $firstMessage = $ticket->messages[0]->message;
-        $data = json_decode($firstMessage, true);
-        $ticketUser = $ticket->user;
-        $company = $ticket->company;
-        $ticketType =  $ticket->ticketType;
-        $debugString = 'DEBUG: Ticket ID: ' . $ticket->id
-            . ' - Ticket User: ' . ($ticketUser->name ?? 'No name')
-            . (isset($data['office']) ? ' - Office set: ' . (Office::find($data['office'])->name ?? $data['office'])  : ' - Office not set')
-            . (isset($data['referer_it']) ? ' - Referer IT set: ' . (User::find($data['referer_it'])->name ?? $data['referer_it']) : ' - Referer IT not set, ')
-            . (isset($data['referer']) ? ($data['referer'] != '0' ? ' - Referer set: ' . (User::find($data['referer'])->name ?? $data['referer']) : ' - Referer set: ' . $data['referer']) : ' - Referer not set, ')
-            . (' - Ticket Type name: ' . ($ticketType->name ?? 'No name'))
-            . (' - Ticket company name: ' . ($company->name ?? 'No name'));
-        Log::info($debugString);
-
-        dispatch(new SendOpenTicketEmail($ticket, $brand_url));
-
-        return response([
-            'ticket' => $ticket,
-        ], 201);
     }
 
     /**
