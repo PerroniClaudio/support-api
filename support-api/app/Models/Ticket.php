@@ -60,7 +60,7 @@ class Ticket extends Model {
         return $this->belongsTo(User::class, 'admin_user_id');
     }
 
-    /* get the referer (referente in sede) */
+    /* get the referer (utente interessato) */
 
     public function referer() {
         // Si usa newQueryWithoutRelationships per evitare di caricare i messaggi, che non servono

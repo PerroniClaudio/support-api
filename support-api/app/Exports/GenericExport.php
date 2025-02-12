@@ -91,7 +91,7 @@ class GenericExport implements FromArray {
         $headers = [
             "ID",
             "Autore",
-            "Referente",
+            "Utente interessato", // referer
             "Data",
             "Tipologia",
             "Webform",

@@ -61,14 +61,14 @@ class SendOpenTicketEmail implements ShouldQueue {
       $referer = $this->ticket->referer();
       $refererIT = $this->ticket->refererIT();
 
-      // Se il referente in sede è impostato ed è diverso dall'utente che ha aperto il ticket, gli invia la mail (se la sua è valida).
+      // Se l'utente interessato (referer) è impostato ed è diverso dall'utente che ha aperto il ticket, gli invia la mail (se la sua è valida).
       if($referer && $referer->id !== $ticketUser->id && $referer->email){
         if(filter_var($referer->email, FILTER_VALIDATE_EMAIL)) {
           Mail::to($referer->email)->send(new OpenTicketEmail($this->ticket, $company, $ticketType, $category, $userlink, $this->brand_url, "referer"));
         }
       }
 
-      // Se il referente IT è impostato ed è diverso dall'utente e dal referente in sede, gli invia la mail (se la sua è valida).
+      // Se il referente IT è impostato ed è diverso dall'utente e dall'utente interessato (referer), gli invia la mail (se la sua è valida).
       if($refererIT && ($referer ? $refererIT->id !== $referer->id : true) && $refererIT->id !== $ticketUser->id && $refererIT->email){
         if(filter_var($refererIT->email, FILTER_VALIDATE_EMAIL)) {
           Mail::to($refererIT->email)->send(new OpenTicketEmail($this->ticket, $company, $ticketType, $category, $userlink, $this->brand_url, "referer_it"));

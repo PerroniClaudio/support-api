@@ -53,7 +53,7 @@ class OpenTicketEmail extends Mailable
         if(isset($data['referer'])){
             if($data['referer'] != 0){
                 $referer = User::find($data['referer']);
-                $data["Referente"] = $referer
+                $data["Utente interessato"] = $referer
                     ? $referer->name . ' ' . $referer->surname ?? ''
                     : $data['referer'];
             }

@@ -19,7 +19,7 @@
 
 @if($mailType == "referer")
 Buongiorno, <br><br>
-Questa mail ti è stata inviata perchè sei il referente in sede per il relativo ticket. <br><br>
+Questa mail ti è stata inviata perchè sei indicato come utente interessato nel relativo ticket. <br><br>
 @elseif($mailType == "referer_it")
 Buongiorno, <br><br>
 Questa mail ti è stata inviata perchè sei il referente IT per il relativo ticket. <br><br>
@@ -29,7 +29,7 @@ Questa mail ti è stata inviata perchè sei il referente IT per il relativo tick
 @if($mailType == "admin" || $mailType == "support")
 Aperto da: {{$opener->name . ' ' . ($opener->surname ?? '')}}<br>
 Referente IT: {{$refererIT ? ($refererIT->name . ' ' . ($refererIT->surname ?? '')) : 'Nessuno'}}<br>
-Referente: {{$referer ? ($referer->name . ' ' . ($referer->surname ?? '')) : 'Nessuno'}}<br>
+Utente interessato: {{$referer ? ($referer->name . ' ' . ($referer->surname ?? '')) : 'Nessuno'}}<br>
 @endif
 @endif
 Inviato da: {{$sender->is_admin ? "Supporto" : ($company->name . ', ' . $sender->name . ' ' . $sender->surname ?? '')}}<br>

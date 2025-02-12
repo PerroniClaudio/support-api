@@ -696,7 +696,7 @@ class HardwareController extends Controller
             ], 200);
         }
 
-        // Qui devono vedersi tutti i ticket collegati a questo hardware, aperti dall'utente o in cui è associato come referente
+        // Qui devono vedersi tutti i ticket collegati a questo hardware, aperti dall'utente o in cui è associato come utente interessato (referer)
         if($hardware->users->contains($authUser)){
             $tickets = $hardware->tickets()
                 ->with([

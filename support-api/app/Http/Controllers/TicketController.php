@@ -317,7 +317,7 @@ class TicketController extends Controller {
         // Può avere il ticket solo se: 
         // admin e del gruppo associato, 
         // company admin e della stessa azienda del ticket, 
-        // della stessa azienda del ticket ed il creatore del ticket o se è il referente interno (non necessariamente company_admin).
+        // della stessa azienda del ticket ed il creatore del ticket o se è l'utente interessato (referer), (non necessariamente company_admin).
         // titolare del dato dell'azienda del ticket.
         $authorized = false;
         if (

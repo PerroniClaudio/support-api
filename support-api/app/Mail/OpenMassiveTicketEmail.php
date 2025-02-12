@@ -69,7 +69,7 @@ class OpenMassiveTicketEmail extends Mailable
         }
         if(isset($data['referer'])){
             $referer = User::find($data['referer']);
-            $data["Referente"] = $referer
+            $data["Utente interessato"] = $referer
                 ? $referer->name . ' ' . $referer->surname ?? ''
                 : $data['referer'];
             unset($data['referer']);

@@ -22,7 +22,7 @@ class UserReportExport implements FromArray
         $headers = [
             "ID",
             "Utente",
-            "Referente",
+            "Utente interessato", // referer
             "Referente IT",
             "Problema/Richiesta",
             "Categoria",

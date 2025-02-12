@@ -16,7 +16,7 @@
 @if($mailType == "user") 
 Di seguito la sintesi del ticket che hai aperto. <br><br>
 @elseif($mailType == "referer")
-Sei stato indicato come referente in sede per {{ $category->is_problem ? 'il seguente Incident' : 'la seguente Request' }}. <br><br>
+Sei stato indicato come utente interessato {{ $category->is_problem ? 'nel seguente Incident' : 'nella seguente Request' }}. <br><br>
 @elseif($mailType == "referer_it")
 Sei stato indicato come referente IT per {{ $category->is_problem ? 'il seguente Incident' : 'la seguente Request' }}. <br><br>
 @endif

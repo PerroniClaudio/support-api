@@ -30,7 +30,7 @@
                             @break
 
                             @case('referer')
-                                <p><b>Referente</b><br> {{ $value }}</p>
+                                <p><b>Utente interessato</b><br> {{ $value }}</p>
                             @break
 
                             @case('referer_it')
