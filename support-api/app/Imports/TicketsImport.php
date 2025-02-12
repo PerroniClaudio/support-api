@@ -85,6 +85,7 @@ class TicketsImport implements ToCollection
                         'priority' => $ticketType['default_priority'],
                         'unread_mess_for_adm' => 0,
                         'unread_mess_for_usr' => 1,
+                        'source' => $formData->source ?? null,
                     ]);
     
                     $generatedTicketsError[] = 'ID ticket: ' . $ticket->id . ' - Identificativo valore file import: ' . $currentValue . " - Tipo di apertura ticket: raggruppato";
@@ -187,6 +188,7 @@ class TicketsImport implements ToCollection
                         'priority' => $ticketType['default_priority'],
                         'unread_mess_for_adm' => 0,
                         'unread_mess_for_usr' => 1,
+                        'source' => $formData->source ?? null,
                     ]);
     
                     $generatedTicketsError[] = 'ID ticket: ' . $ticket->id . ' - Identificativo valore file import: ' . $currentValue . " - Tipo di apertura ticket: suddiviso - Indice riga: " . $index;

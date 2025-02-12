@@ -135,6 +135,7 @@ class TicketController extends Controller {
                 'priority' => $ticketType['default_priority'],
                 'unread_mess_for_adm' => $user["is_admin"] == 1 ? 0 : 1,
                 'unread_mess_for_usr' => $user["is_admin"] == 1 ? 1 : 0,
+                'source' => $user["is_admin"] == 1 ? ($request->source ?? null) : 'piattaforma',
             ]);
     
             if ($request->file('file') != null) {
@@ -582,6 +583,7 @@ class TicketController extends Controller {
             'message' => 'required|string',
             'actualProcessingTime' => 'required|int',
             'workMode' => 'required|string',
+            'isRejected' => 'required|boolean',
         ]);
 
         if (!$request->user()->is_admin) {
@@ -611,6 +613,7 @@ class TicketController extends Controller {
             'status' => 5, // Si può impostare l'array di stati e prendere l'indice di "Chiuso" da lì
             'actual_processing_time' => $request->actualProcessingTime,
             'work_mode' => $request->workMode,
+            'is_rejected' => $request->isRejected,
         ]);
 
         $update = TicketStatusUpdate::create([

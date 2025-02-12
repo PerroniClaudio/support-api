@@ -223,4 +223,13 @@ return [
         "on_site" => "Dal cliente",
         "remote" => "In remoto",
     ],
+
+    'ticket_sources' => [
+        "email" => "Email",
+        "phone" => "Telefono",
+        "on_site_technician" => "Tecnico in sede",
+        "platform" => "Piattaforma",
+        "internal" => "Interno",
+        "automatic" => "Automatico",
+    ]
 ];

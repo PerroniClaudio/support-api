@@ -51,6 +51,7 @@ class StoreDgveryTrackingError implements ShouldQueue {
             'priority' => $ticketType['default_priority'],
             'unread_mess_for_adm' => 1,
             'unread_mess_for_usr' => 0,
+            'source' => 'automatico',
         ]);
 
         TicketMessage::create([
