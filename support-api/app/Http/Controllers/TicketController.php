@@ -1091,17 +1091,35 @@ class TicketController extends Controller {
 
         $ticket->ticket_type = $ticket->ticketType ?? null;
 
+        // ? Categoria 
+
+        $ticket['category'] = $ticket->ticketType->category()->first();
+
         // Nasconde i dati per gli admin se l'utente non è admin
         if ($user["is_admin"] != 1) {
             $ticket->setRelation('status_updates', null);
             $ticket->makeHidden(["admin_user_id", "group_id", "priority", "is_user_error", "actual_processing_time"]);
         }
 
+        $ticket['is_form_correct'] = $ticket->is_form_correct !== null ? $ticket->is_form_correct : 2;
+
+        // ? Messaggi 
+
+        $ticket['messages'] = $ticket->messages()->with('user')->get();
+        $author = $ticket->user()->first();
+        if ($author->is_admin == 1) {
+            $ticket['opened_by'] = "Supporto";
+        } else {
+            $ticket['opened_by'] = $author->name . " " . $author->surname;
+        }
+
+
         return response([
             'data' => $ticket,
             'webform_data' => $webform_data,
             'status_updates' => $avanzamento,
             'closing_messages' => $closingMessage,
+            'isadmin' => $user["is_admin"],
         ], 200);
     }
 
@@ -1208,14 +1226,13 @@ class TicketController extends Controller {
 
                 // Nasconde i dati per gli admin se l'utente non è admin
                 if ($user["is_admin"] != 1) {
+
                     $ticket->setRelation('status_updates', null);
                     $ticket->makeHidden(["admin_user_id", "group_id", "priority", "is_user_error", "actual_processing_time"]);
                 }
 
                 $ticket['messages'] = $ticket->messages()->with('user')->get();
-
                 $author = $ticket->user()->first();
-
                 if ($author->is_admin == 1) {
                     $ticket['opened_by'] = "Supporto";
                 } else {
@@ -1227,6 +1244,7 @@ class TicketController extends Controller {
                     'webform_data' => $webform_data,
                     'status_updates' => $avanzamento,
                     'closing_message' => $closingMessage,
+
                 ];
             }
         }
