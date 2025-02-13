@@ -5,11 +5,19 @@ namespace App\Http\Controllers;
 use App\Jobs\StoreDgveryLive;
 use App\Jobs\StoreDgveryTrackingError;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class WebhookController extends Controller {
     public function handle(Request $request) {
-        // Process webhook payload
 
+        Log::info('webhook received', $request->all());
+
+        if ($request->header('X-NinjaRMM-Event') !== null) {
+            $this->ninjaRmm($request->all());
+            return response()->json(['success' => true]);
+        }
+
+        // Process webhook payload
         switch ($request->header('X-Support-Webhook-Event')) {
             case 'ticket.new_live_academelearning':
                 // Handle ticket created event
@@ -31,5 +39,11 @@ class WebhookController extends Controller {
         // Perform actions based on the webhook data
 
         return response()->json(['success' => true]);
+    }
+
+    private function ninjaRmm($data) {
+        // Process NinjaRMM webhook payload
+
+        Log::info('NinjaRMM webhook received', $data);
     }
 }

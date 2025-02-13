@@ -44,7 +44,6 @@ Route::get('/', function () {
 
 
 Route::get('/info', function () {
-    echo "1";
     phpinfo();
 });
 

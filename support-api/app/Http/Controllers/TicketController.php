@@ -283,11 +283,14 @@ class TicketController extends Controller {
         $ticket = Ticket::where('id', $id)->with([
             'ticketType' => function ($query) {
                 $query->with('category');
-            }, 
+            },
             'hardware' => function ($query) {
                 $query->with('hardwareType');
             },
-            'company', 'user', 'files'])->first();
+            'company',
+            'user',
+            'files'
+        ])->first();
 
         if ($ticket == null) {
             return response([
@@ -1022,7 +1025,6 @@ class TicketController extends Controller {
     }
 
     public function report(Ticket $ticket, Request $request) {
-
         $user = $request->user();
         if ($user["is_admin"] != 1 && ($user["is_company_admin"] != 1 || $ticket->company_id != $user->company_id)) {
             return response([
@@ -1112,19 +1114,19 @@ class TicketController extends Controller {
             ], 401);
         }
 
-        if ($user["is_admin"] == 1) {
-            $cacheKey = 'admin_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to;
-        } else {
-            $cacheKey = 'user_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to;
-        }
+        // if ($user["is_admin"] == 1) {
+        //     $cacheKey = 'admin_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to;
+        // } else {
+        //     $cacheKey = 'user_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to;
+        // }
 
-        if (Cache::has($cacheKey)) {
-            $tickets_data = Cache::get($cacheKey);
+        // if (Cache::has($cacheKey)) {
+        //     $tickets_data = Cache::get($cacheKey);
 
-            return response([
-                'data' => $tickets_data,
-            ], 200);
-        }
+        //     return response([
+        //         'data' => $tickets_data,
+        //     ], 200);
+        // }
 
         $tickets = Ticket::where("company_id", $request->company_id)->whereBetween('created_at', [$request->from, $request->to])->get();
 
@@ -1132,7 +1134,15 @@ class TicketController extends Controller {
 
         foreach ($tickets as $ticket) {
 
+            if (!$ticket->messages()->first()) {
+                continue;
+            }
+
             $webform_data = json_decode($ticket->messages()->first()->message);
+
+            if (!$webform_data) {
+                continue;
+            }
 
             if (isset($webform_data->office)) {
                 $office = $ticket->company->offices()->where('id', $webform_data->office)->first();
@@ -1193,6 +1203,19 @@ class TicketController extends Controller {
                 $ticket->makeHidden(["admin_user_id", "group_id", "priority", "is_user_error", "actual_processing_time"]);
             }
 
+            $ticket['messages'] = $ticket->messages()->with('user')->get();
+
+            $cat = $ticket->ticketType->category()->get();
+            $ticket['category'] = $cat[0];
+
+            $author = $ticket->user()->first();
+
+            if ($author->is_admin == 1) {
+                $ticket['opened_by'] = "Supporto";
+            } else {
+                $ticket['opened_by'] = $author->name . " " . $author->surname;
+            }
+
             $tickets_data[] = [
                 'data' => $ticket,
                 'webform_data' => $webform_data,
@@ -1201,9 +1224,11 @@ class TicketController extends Controller {
             ];
         }
 
-        $tickets_batch_data = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($tickets_data) {
-            return $tickets_data;
-        });
+        $tickets_batch_data = $tickets_data;
+
+        // $tickets_batch_data = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($tickets_data) {
+        //     return $tickets_data;
+        // });
 
         return response([
             'data' => $tickets_batch_data,
