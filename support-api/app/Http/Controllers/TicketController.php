@@ -120,7 +120,7 @@ class TicketController extends Controller {
             $ticketType = TicketType::find($fields['type_id']);
             $group = $ticketType->groups->first();
             $groupId = $group ? $group->id : null;
-    
+
             $ticket = Ticket::create([
                 'description' => $fields['description'],
                 'type_id' => $fields['type_id'],
@@ -137,7 +137,7 @@ class TicketController extends Controller {
                 'unread_mess_for_usr' => $user["is_admin"] == 1 ? 1 : 0,
                 'source' => $user["is_admin"] == 1 ? ($request->source ?? null) : 'piattaforma',
             ]);
-    
+
             if ($request->file('file') != null) {
                 $file = $request->file('file');
                 $file_name = time() . '_' . $file->getClientOriginalName();
@@ -146,24 +146,24 @@ class TicketController extends Controller {
                     'file' => $file_name,
                 ]);
             }
-    
+
             // cache()->forget('user_' . $user->id . '_tickets');
             // cache()->forget('user_' . $user->id . '_tickets_with_closed');
-    
+
             TicketMessage::create([
                 'ticket_id' => $ticket->id,
                 'user_id' => $user->id,
                 'message' => json_encode($request['messageData']),
                 // 'is_read' => 1
             ]);
-    
+
             TicketMessage::create([
                 'ticket_id' => $ticket->id,
                 'user_id' => $user->id,
                 'message' => $fields['description'],
                 // 'is_read' => 0
             ]);
-    
+
             // Associazioni ticket-hardware
             $hardwareFields = $ticketType->typeHardwareFormField();
             $addedHardware = [];
@@ -193,9 +193,9 @@ class TicketController extends Controller {
 
             cache()->forget('user_' . $user->id . '_tickets');
             cache()->forget('user_' . $user->id . '_tickets_with_closed');
-    
+
             $brand_url = $ticket->brandUrl();
-    
+
             // Debug: qualche elemento col name non viene trovato
             $firstMessage = $ticket->messages[0]->message;
             $data = json_decode($firstMessage, true);
@@ -210,9 +210,9 @@ class TicketController extends Controller {
                 . (' - Ticket Type name: ' . ($ticketType->name ?? 'No name'))
                 . (' - Ticket company name: ' . ($company->name ?? 'No name'));
             Log::info($debugString);
-    
+
             dispatch(new SendOpenTicketEmail($ticket, $brand_url));
-    
+
             return response([
                 'ticket' => $ticket,
             ], 201);
@@ -220,7 +220,7 @@ class TicketController extends Controller {
             DB::rollBack();
 
             Log::error('Errore durante la creazione del ticket. Request: ' . json_encode($request) . ' - Errore: ' . $e->getMessage());
-            
+
             return response([
                 'message' => 'Errore durante la creazione del ticket: ' . $e->getMessage(),
             ], 500);
@@ -1114,121 +1114,128 @@ class TicketController extends Controller {
             ], 401);
         }
 
-        // if ($user["is_admin"] == 1) {
-        //     $cacheKey = 'admin_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to;
-        // } else {
-        //     $cacheKey = 'user_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to;
-        // }
+        if ($user["is_admin"] == 1) {
+            $cacheKey = 'admin_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to . '_' . $request->type_filter;
+        } else {
+            $cacheKey = 'user_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to;
+        }
 
-        // if (Cache::has($cacheKey)) {
-        //     $tickets_data = Cache::get($cacheKey);
+        if (Cache::has($cacheKey)) {
+            $tickets_data = Cache::get($cacheKey);
 
-        //     return response([
-        //         'data' => $tickets_data,
-        //     ], 200);
-        // }
+            return response([
+                'data' => $tickets_data,
+            ], 200);
+        }
 
         $tickets = Ticket::where("company_id", $request->company_id)->whereBetween('created_at', [$request->from, $request->to])->get();
+        $filter = $request->type_filter;
 
         $tickets_data = [];
 
         foreach ($tickets as $ticket) {
 
-            if (!$ticket->messages()->first()) {
-                continue;
-            }
+            $ticket['category'] = $ticket->ticketType->category()->first();
 
-            $webform_data = json_decode($ticket->messages()->first()->message);
+            if (
+                $filter == 'all' ||
+                ($filter == 'request' && $ticket['category']['is_request'] == 1) ||
+                ($filter == 'incident' && $ticket['category']['is_problem'] == 1)
+            ) {
 
-            if (!$webform_data) {
-                continue;
-            }
+                if (!$ticket->messages()->first()) {
+                    continue;
+                }
 
-            if (isset($webform_data->office)) {
-                $office = $ticket->company->offices()->where('id', $webform_data->office)->first();
-                $webform_data->office = $office ? $office->name : null;
-            } else {
-                $webform_data->office = null;
-            }
+                $webform_data = json_decode($ticket->messages()->first()->message);
 
-            if (isset($webform_data->referer)) {
-                $referer = User::find($webform_data->referer);
-                $webform_data->referer = $referer ? $referer->name . " " . $referer->surname : null;
-            }
+                if (!$webform_data) {
+                    continue;
+                }
 
-            if (isset($webform_data->referer_it)) {
-                $referer_it = User::find($webform_data->referer_it);
-                $webform_data->referer_it = $referer_it ? $referer_it->name . " " . $referer_it->surname : null;
-            }
+                if (isset($webform_data->office)) {
+                    $office = $ticket->company->offices()->where('id', $webform_data->office)->first();
+                    $webform_data->office = $office ? $office->name : null;
+                } else {
+                    $webform_data->office = null;
+                }
 
-            //? Avanzamento
+                if (isset($webform_data->referer)) {
+                    $referer = User::find($webform_data->referer);
+                    $webform_data->referer = $referer ? $referer->name . " " . $referer->surname : null;
+                }
 
-            $avanzamento = [
-                "attesa" => 0,
-                "assegnato" => 0,
-                "in_corso" => 0,
-            ];
+                if (isset($webform_data->referer_it)) {
+                    $referer_it = User::find($webform_data->referer_it);
+                    $webform_data->referer_it = $referer_it ? $referer_it->name . " " . $referer_it->surname : null;
+                }
 
-            foreach ($ticket->statusUpdates as $update) {
-                if ($update->type == 'status') {
+                //? Avanzamento
 
-                    if (strpos($update->content, 'In attesa') !== false) {
-                        $avanzamento["attesa"]++;
-                    }
-                    if (strpos($update->content, 'Assegnato') !== false) {
-                        $avanzamento["assegnato"]++;
-                    }
-                    if (strpos($update->content, 'In corso') !== false) {
-                        $avanzamento["in_corso"]++;
+                $avanzamento = [
+                    "attesa" => 0,
+                    "assegnato" => 0,
+                    "in_corso" => 0,
+                ];
+
+                foreach ($ticket->statusUpdates as $update) {
+                    if ($update->type == 'status') {
+
+                        if (strpos($update->content, 'In attesa') !== false) {
+                            $avanzamento["attesa"]++;
+                        }
+                        if (strpos($update->content, 'Assegnato') !== false) {
+                            $avanzamento["assegnato"]++;
+                        }
+                        if (strpos($update->content, 'In corso') !== false) {
+                            $avanzamento["in_corso"]++;
+                        }
                     }
                 }
+
+                //? Chiusura
+
+                $closingMessage = "";
+
+                $closingUpdates = TicketStatusUpdate::where('ticket_id', $ticket->id)->where('type', 'closing')->get();
+                $closingUpdate = $closingUpdates->last();
+
+                if ($closingUpdate) {
+                    $closingMessage = $closingUpdate->content;
+                }
+
+                $ticket->ticket_type = $ticket->ticketType ?? null;
+
+                // Nasconde i dati per gli admin se l'utente non è admin
+                if ($user["is_admin"] != 1) {
+                    $ticket->setRelation('status_updates', null);
+                    $ticket->makeHidden(["admin_user_id", "group_id", "priority", "is_user_error", "actual_processing_time"]);
+                }
+
+                $ticket['messages'] = $ticket->messages()->with('user')->get();
+
+                $author = $ticket->user()->first();
+
+                if ($author->is_admin == 1) {
+                    $ticket['opened_by'] = "Supporto";
+                } else {
+                    $ticket['opened_by'] = $author->name . " " . $author->surname;
+                }
+
+                $tickets_data[] = [
+                    'data' => $ticket,
+                    'webform_data' => $webform_data,
+                    'status_updates' => $avanzamento,
+                    'closing_message' => $closingMessage,
+                ];
             }
-
-            //? Chiusura
-
-            $closingMessage = "";
-
-            $closingUpdates = TicketStatusUpdate::where('ticket_id', $ticket->id)->where('type', 'closing')->get();
-            $closingUpdate = $closingUpdates->last();
-
-            if ($closingUpdate) {
-                $closingMessage = $closingUpdate->content;
-            }
-
-            $ticket->ticket_type = $ticket->ticketType ?? null;
-
-            // Nasconde i dati per gli admin se l'utente non è admin
-            if ($user["is_admin"] != 1) {
-                $ticket->setRelation('status_updates', null);
-                $ticket->makeHidden(["admin_user_id", "group_id", "priority", "is_user_error", "actual_processing_time"]);
-            }
-
-            $ticket['messages'] = $ticket->messages()->with('user')->get();
-
-            $cat = $ticket->ticketType->category()->get();
-            $ticket['category'] = $cat[0];
-
-            $author = $ticket->user()->first();
-
-            if ($author->is_admin == 1) {
-                $ticket['opened_by'] = "Supporto";
-            } else {
-                $ticket['opened_by'] = $author->name . " " . $author->surname;
-            }
-
-            $tickets_data[] = [
-                'data' => $ticket,
-                'webform_data' => $webform_data,
-                'status_updates' => $avanzamento,
-                'closing_message' => $closingMessage,
-            ];
         }
 
         $tickets_batch_data = $tickets_data;
 
-        // $tickets_batch_data = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($tickets_data) {
-        //     return $tickets_data;
-        // });
+        $tickets_batch_data = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($tickets_data) {
+            return $tickets_data;
+        });
 
         return response([
             'data' => $tickets_batch_data,

@@ -316,7 +316,7 @@ class TicketReportExportController extends Controller {
         }
 
         if ($user["is_admin"] == 1) {
-            $cacheKey = 'admin_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to;
+            $cacheKey = 'admin_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to . '_' . $request->type_filter;
         } else {
             $cacheKey = 'user_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to;
         }
