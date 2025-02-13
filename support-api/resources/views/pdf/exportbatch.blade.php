@@ -262,7 +262,7 @@
                                             @break
 
                                             @case('referer')
-                                                <span><b>Utente che ha il problema</b><br> {{ $value }}</span> <br>
+                                                <span><b>Utente interessato</b><br> {{ $value }}</span> <br>
                                             @break
 
                                             @case('referer_it')
