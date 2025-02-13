@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\HardwareTemplateExport;
+use App\Imports\HardwareImport;
 use App\Models\Company;
 use App\Models\Hardware;
 use App\Models\HardwareAuditLog;
@@ -11,6 +13,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Faker\Factory as Faker;
+use Maatwebsite\Excel\Facades\Excel;
 
 use function PHPUnit\Framework\isEmpty;
 
@@ -203,6 +206,16 @@ class HardwareController extends Controller
         
         $hardware = Hardware::create($data);
 
+        if($hardware->company_id) {
+            HardwareAuditLog::create([
+                'modified_by' => $authUser->id,
+                'hardware_id' => $hardware->id,
+                'log_subject' => 'hardware_company',
+                'log_type' => 'created',
+                'new_data' => json_encode(['company_id' => $hardware->company_id]),
+            ]);
+        }
+
         if (!empty($data['users'])) {
             // Non so perchè ma non crea i log in automatico, quindi devo aggiungerli manualmente
             // $hardware->users()->attach($data['users']);
@@ -333,8 +346,24 @@ class HardwareController extends Controller
 
         }
 
+        $oldCompanyId = $hardware->company_id;
+
         // Aggiorna l'hardware
         $hardware->update($data);
+
+        if($hardware->company_id != $oldCompanyId) {
+            $logType = $oldCompanyId ? ($hardware->company_id ? 'updated' : 'deleted') : 'created';
+            $oldData = $oldCompanyId ? json_encode(['company_id' => $oldCompanyId]) : null;
+            $newData = $hardware->company_id ? json_encode(['company_id' => $hardware->company_id]) : null;
+            HardwareAuditLog::create([
+                'modified_by' => $authUser->id,
+                'hardware_id' => $hardware->id,
+                'log_subject' => 'hardware_company',
+                'log_type' => $logType,
+                'old_data' => $oldData,
+                'new_data' => $newData,
+            ]);
+        }
 
         // Aggiorna gli utenti associati
         // Non so perchè ma non crea i log in automatico, quindi devo aggiungerli manualmente
@@ -503,6 +532,12 @@ class HardwareController extends Controller
 
 
         $company = $hardware->company;
+
+        if(!isEmpty($data['users']) && !$company){
+            return response([
+                'message' => 'Hardware must be associated with a company to add users',
+            ], 404);
+        }
 
         if($company && !isEmpty($data['users'])){
             $isFail = User::whereIn('id', $data['users'])->where('company_id', '!=', $company->id)->exists();
@@ -721,6 +756,50 @@ class HardwareController extends Controller
         return response([
             'message' => 'You are not allowed to view this hardware tickets',
         ], 403);
+    }
+
+    public function exportTemplate() {
+        $name = 'hardware_import_template_' . time() . '.xlsx';
+        return Excel::download(new HardwareTemplateExport(), $name);
+    }
+
+    public function importHardware(Request $request) {
+
+        $authUser = $request->user();
+        if (!$authUser->is_admin) {
+            return response([
+                'message' => 'You are not allowed to import hardware',
+            ], 403);
+        }
+
+        $request->validate([
+            'file' => 'required|mimes:xlsx',
+        ]);
+
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+
+            $extension = $file->getClientOriginalExtension();
+
+            if (!($extension === 'xlsx')) {
+                return response([
+                    'message' => 'Invalid file type. Please upload an XLSX or XLS file.',
+                ], 400);
+            }
+
+            try {
+                Excel::import(new HardwareImport($authUser), $file, 'xlsx');
+            } catch (\Exception $e) {
+                return response([
+                    'message' => 'An error occurred while importing the file. Please check the file and try again.',
+                    'error' => $e->getMessage(),
+                ], 400);
+            }
+        }
+
+        return response([
+            'message' => "Success",
+        ], 200);
     }
     
 }

@@ -231,5 +231,11 @@ return [
         "platform" => "Piattaforma",
         "internal" => "Interno",
         "automatic" => "Automatico",
-    ]
+    ],
+
+    'hardware_ownership_types' => [
+        "owned" => "Proprietà",
+        "rented" => "Noleggio",
+        "other" => "Altro",
+    ],
 ];

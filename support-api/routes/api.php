@@ -565,6 +565,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/form-field-hardware-list/{typeFormField}", [App\Http\Controllers\HardwareController::class, "formFieldHardwareList"]);
     Route::get("/hardware-list-full", [App\Http\Controllers\HardwareController::class, "hardwareListWithTrashed"]);
     Route::post("/hardware", [App\Http\Controllers\HardwareController::class, "store"]);
+    Route::get("/hardware/export-template", [App\Http\Controllers\HardwareController::class, "exportTemplate"]);
     Route::delete("/hardware/{hardware}", [App\Http\Controllers\HardwareController::class, "destroy"]);
     Route::post("/hardware-restore/{hardware}", [App\Http\Controllers\HardwareController::class, "restore"]);
     Route::delete("/hardware-trashed/{hardware}", [App\Http\Controllers\HardwareController::class, "destroyTrashed"]);
@@ -575,6 +576,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/hardware/{hardware}", [App\Http\Controllers\HardwareController::class, "show"]);
     Route::get("/fake-hardware-field", [App\Http\Controllers\HardwareController::class, "fakeHardwareField"]);
     Route::get("/hardware-tickets/{hardware}", [App\Http\Controllers\HardwareController::class, "hardwareTickets"]);
+    Route::post("/hardwaremassive", [App\Http\Controllers\HardwareController::class, "importHardware"]);
 });
 
 /** documentazione */
