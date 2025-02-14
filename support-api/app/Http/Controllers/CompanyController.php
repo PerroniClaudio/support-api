@@ -211,7 +211,7 @@ class CompanyController extends Controller {
 
     public function ticketTypes(Company $company, Request $request) {
         $isMassive = $request->query('is_massive');
-        if($isMassive) {
+        if ($isMassive) {
             $ticketTypes = $company->ticketTypes()->where('is_massive_enabled', 1)->with('category')->get();
         } else {
             $ticketTypes = $company->ticketTypes()->where('is_massive_enabled', 0)->with('category')->get();
@@ -285,10 +285,10 @@ class CompanyController extends Controller {
                 'message' => 'Unauthorized',
             ], 401);
         }
-        
+
         $tickets = $company->tickets()->with(['ticketType'])->orderBy('created_at', 'desc')->get();
-        
-        if($user["is_admin"] != 1) {
+
+        if ($user["is_admin"] != 1) {
             foreach ($tickets as $ticket) {
                 $ticket->makeHidden(["admin_user_id", "group_id", "priority", "is_user_error", "actual_processing_time"]);
             }
@@ -297,5 +297,76 @@ class CompanyController extends Controller {
         return response([
             'tickets' => $tickets,
         ], 200);
+    }
+
+    // Orari azienda
+
+    public function getWeeklyTimes(Company $company) {
+        $weeklyTimes = $company->weeklyTimes()->get();
+
+        if ($weeklyTimes->count() == 0) {
+
+            $weeklyTimes = [];
+
+            // Se non sono stati impostati generali di default con orario 09:00 - 18:00
+
+            $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+
+            foreach ($days as $day) {
+                $weeklyTimes[] = [
+                    'day' => $day,
+                    'start_time' => '09:00',
+                    'end_time' => '18:00',
+                ];
+            }
+
+            // Sabato e domenica di default vengono inseriti a 00:00 - 00:00
+
+            $weeklyTimes[] = [
+                'day' => 'saturday',
+                'start_time' => '00:00',
+                'end_time' => '00:00',
+            ];
+
+            $weeklyTimes[] = [
+                'day' => 'sunday',
+                'start_time' => '00:00',
+                'end_time' => '00:00',
+            ];
+
+            foreach ($weeklyTimes as $weeklyTime) {
+                $company->weeklyTimes()->create($weeklyTime);
+            }
+        }
+
+        $weeklyTimes = $company->weeklyTimes()->get();
+
+        return response([
+            'weeklyTimes' => $weeklyTimes,
+        ], 200);
+    }
+
+    public function editWeeklyTime(Request $request) {
+        $request->validate([
+            'company_id' => 'required|int|exists:companies,id',
+            'day' => 'required|string',
+            'start_time' => 'required|string',
+            'end_time' => 'required|string',
+        ]);
+
+        $user = $request->user();
+
+        if (!$user['is_admin']) {
+            return response(['message' => 'Unauthorized'], 401);
+        }
+
+        $weeklyTime = Company::findOrFail($request->company_id)->weeklyTimes()->where('day', $request->day)->first();
+
+        $weeklyTime->update([
+            'start_time' => $request->start_time,
+            'end_time' => $request->end_time,
+        ]);
+
+        return response(['weeklyTime' => $weeklyTime], 200);
     }
 }
