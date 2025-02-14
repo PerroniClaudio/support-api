@@ -45,7 +45,7 @@ class Company extends Model {
     // public function ticketTypes() {
     //     return $this->belongsToMany(TicketType::class, 'company_ticket_types')->withPivot('sla_taking_charge', 'sla_resolving');;
     // }
-    
+
     public function ticketTypes() {
         return $this->hasMany(TicketType::class);
     }
@@ -77,5 +77,8 @@ class Company extends Model {
     public function hardware() {
         return $this->hasMany(Hardware::class);
     }
-    
+
+    public function weeklyTimes() {
+        return $this->hasMany(WeeklyTime::class);
+    }
 }
