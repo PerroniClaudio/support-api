@@ -36,6 +36,7 @@ class Company extends Model {
         'data_owner_name',
         'data_owner_surname',
         'data_owner_email',
+        'logo_url',
     ];
 
     public function users() {

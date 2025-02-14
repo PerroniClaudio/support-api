@@ -94,6 +94,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/companies/{company}/tickets", [CompanyController::class, "tickets"]);
     Route::get("/companies/{company}/weekly-times", [CompanyController::class, "getWeeklyTimes"]);
     Route::post("/companies/{company}/weekly-times", [CompanyController::class, "editWeeklyTime"]);
+    Route::post("/companies/{company}/logo", [CompanyController::class, "uploadLogo"]);
 });
 
 // Office Routes

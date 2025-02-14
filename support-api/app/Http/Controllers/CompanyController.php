@@ -6,6 +6,7 @@ use App\Models\Brand;
 use App\Models\Company;
 use App\Models\Supplier;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class CompanyController extends Controller {
     /**
@@ -87,6 +88,8 @@ class CompanyController extends Controller {
                 'message' => 'Company not found',
             ], 404);
         }
+
+        $company->logo_url = $company->logo_url != null ? Storage::disk('gcs')->temporaryUrl($company->logo_url, now()->addMinutes(70)) : '';
 
         return response([
             'company' => $company,
@@ -368,5 +371,33 @@ class CompanyController extends Controller {
         ]);
 
         return response(['weeklyTime' => $weeklyTime], 200);
+    }
+
+    public function uploadLogo(Company $company, Request $request) {
+
+        if(!$company) {
+            return response([
+                'message' => 'Company not found',
+            ], 404);
+        }
+
+        if ($request->file('file') != null) {
+
+            $file = $request->file('file');
+            $file_name = time() . '_' . $file->getClientOriginalName();
+
+            $path = "company/" . $company->id . "/logo/" . $file_name;
+
+            $file->storeAs($path);
+
+            // $company = Company::find($id);
+            $company->update([
+                'logo_url' => $path
+            ]);
+
+            return response()->json([
+                'company' => $company
+            ]);
+        }
     }
 }
