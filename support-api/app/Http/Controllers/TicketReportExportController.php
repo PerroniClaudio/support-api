@@ -327,14 +327,8 @@ class TicketReportExportController extends Controller {
         $tickets_by_day = [];
         $ticket_graph_data = [];
         $closed_tickets_per_day = [];
-        $different_categories_with_count = [
-            "incident" => [],
-            "request" => []
-        ];
-        $different_type_with_count = [
-            "incident" => [],
-            "request" => []
-        ];
+        $different_categories_with_count = [];
+        $different_type_with_count = [];
         $ticket_by_weekday = [];
         $ticket_by_priority = [];
         $tickets_by_user = [];
