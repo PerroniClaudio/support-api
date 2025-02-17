@@ -234,3 +234,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/files/{folder}", [App\Http\Controllers\WikiObjectController::class, "index"]);
     Route::post("/files", [App\Http\Controllers\WikiObjectController::class, "store"]);
 });
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get("/stats", [App\Http\Controllers\TicketStatsController::class, "latestStats"]);
+});
