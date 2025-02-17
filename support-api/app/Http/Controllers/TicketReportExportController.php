@@ -332,6 +332,7 @@ class TicketReportExportController extends Controller {
         $ticket_by_weekday = [];
         $ticket_by_priority = [];
         $tickets_by_user = [];
+        $ticket_by_source = [];
         $reduced_tickets = [];
 
         $sla_data = [
@@ -437,8 +438,6 @@ class TicketReportExportController extends Controller {
 
             // Per utente
 
-
-
             if ($ticket['data']['user']['is_admin'] == 1) {
 
                 if (!isset($tickets_by_user['Support'])) {
@@ -454,6 +453,14 @@ class TicketReportExportController extends Controller {
 
                 $tickets_by_user[$ticket['data']['user_id']]++;
             }
+
+            // Per provenienza
+
+            if (!isset($ticket_by_source[$ticket['data']['source']])) {
+                $ticket_by_source[$ticket['data']['source']] = 0;
+            }
+
+            $ticket_by_source[$ticket['data']['source']]++;
 
 
             // Presa in carica
@@ -735,15 +742,22 @@ class TicketReportExportController extends Controller {
         ];
         $ticket_by_type_request_bar_url = $charts_base_url . urlencode(json_encode($ticket_by_type_request_bar_data));
 
-        // 5 - Provenienza ticket (il dato ancora non c'è, grafico finto)
+        // 5 - Provenienza ticket
 
         $ticket_by_source_data = [
             "type" => "horizontalBar",
             "data" => [
-                "labels" => ["Email", "Telefono", "Tecnico onsite", "Piattaforma", "Automatico"],
+                "labels" => ["Email", "Telefono", "Tecnico onsite", "Piattaforma", "Interno", "Automatico"],
                 "datasets" => [[
                     "label" => "Numero di Ticket",
-                    "data" => [12, 19, 3, 5, 7],
+                    "data" => [
+                        $ticket_by_source['email'] ?? 0,
+                        $ticket_by_source['phone'] ?? 0,
+                        $ticket_by_source['on_site_technician'] ?? 0,
+                        $ticket_by_source['platform'] ?? 0,
+                        $ticket_by_source['internal'] ?? 0,
+                        $ticket_by_source['automatic'] ?? 0
+                    ],
                     "backgroundColor" => $this->getColorShades(5, true)
                 ]]
             ],
