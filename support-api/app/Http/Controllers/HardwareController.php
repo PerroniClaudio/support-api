@@ -14,6 +14,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Faker\Factory as Faker;
 use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 use function PHPUnit\Framework\isEmpty;
 
@@ -216,22 +217,9 @@ class HardwareController extends Controller
             ]);
         }
 
-        if (!empty($data['users'])) {
-            // Non so perchè ma non crea i log in automatico, quindi devo aggiungerli manualmente
-            // $hardware->users()->attach($data['users']);
-            
+        if (!empty($data['users'])) {            
             foreach ($data['users'] as $userId) {
-                $hardware->users()->syncWithoutDetaching($userId, [
-                    'created_at' => Carbon::now(),
-                    'updated_at' => Carbon::now(),
-                ]);
-                HardwareAuditLog::create([
-                    'modified_by' => $authUser->id,
-                    'hardware_id' => $hardware->id,
-                    'log_subject' => 'hardware_user',
-                    'log_type' => 'created',
-                    'new_data' => json_encode(['user_id' => $userId]),
-                ]);
+                $hardware->users()->attach($userId);
             }
         }
         
@@ -365,36 +353,18 @@ class HardwareController extends Controller
             ]);
         }
 
-        // Aggiorna gli utenti associati
-        // Non so perchè ma non crea i log in automatico, quindi devo aggiungerli manualmente
-        // $hardware->users()->attach($data['users']);
+        // Aggiorna gli utenti associati e crea automaticamente il log
+        // usando attach, la funzione di boot nel modello pivot e modificando la relazione nei modelli (user e hardware) in modo da fargli usare la tabella personalizzata
         
         $usersToRemove = $hardware->users->pluck('id')->diff($data['users']);
         $usersToAdd = collect($data['users'])->diff($hardware->users->pluck('id'));
 
         foreach ($usersToAdd as $userId) {
-            $hardware->users()->syncWithoutDetaching($userId, [
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ]);
-            HardwareAuditLog::create([
-                'modified_by' => $authUser->id,
-                'hardware_id' => $hardware->id,
-                'log_subject' => 'hardware_user',
-                'log_type' => 'created',
-                'new_data' => json_encode(['user_id' => $userId]),
-            ]);
+            $hardware->users()->attach($userId);
         }
 
         foreach ($usersToRemove as $userId) {
             $hardware->users()->detach($userId);
-            HardwareAuditLog::create([
-                'modified_by' => $authUser->id,
-                'hardware_id' => $hardware->id,
-                'log_subject' => 'hardware_user',
-                'log_type' => 'deleted',
-                'old_data' => json_encode(['user_id' => $userId]),
-            ]);
         }
         
         return response([
@@ -559,28 +529,11 @@ class HardwareController extends Controller
         $usersToAdd = collect($data['users'])->diff($hardware->users->pluck('id'));
 
         foreach ($usersToAdd as $userId) {
-            $hardware->users()->syncWithoutDetaching($userId, [
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ]);
-            HardwareAuditLog::create([
-                'modified_by' => $authUser->id,
-                'hardware_id' => $hardware->id,
-                'log_subject' => 'hardware_user',
-                'log_type' => 'created',
-                'new_data' => json_encode(['user_id' => $userId]),
-            ]);
+            $hardware->users()->attach($userId);
         }
 
         foreach ($usersToRemove as $userId) {
             $hardware->users()->detach($userId);
-            HardwareAuditLog::create([
-                'modified_by' => $authUser->id,
-                'hardware_id' => $hardware->id,
-                'log_subject' => 'hardware_user',
-                'log_type' => 'deleted',
-                'old_data' => json_encode(['user_id' => $userId]),
-            ]);
         }
 
         return response([
@@ -618,14 +571,6 @@ class HardwareController extends Controller
         }
 
         $hardware->users()->detach($userId);
-
-        HardwareAuditLog::create([
-            'modified_by' => $authUser->id,
-            'hardware_id' => $hardware->id,
-            'log_subject' => 'hardware_user',
-            'log_type' => 'deleted',
-            'old_data' => json_encode(['user_id' => $user->id]),
-        ]);
 
         return response()->json(['message' => 'User detached from hardware successfully'], 200);
     }
@@ -800,6 +745,49 @@ class HardwareController extends Controller
         return response([
             'message' => "Success",
         ], 200);
+    }
+
+    public function downloadUserAssignmentPdf(Hardware $hardware, User $user, Request $request) {
+        $authUser = $request->user();
+        if (!$authUser->is_admin) {
+            return response([
+                'message' => 'You are not allowed to download this document',
+            ], 403);
+        }
+
+        if (!$hardware->users->contains($user)) {
+            return response([
+                'message' => 'User not associated with hardware',
+            ], 400);
+        }
+
+        // $fileName = 'hardware_assignment_' . $hardware->id . '_to_' . $user->id . '.pdf';
+
+        $name = 'hardware_user_assignment_' . $hardware->id . '_to_' . $user->id . '_' . time() . '.pdf';
+        $name = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $name);
+
+        $hardware->load(['hardwareType', 'company']);
+
+        $relation = $hardware->users()->wherePivot('user_id', $user->id)->first();
+
+        $data = [
+            'title' => $name,
+            'hardware' => $hardware,
+            'user' => $user,
+            'relation' => $relation,
+        ];
+
+        Pdf::setOptions([
+            'dpi' => 150,
+            'defaultFont' => 'sans-serif',
+            'isHtml5ParserEnabled' => true,
+            'isRemoteEnabled' => true // ✅ Abilita il caricamento di immagini da URL esterni
+        ]);
+
+        $pdf = Pdf::loadView('pdf.hardwareuserassignment', $data);
+
+        // return $pdf->stream();
+        return $pdf->download($name);
     }
     
 }

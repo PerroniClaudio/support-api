@@ -130,7 +130,13 @@ class User extends Authenticatable {
         return $otp;
     }
 
+    // public function hardware() {
+    //     return $this->belongsToMany(Hardware::class, 'hardware_user', 'user_id', 'hardware_id');
+    // }
     public function hardware() {
-        return $this->belongsToMany(Hardware::class, 'hardware_user', 'user_id', 'hardware_id');
+        return $this->belongsToMany(Hardware::class, 'hardware_user', 'user_id', 'hardware_id')
+                    ->using(HardwareUser::class)
+                    ->withPivot('created_by', 'created_at', 'updated_at');
     }
+    
 }

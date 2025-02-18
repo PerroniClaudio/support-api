@@ -13,11 +13,22 @@
 
     <div style="text-align:center; height:100%">
 
-        <img src="https://staging.ifortech.com/images/ifortech.png" alt="iftlogo" width="192" height="38">
+        <img src="data:image/png;base64,{{ base64_encode(file_get_contents("https://frontend.ifortech.com/images/ifortech.png")) }}"
+            alt="iftlogo" 
+            style="width: 192px; height: 38px;"
+        >
 
 
         <h1 class="main-header" style="font-size:3rem;line-height: 1;margin-top: 4rem;margin-bottom: 4rem;">
             {{ $company['name'] }}</h1>
+
+        {{-- @php
+            $logoUrl = $company->temporaryLogoUrl();
+        @endphp
+        @if ($logoUrl)
+            <img src="data:image;base64, {{ base64_encode(file_get_contents($logoUrl)) }}" alt="Company Logo"
+                style="max-height: 100px; max-width: 200px;">
+        @endif --}}
 
         <h3>Periodo</h3>
         <p>{{ $date_from->format('d/m/Y') }} - {{ $date_to->format('d/m/Y') }}</p>

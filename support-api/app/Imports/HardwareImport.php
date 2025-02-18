@@ -136,16 +136,10 @@ class HardwareImport implements ToCollection
                         throw new \Exception('ID utenti errati per l\'hardware con seriale ' . $row[2]);
                     }
                     $users = explode(',', $row[10]);
-                    $hardware->users()->sync($users);
 
+                    // Non usiamo il sync perchè non eseguirebbe la funzione di boot del modello personalizzato HardwareUser
                     foreach ($users as $user) {
-                        HardwareAuditLog::create([
-                            'modified_by' => $this->authUser->id,
-                            'hardware_id' => $hardware->id,
-                            'log_subject' => 'hardware_user',
-                            'log_type' => 'created',
-                            'new_data' => json_encode(['user_id' => $user]),
-                        ]);
+                        $hardware->users()->attach($user, ['created_by' => $this->authUser->id ?? null]);
                     }
                 }
             }

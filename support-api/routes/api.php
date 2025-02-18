@@ -224,6 +224,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/fake-hardware-field", [App\Http\Controllers\HardwareController::class, "fakeHardwareField"]);
     Route::get("/hardware-tickets/{hardware}", [App\Http\Controllers\HardwareController::class, "hardwareTickets"]);
     Route::post("/hardwaremassive", [App\Http\Controllers\HardwareController::class, "importHardware"]);
+    Route::get("hardware-user/{hardware}/{user}/download-assignment-pdf", [App\Http\Controllers\HardwareController::class, "downloadUserAssignmentPdf"]);
+    
 });
 
 // Documentation Routes
