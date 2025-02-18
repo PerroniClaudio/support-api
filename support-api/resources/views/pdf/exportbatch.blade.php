@@ -362,7 +362,7 @@
                             <div class="box">
                                 <p class="box-heading"><b>Messaggio di chiusura</b></p>
                                 <span>
-                                    {{ $ticket['closing_message'] }}
+                                    {{ $ticket['closing_message']['message'] }}
                                 </span>
                             </div>
                         </td>
@@ -512,7 +512,7 @@
                             <div class="box">
                                 <p class="box-heading"><b>Messaggio di chiusura</b></p>
                                 <span>
-                                    {{ $ticket['closing_message'] }}
+                                    {{ $ticket['closing_message']['message'] }}
                                 </span>
                             </div>
                         </td>

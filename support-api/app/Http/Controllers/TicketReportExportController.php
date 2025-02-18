@@ -318,7 +318,7 @@ class TicketReportExportController extends Controller {
         if ($user["is_admin"] == 1) {
             $cacheKey = 'admin_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to . '_' . $request->type_filter;
         } else {
-            $cacheKey = 'user_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to;
+            $cacheKey = 'user_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to . '_' . $request->type_filter;
         }
 
         $company = Company::find($request->company_id);
@@ -332,6 +332,7 @@ class TicketReportExportController extends Controller {
         $ticket_by_weekday = [];
         $ticket_by_priority = [];
         $tickets_by_user = [];
+        $ticket_by_source = [];
         $reduced_tickets = [];
 
         $sla_data = [
@@ -437,8 +438,6 @@ class TicketReportExportController extends Controller {
 
             // Per utente
 
-
-
             if ($ticket['data']['user']['is_admin'] == 1) {
 
                 if (!isset($tickets_by_user['Support'])) {
@@ -454,6 +453,14 @@ class TicketReportExportController extends Controller {
 
                 $tickets_by_user[$ticket['data']['user_id']]++;
             }
+
+            // Per provenienza
+
+            if (!isset($ticket_by_source[$ticket['data']['source']])) {
+                $ticket_by_source[$ticket['data']['source']] = 0;
+            }
+
+            $ticket_by_source[$ticket['data']['source']]++;
 
 
             // Presa in carica
@@ -651,9 +658,14 @@ class TicketReportExportController extends Controller {
             "options" => [
                 "title" => ["display" => true, "text" => "Incident per Categoria"],
                 "legend" => ["display" => false],
-
             ]
         ];
+        $maxValue = max(array_values($ticket_by_category_incident_bar_data['data']['datasets'][0]['data']));
+        if ($maxValue < 5) {
+            $ticket_by_category_incident_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
+            $ticket_by_category_incident_bar_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = 1;
+        }
+
         $ticket_by_category_incident_bar_url = $charts_base_url . urlencode(json_encode($ticket_by_category_incident_bar_data));
 
         $ticket_by_category_request_bar_data = [
@@ -675,6 +687,13 @@ class TicketReportExportController extends Controller {
 
             ]
         ];
+
+        $maxValue = max(array_values($ticket_by_category_request_bar_data['data']['datasets'][0]['data']));
+        if ($maxValue < 5) {
+            $ticket_by_category_request_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
+            $ticket_by_category_request_bar_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = 1;
+        }
+
         $ticket_by_category_request_bar_url = $charts_base_url . urlencode(json_encode($ticket_by_category_request_bar_data));
 
         // 4 - Grafico tipo di ticket
@@ -713,6 +732,13 @@ class TicketReportExportController extends Controller {
 
             ]
         ];
+
+        $maxValue = max(array_values($ticket_by_type_incident_bar_data['data']['datasets'][0]['data']));
+        if ($maxValue < 5) {
+            $ticket_by_type_incident_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
+            $ticket_by_type_incident_bar_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = 1;
+        }
+
         $ticket_by_type_incident_bar_url = $charts_base_url . urlencode(json_encode($ticket_by_type_incident_bar_data));
 
         $ticket_by_type_request_bar_data = [
@@ -733,17 +759,31 @@ class TicketReportExportController extends Controller {
                 "legend" => ["display" => false]
             ]
         ];
+
+        $maxValue = max(array_values($ticket_by_type_request_bar_data['data']['datasets'][0]['data']));
+        if ($maxValue < 5) {
+            $ticket_by_type_request_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
+            $ticket_by_type_request_bar_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = 1;
+        }
+
         $ticket_by_type_request_bar_url = $charts_base_url . urlencode(json_encode($ticket_by_type_request_bar_data));
 
-        // 5 - Provenienza ticket (il dato ancora non c'è, grafico finto)
+        // 5 - Provenienza ticket
 
         $ticket_by_source_data = [
             "type" => "horizontalBar",
             "data" => [
-                "labels" => ["Email", "Telefono", "Tecnico onsite", "Piattaforma", "Automatico"],
+                "labels" => ["Email", "Telefono", "Tecnico onsite", "Piattaforma", "Interno", "Automatico"],
                 "datasets" => [[
                     "label" => "Numero di Ticket",
-                    "data" => [12, 19, 3, 5, 7],
+                    "data" => [
+                        $ticket_by_source['email'] ?? 0,
+                        $ticket_by_source['phone'] ?? 0,
+                        $ticket_by_source['on_site_technician'] ?? 0,
+                        $ticket_by_source['platform'] ?? 0,
+                        $ticket_by_source['internal'] ?? 0,
+                        $ticket_by_source['automatic'] ?? 0
+                    ],
                     "backgroundColor" => $this->getColorShades(5, true)
                 ]]
             ],
