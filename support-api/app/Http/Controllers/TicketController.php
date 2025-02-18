@@ -1132,21 +1132,36 @@ class TicketController extends Controller {
             ], 401);
         }
 
-        if ($user["is_admin"] == 1) {
-            $cacheKey = 'admin_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to . '_' . $request->type_filter;
-        } else {
-            $cacheKey = 'user_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to . '_' . $request->type_filter;;
+        if ($request->useCache) {
+            if ($user["is_admin"] == 1) {
+                $cacheKey = 'admin_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to . '_' . $request->type_filter;
+            } else {
+                $cacheKey = 'user_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to . '_' . $request->type_filter;;
+            }
+
+
+            if (Cache::has($cacheKey)) {
+                $tickets_data = Cache::get($cacheKey);
+
+                return response([
+                    'data' => $tickets_data,
+                ], 200);
+            }
         }
 
-        if (Cache::has($cacheKey)) {
-            $tickets_data = Cache::get($cacheKey);
+        // Ticket che non sono ancora stati chiusi nel periodo selezionato
 
-            return response([
-                'data' => $tickets_data,
-            ], 200);
-        }
+        // ignora i ticket creati dopo $request->to, escludi quelli con created_at dopo il to ,e quelli chiusi prima di $request->from
 
-        $tickets = Ticket::where("company_id", $request->company_id)->whereBetween('created_at', [$request->from, $request->to])->get();
+        $tickets = Ticket::where('company_id', $request->company_id)
+            ->where('created_at', '<=', $request->to)
+            ->where('description', 'NOT LIKE', 'Ticket importato%')
+            ->whereDoesntHave('statusUpdates', function ($query) use ($request) {
+                $query->where('type', 'closing')
+                    ->where('created_at', '<=', $request->from);
+            })
+            ->get();
+
         $filter = $request->type_filter;
 
         $tickets_data = [];
@@ -1243,17 +1258,22 @@ class TicketController extends Controller {
                     'data' => $ticket,
                     'webform_data' => $webform_data,
                     'status_updates' => $avanzamento,
-                    'closing_message' => $closingMessage,
+                    'closing_message' => [
+                        'message' => $closingMessage,
+                        'date' => $closingUpdate ? $closingUpdate->created_at : null
+                    ]
 
                 ];
             }
         }
 
-        $tickets_batch_data = $tickets_data;
-
-        $tickets_batch_data = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($tickets_data) {
-            return $tickets_data;
-        });
+        if ($request->useCache) {
+            $tickets_batch_data = Cache::remember($cacheKey, now()->addMinutes(60), function () use ($tickets_data) {
+                return $tickets_data;
+            });
+        } else {
+            $tickets_batch_data = $tickets_data;
+        }
 
         return response([
             'data' => $tickets_batch_data,
