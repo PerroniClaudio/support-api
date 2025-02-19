@@ -335,6 +335,7 @@ class TicketReportExportController extends Controller {
         $ticket_by_source = [];
         $reduced_tickets = [];
 
+
         $sla_data = [
             'less_than_30_minutes' => 0,
             'less_than_1_hour' => 0,
@@ -482,6 +483,33 @@ class TicketReportExportController extends Controller {
                 $sla_data['more_than_2_hours']++;
             }
 
+            // Stato attuale del ticket 
+
+            $latest_status_update = TicketStatusUpdate::where(
+                'ticket_id',
+                $ticket['data']['id']
+            )
+                ->whereIn('type', ['status', 'closing'])
+                ->where('created_at', '<', \Carbon\Carbon::createFromFormat('Y-m-d', $request->to))
+                ->orderBy('created_at', 'DESC')
+                ->first();
+
+            $current_status = "Aperto";
+
+            if (strpos($latest_status_update->content, 'In attesa') !== false) {
+                $current_status = "In Attesa";
+            }
+            if (strpos($latest_status_update->content, 'Assegnato') !== false) {
+                $current_status = "Assegnato";
+            }
+            if (strpos($latest_status_update->content, 'In corso') !== false) {
+                $current_status = "In corso";
+            }
+            if ($latest_status_update->type == 'closing') {
+                $current_status = "Chiuso";
+            }
+
+
             // Ticket ridotto
 
             $reduced_ticket = [
@@ -497,6 +525,7 @@ class TicketReportExportController extends Controller {
                 "closing_message" => $ticket['closing_message'],
                 'should_show_more' => false,
                 'ticket_frontend_url' => env('FRONTEND_URL') . '/support/user/ticket/' . $ticket['data']['id'],
+                'current_status' => $current_status,
             ];
 
             if (count($ticket['data']['messages']) > 3) {
@@ -527,8 +556,6 @@ class TicketReportExportController extends Controller {
 
             $reduced_tickets[] = $reduced_ticket;
         }
-
-
 
 
         $total_incidents = 0;
@@ -976,6 +1003,12 @@ class TicketReportExportController extends Controller {
 
         $tickets_sla_url = $charts_base_url . urlencode(json_encode($tickets_sla_data));
 
+
+        // Logo da usare
+
+        $brand = $company->brands()->first();
+        $google_url = $brand->withGUrl()->logo_url;
+
         $data = [
             'tickets' => $reduced_tickets,
             'title' => "Esportazione tickets",
@@ -1000,8 +1033,10 @@ class TicketReportExportController extends Controller {
             'ticket_by_priority_url' => $ticket_by_priority_url,
             'tickets_by_user_url' => $tickets_by_user_url,
             'tickets_sla_url' => $tickets_sla_url,
+            'logo_url' => $google_url
 
         ];
+
 
 
         Pdf::setOptions([
