@@ -93,15 +93,15 @@
 
     <div>
       <br>
-      <p>
+      <p style="font-size: 14px;">
         Data: {{ now()->format('d/m/Y') }}
       </p>
       <br>
-      <p>
+      <p style="font-size: 14px;">
         {{ $user->name . ' ' . $user->surname }}: ______________________________________ 
       </p>
       <br>
-      <p>
+      <p style="font-size: 14px;">
         {{ $assignedBy->name . ($assignedBy->surname ? ' ' . $assignedBy->surname : '') }}: ______________________________________ 
       </p>
     </div>
