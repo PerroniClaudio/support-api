@@ -45,4 +45,72 @@
         font-size: 0.55rem;
         line-height: 1rem;
     }
+
+    .ticket-pill {
+        text-align: center;
+        border-radius: 8px;
+        padding: 8px;
+        font-weight: bold;
+    }
+
+    .ticket-container {
+        font-size: 0.75rem;
+        !important;
+        line-height: 1rem !important;
+    }
+
+    .ticket-section {
+        padding: 15px;
+        margin-top: 10px;
+        border-left: 5px solid #949a9f;
+        background: #e1e7eb;
+    }
+
+    .ticket-section-title {
+        font-weight: bold;
+        color: #37474F;
+    }
+
+    .ticket-webform-incident-section {
+        padding: 15px;
+        margin-top: 10px;
+        border-left: 5px solid #8b1d19;
+        color: #8b1d19;
+        background: #fad6d4;
+    }
+
+    .ticket-webform-request-section {
+        padding: 15px;
+        margin-top: 10px;
+        border-left: 5px solid #011c29;
+        color: #011c29;
+        background: #82aec5;
+    }
+
+    .ticket-messages {
+        background: #fff3e0;
+        padding: 10px;
+        border-left: 5px solid #FF9800;
+    }
+
+    .ticket-messages-author {
+        vertical-align: top;
+        width: 70%;
+        font-weight: bold;
+        color: #37474F;
+    }
+
+    .ticket-messages-date {
+        vertical-align: top;
+        width: 30%;
+        text-align: right;
+        color: #37474F;
+    }
+
+    .ticket-closing {
+        background: #E8F5E9;
+        padding: 10px;
+        border-left: 5px solid #388E3C;
+
+    }
 </style>

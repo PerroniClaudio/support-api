@@ -13,10 +13,8 @@
 
     <div style="text-align:center; height:100%">
 
-        <img src="data:image/png;base64,{{ base64_encode(file_get_contents("https://frontend.ifortech.com/images/ifortech.png")) }}"
-            alt="iftlogo" 
-            style="width: 192px; height: 38px;"
-        >
+        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logo_url)) }}" alt="iftlogo"
+            style="width: 192px; height: 38px;">
 
 
         <h1 class="main-header" style="font-size:3rem;line-height: 1;margin-top: 4rem;margin-bottom: 4rem;">
@@ -224,16 +222,15 @@
     @foreach ($tickets as $ticket)
         @if (!is_null($ticket['webform_data']))
             @if (!$ticket['should_show_more'])
-                <div id="ticket-{{ $ticket['id'] }}"
-                    style="font-size: 0.75rem; !important; line-height: 1rem !important;">
+                <div id="ticket-{{ $ticket['id'] }}" class="ticket-container">
                     <table style="width:100%">
                         <tr>
                             <td style="vertical-align: middle;">
                                 <h1 class="main-header">Ticket #{{ $ticket['id'] }}</h1>
                             </td>
                             <td style="vertical-align: middle;">
-                                <div
-                                    style="text-align:right; background-color: {{ $ticket['incident_request'] == 'Request' ? '#d4dce3' : '#f8d7da' }}; border-radius: 8px; padding: 8px;font-weight: bold;">
+                                <div class="ticket-pill"
+                                    style="background-color: {{ $ticket['incident_request'] == 'Request' ? '#d4dce3' : '#f8d7da' }};">
                                     {{ $ticket['incident_request'] }}
                                 </div>
                             </td>
@@ -242,32 +239,36 @@
 
                     <hr>
 
-                    <table class="width:100%">
-                        <td style="width: 28%">
-                            <div style="margin-bottom:.5rem" class="card">
-                                <div>
-                                    <b>Data di apertura</b> <br>
-                                    <span>{{ $ticket['opened_at'] }}</span>
-                                </div>
+                    <div class="ticket-section">
+                        <p><span class="ticket-section-title">Data di apertura:</span>
+                            <span>{{ $ticket['opened_at'] }}</span>
+                        </p>
+                        <p><span class="ticket-section-title">Aperto da:</span> <span>{{ $ticket['opened_by'] }}</span>
+                        </p>
+                        <p><span class="ticket-section-title">Categoria:</span> <span>{{ $ticket['category'] }}</span>
+                        </p>
+                        <p><span class="ticket-section-title">Tipologia:</span> <span>{{ $ticket['type'] }}</span>
+                        </p>
+                        <p>
+                            <span class="ticket-section-title">Stato al {{ $date_to->format('d/m/Y') }}:</span>
+                            <span>{{ $ticket['current_status'] }}</span>
+                        </p>
+                    </div>
 
-                                <div>
-                                    <b>Aperto da</b> <br>
-                                    <span>{{ $ticket['opened_by'] }}</span>
-                                </div>
+                    <div class="ticket-webform-{{ strtolower($ticket['incident_request']) }}-section">
+                        <p class="box-heading"><b>Dati webform</b></p>
+                        @if (!is_null($ticket['webform_data']))
+                            <table style="width:100%">
 
-                                <div>
-                                    <b>Categoria</b> <br>
-                                    <span>{{ $ticket['category'] }}</span>
-                                </div>
-                                <div>
-                                    <b>Tipologia</b> <br>
-                                    <span>{{ $ticket['type'] }}</span>
-                                </div>
-                            </div>
-                            <div style="margin-bottom:.5rem" class="box">
-                                <p class="box-heading"><b>Dati webform</b></p>
-                                @if (!is_null($ticket['webform_data']))
-                                    @foreach ($ticket['webform_data'] as $key => $value)
+                                @php
+                                    unset($ticket['webform_data']->description);
+                                @endphp
+
+                                @foreach ($ticket['webform_data'] as $key => $value)
+                                    @if ($loop->index % 3 == 0)
+                                        <tr>
+                                    @endif
+                                    <td>
                                         @switch($key)
                                             @case('description')
                                             @break
@@ -286,101 +287,80 @@
 
                                             @default
                                                 @if (is_array($value))
-                                                    <span><b>{{ $key }}</b><br> {{ implode(', ', $value) }}</span>
+                                                    <span><b>{{ $key }}</b><br>
+                                                        {{ implode(', ', $value) }}</span>
                                                     <br>
                                                 @else
                                                     <span><b>{{ $key }}</b><br> {{ $value }}</span> <br>
                                                 @endif
                                         @endswitch
-                                    @endforeach
-                                @endif
-                            </div>
-                            <div style="margin-bottom:.5rem" class="box">
-                                <p class="box-heading"><b>Avanzamento</b></p>
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th style="text-align: left">Stato</th>
-                                            <th style="text-align: left">Numero</th>
+                                    </td>
+                                    @if ($loop->iteration % 3 == 0)
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>In Attesa</td>
-                                            <td>{{ $ticket['status_updates']['attesa'] }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Assegnato</td>
-                                            <td>{{ $ticket['status_updates']['assegnato'] }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>In Corso</td>
-                                            <td>{{ $ticket['status_updates']['in_corso'] }}</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </td>
-                        <td style="width: 68%">
-                            <div class="box" style="margin-bottom:.5rem">
-                                <p class="box-heading"><b>Descrizione</b></p>
-                                <span>
-                                    {{ $ticket['description'] }}
-                                </span>
-                            </div>
-
-                            <div class="box" style="margin-bottom:.5rem">
-                                <p class="box-heading"><b>Messaggi</b></p>
-
-
-                                @foreach ($ticket['messages'] as $key => $value)
-                                    @if ($loop->first)
-                                        @continue
                                     @endif
-
-                                    <table style="width:100%">
-                                        <tr>
-                                            <td style="vertical-align: top; width:70%;font-weight: bold">
-
-                                                {{ $value['user'] }}
-                                            </td>
-                                            <td style="vertical-align: top; width:30%;">
-                                                <span style="text-align: right">{{ $value['created_at'] }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="2">
-                                                <span>{{ $value['message'] }}</span>
-                                            </td>
-                                        </tr>
-                                    </table>
                                 @endforeach
+                                @if ($loop->count % 3 != 0)
+                                    </tr>
+                                @endif
+                            </table>
+                        @endif
+                    </div>
 
-                            </div>
+                    <div class="ticket-section">
+                        <p><span class="ticket-section-title">Descrizione</span></p>
+                        <p>{{ $ticket['description'] }}</p>
+                    </div>
 
-                            <div class="box">
-                                <p class="box-heading"><b>Messaggio di chiusura</b></p>
-                                <span>
-                                    {{ $ticket['closing_message']['message'] }}
-                                </span>
-                            </div>
-                        </td>
-                    </table>
+                    <div class="ticket-messages">
+                        <p><span class="ticket-section-title">Messaggi</span></p>
+
+                        @foreach ($ticket['messages'] as $key => $value)
+                            @if ($loop->first)
+                                @continue
+                            @endif
+
+                            <table style="width:100%">
+                                <tr>
+                                    <td class="ticket-messages-author">
+                                        {{ $value['user'] }}
+                                    </td>
+                                    <td class="ticket-messages-date">
+                                        <span style="text-align: right">{{ $value['created_at'] }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+                                        <span>{{ $value['message'] }}</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        @endforeach
+                    </div>
+
+                    @if ($ticket['closing_message']['message'] != '')
+                        <div class="ticket-closing">
+                            <p><span class="ticket-section-title">Chiusura</span></p>
+                            <p>{{ $ticket['closing_message']['message'] }}</p>
+                        </div>
+                    @endif
+
+
                 </div>
 
-                <div class="page-break"></div>
+                @if (!$loop->last)
+                    <div class="page-break"></div>
+                @endif
             @else
-                <div id="ticket-{{ $ticket['id'] }}"
-                    style="font-size: 0.75rem; !important; line-height: 1rem !important;">
+                <div id="ticket-{{ $ticket['id'] }}" class="ticket-container">
                     <table style="width:100%">
                         <tr>
                             <td style="vertical-align: middle;">
                                 <h1 class="main-header">Ticket #{{ $ticket['id'] }}</h1>
                             </td>
                             <td style="vertical-align: middle;">
-                                <div
-                                    style="text-align:right; background-color: {{ $ticket['incident_request'] == 'Request' ? '#d4dce3' : '#f8d7da' }}; border-radius: 8px; padding: 8px;font-weight: bold;">
+                                <div class="ticket-pill"
+                                    style="background-color: {{ $ticket['incident_request'] == 'Request' ? '#82aec5' : '#fad6d4' }};">
                                     {{ $ticket['incident_request'] }}
                                 </div>
                             </td>
@@ -389,38 +369,43 @@
 
                     <hr>
 
-                    <table class="width:100%">
-                        <td style="width: 28%">
-                            <div style="margin-bottom:.5rem" class="card">
-                                <div>
-                                    <b>Data di apertura</b> <br>
-                                    <span>{{ $ticket['opened_at'] }}</span>
-                                </div>
+                    <div class="ticket-section">
+                        <p><span class="ticket-section-title">Data di apertura:</span>
+                            <span>{{ $ticket['opened_at'] }}</span>
+                        </p>
+                        <p><span class="ticket-section-title">Aperto da:</span>
+                            <span>{{ $ticket['opened_by'] }}</span>
+                        </p>
+                        <p><span class="ticket-section-title">Categoria:</span> <span>{{ $ticket['category'] }}</span>
+                        </p>
+                        <p><span class="ticket-section-title">Tipologia:</span> <span>{{ $ticket['type'] }}</span>
+                        </p>
+                        <p>
+                            <span class="ticket-section-title">Stato al {{ $date_to->format('d/m/Y') }}:</span>
+                            <span>{{ $ticket['current_status'] }}</span>
+                        </p>
+                    </div>
 
-                                <div>
-                                    <b>Aperto da</b> <br>
-                                    <span>{{ $ticket['opened_by'] }}</span>
-                                </div>
+                    <div class="ticket-webform-{{ strtolower($ticket['incident_request']) }}-section">
+                        <p class="box-heading"><b>Dati webform</b></p>
+                        @if (!is_null($ticket['webform_data']))
+                            <table style="width:100%">
 
-                                <div>
-                                    <b>Categoria</b> <br>
-                                    <span>{{ $ticket['category'] }}</span>
-                                </div>
-                                <div>
-                                    <b>Tipologia</b> <br>
-                                    <span>{{ $ticket['type'] }}</span>
-                                </div>
-                            </div>
-                            <div style="margin-bottom:.5rem" class="box">
-                                <p class="box-heading"><b>Dati webform</b></p>
-                                @if (!is_null($ticket['webform_data']))
-                                    @foreach ($ticket['webform_data'] as $key => $value)
+                                @php
+                                    unset($ticket['webform_data']->description);
+                                @endphp
+
+                                @foreach ($ticket['webform_data'] as $key => $value)
+                                    @if ($loop->index % 3 == 0)
+                                        <tr>
+                                    @endif
+                                    <td>
                                         @switch($key)
                                             @case('description')
                                             @break
 
                                             @case('referer')
-                                                <span><b>Utente che ha il problema</b><br> {{ $value }}</span> <br>
+                                                <span><b>Utente interessato</b><br> {{ $value }}</span> <br>
                                             @break
 
                                             @case('referer_it')
@@ -433,98 +418,77 @@
 
                                             @default
                                                 @if (is_array($value))
-                                                    <span><b>{{ $key }}</b><br> {{ implode(', ', $value) }}</span>
+                                                    <span><b>{{ $key }}</b><br>
+                                                        {{ implode(', ', $value) }}</span>
                                                     <br>
                                                 @else
                                                     <span><b>{{ $key }}</b><br> {{ $value }}</span> <br>
                                                 @endif
                                         @endswitch
-                                    @endforeach
-                                @endif
-                            </div>
-                            <div style="margin-bottom:.5rem" class="box">
-                                <p class="box-heading"><b>Avanzamento</b></p>
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th style="text-align: left">Stato</th>
-                                            <th style="text-align: left">Numero</th>
+                                    </td>
+                                    @if ($loop->iteration % 3 == 0)
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr>
-                                            <td>In Attesa</td>
-                                            <td>{{ $ticket['status_updates']['attesa'] }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Assegnato</td>
-                                            <td>{{ $ticket['status_updates']['assegnato'] }}</td>
-                                        </tr>
-                                        <tr>
-                                            <td>In Corso</td>
-                                            <td>{{ $ticket['status_updates']['in_corso'] }}</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </td>
-                        <td style="width: 68%">
-                            <div class="box" style="margin-bottom:.5rem">
-                                <p class="box-heading"><b>Descrizione</b></p>
-                                <span>
-                                    {{ $ticket['description'] }}
-                                </span>
-                            </div>
-
-                            <div class="box" style="margin-bottom:.5rem">
-                                <p class="box-heading"><b>Messaggi</b></p>
-
-
-                                @foreach ($ticket['messages'] as $key => $value)
-                                    <table style="width:100%">
-                                        <tr>
-                                            <td style="vertical-align: top; width:70%;font-weight: bold">
-
-                                                {{ $value['user'] }}
-                                            </td>
-                                            <td style="vertical-align: top; width:30%;">
-                                                <span style="text-align: right">{{ $value['created_at'] }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                        <tr>
-                                            <td colspan="2">
-                                                <span>{{ $value['message'] }}</span>
-                                            </td>
-                                        </tr>
-                                    </table>
+                                    @endif
                                 @endforeach
+                                @if ($loop->count % 3 != 0)
+                                    </tr>
+                                @endif
+                            </table>
+                        @endif
+                    </div>
 
-                                <p>
-                                    <a href="{{ $ticket['ticket_frontend_url'] }}"
-                                        style="color: #e73029; font-size: 0.75rem;" target="_blank">
-                                        Vedi di più
-                                    </a>
-                                </p>
+                    <div class="ticket-section">
+                        <p><span class="ticket-section-title">Descrizione</span></p>
+                        <p>{{ $ticket['description'] }}</p>
+                    </div>
 
-                            </div>
+                    <div class="ticket-messages">
+                        <p><span class="ticket-section-title">Messaggi</span></p>
 
-                            <div class="box">
-                                <p class="box-heading"><b>Messaggio di chiusura</b></p>
-                                <span>
-                                    {{ $ticket['closing_message']['message'] }}
-                                </span>
-                            </div>
-                        </td>
-                    </table>
+                        @foreach ($ticket['messages'] as $key => $value)
+                            <table style="width:100%">
+                                <tr>
+                                    <td class="ticket-messages-author">
+
+                                        {{ $value['user'] }}
+                                    </td>
+                                    <td class="ticket-messages-date">
+                                        <span style="text-align: right">{{ $value['created_at'] }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2">
+                                        <span>{{ $value['message'] }}</span>
+                                    </td>
+                                </tr>
+                            </table>
+                        @endforeach
+
+                        <p>
+                            <a href="{{ $ticket['ticket_frontend_url'] }}"
+                                style="color: #cc7a00; font-size: 0.75rem;" target="_blank">
+                                Vedi di più
+                            </a>
+                        </p>
+                    </div>
+
+                    @if ($ticket['closing_message']['message'] != '')
+                        <div class="ticket-closing">
+                            <p><span class="ticket-section-title">Chiusura</span></p>
+                            <p>{{ $ticket['closing_message']['message'] }}</p>
+                        </div>
+                    @endif
+
 
                 </div>
 
-                <div class="page-break"></div>
+                @if (!$loop->last)
+                    <div class="page-break"></div>
+                @endif
             @endif
         @endif
     @endforeach
-
 
 
 
