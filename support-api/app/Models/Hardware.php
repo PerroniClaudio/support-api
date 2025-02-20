@@ -23,12 +23,14 @@ class Hardware extends Model {
     'ownership_type',
     'ownership_type_note',
     'notes',
+    'is_exclusive_use',
   ];
 
   protected static function boot()
     {
         parent::boot();
-
+        // è stato deciso di tenere i log delle assegnazioni, nel caso dell'azienda si deve intercettare il company_id nell'hardware.
+        
         // Aggiunge un log quando vene creato un nuovo hardware, se company_id è diverso da null
         static::created(function ($model) {
             if ($model->company_id != null) {

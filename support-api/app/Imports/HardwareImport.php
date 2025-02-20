@@ -18,12 +18,13 @@ class HardwareImport implements ToCollection
     // "Marca",
     // "Modello",
     // "Seriale",
-    // "Tipo (testo, preso dalla lista nel gestionale)",
+    // "Uso esclusivo (Si/No, Se manca viene impostato su No)",
     // "Data d'acquisto (gg/mm/aaaa)",
     // "Proprietà",
     // "Specificare (se proprietà è Altro)",
     // "Cespite aziendale",
     // "Note",
+    // "Tipo (testo, preso dalla lista nel gestionale)",
     // "ID Azienda"
     // "ID utenti (separati da virgola)"
 
@@ -65,8 +66,8 @@ class HardwareImport implements ToCollection
                     throw new \Exception('Tipo hardware non trovato per l\'hardware con seriale ' . $row[2]);
                 }
                 
-                if($row[9] != null){
-                    $isCompanyPresent = Company::find($row[9]);
+                if($row[10] != null){
+                    $isCompanyPresent = Company::find($row[10]);
                     if(!$isCompanyPresent) {
                         throw new \Exception('ID Azienda errato per l\'hardware con seriale ' . $row[2]);
                     }
@@ -114,7 +115,8 @@ class HardwareImport implements ToCollection
                     'ownership_type_note' => $row[6] ?? null,
                     'company_asset_number' => $row[7] ?? null,
                     'notes' => $row[8] ?? null,
-                    'company_id' => $row[9] ?? null,
+                    'is_exclusive_use' => strtolower($row[9]) == 'si' ? 1 : 0,
+                    'company_id' => $row[10] ?? null,
                 ]);
 
                 if(isset($hardware->company_id)){
@@ -127,15 +129,18 @@ class HardwareImport implements ToCollection
                     ]);
                 }
                 
-                if($row[10] != null) {
-                    if($row[9] == null) {
+                if($row[11] != null) {
+                    if($row[10] == null) {
                         throw new \Exception('ID Azienda mancante per l\'hardware con seriale ' . $row[2]);
                     }
-                    $isCorrect = User::where('company_id', $row[9])->whereIn('id', explode(',', $row[10]))->count() == count(explode(',', $row[10]));
+                    $isCorrect = User::where('company_id', $row[10])->whereIn('id', explode(',', $row[11]))->count() == count(explode(',', $row[11]));
                     if(!$isCorrect) {
                         throw new \Exception('ID utenti errati per l\'hardware con seriale ' . $row[2]);
                     }
-                    $users = explode(',', $row[10]);
+                    $users = explode(',', $row[11]);
+                    if($hardware->is_exclusive_use && count($users) > 1) {
+                        throw new \Exception('Uso esclusivo impostato ma ci sono più utenti per l\'hardware con seriale ' . $row[2]);
+                    }
 
                     // Non usiamo il sync perchè non eseguirebbe la funzione di boot del modello personalizzato HardwareUser
                     foreach ($users as $user) {

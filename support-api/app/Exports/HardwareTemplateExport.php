@@ -23,6 +23,7 @@ class HardwareTemplateExport implements FromArray
             "Specificare (se proprietà è Altro)",
             "Cespite aziendale",
             "Note",
+            "Uso esclusivo (Si/No, Se manca viene impostato su No)",
             "ID Azienda",
             "ID utenti (separati da virgola)",
         ];
