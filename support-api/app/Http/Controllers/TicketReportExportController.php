@@ -329,11 +329,21 @@ class TicketReportExportController extends Controller {
         $closed_tickets_per_day = [];
         $different_categories_with_count = [];
         $different_type_with_count = [];
-        $ticket_by_weekday = [];
+        $ticket_by_weekday = [
+            "lunedì" => 0,
+            "martedì" => 0,
+            "mercoledì" => 0,
+            "giovedì" => 0,
+            "venerdì" => 0,
+            "sabato" => 0,
+            "domenica" => 0
+        ];
         $ticket_by_priority = [];
         $tickets_by_user = [];
         $ticket_by_source = [];
         $reduced_tickets = [];
+        $total_incidents = 0;
+        $total_requests = 0;
 
 
         $sla_data = [
@@ -373,6 +383,8 @@ class TicketReportExportController extends Controller {
                 }
 
                 $different_type_with_count['incident'][$ticket['data']['ticketType']['name']]++;
+
+                $total_incidents++;
             } else {
 
                 // Request 
@@ -389,6 +401,7 @@ class TicketReportExportController extends Controller {
                 }
 
                 $different_type_with_count['request'][$ticket['data']['ticketType']['name']]++;
+                $total_requests++;
             }
 
             // Giorno della settimana
@@ -558,8 +571,8 @@ class TicketReportExportController extends Controller {
         }
 
 
-        $total_incidents = 0;
-        $total_requests = 0;
+
+
 
         for ($date = \Carbon\Carbon::createFromFormat('Y-m-d', $request->from); $date <= \Carbon\Carbon::createFromFormat('Y-m-d', $request->to); $date->addDay()) {
             if (isset($tickets_by_day[$date->format('Y-m-d')])) {
@@ -568,12 +581,11 @@ class TicketReportExportController extends Controller {
                 $requests = 0;
 
                 foreach ($tickets_by_day[$date->format('Y-m-d')] as $ticket) {
+
                     if ($ticket['data']['ticketType']['category']['is_problem'] == 1) {
                         $incidents++;
-                        $total_incidents++;
                     } else {
                         $requests++;
-                        $total_requests++;
                     }
                 }
 
@@ -585,6 +597,9 @@ class TicketReportExportController extends Controller {
                 $closed_tickets_per_day[$date->format('Y-m-d')] = $incidents + $requests;
             }
         }
+
+
+
 
         /** Grafici */
 
@@ -625,7 +640,6 @@ class TicketReportExportController extends Controller {
             "data" => [
                 "labels" => array_keys($ticket_graph_data),
                 "datasets" => [
-
                     [
                         "label" => "Incidents",
                         "data" => array_values(array_column($ticket_graph_data, 'incidents')),
@@ -841,6 +855,7 @@ class TicketReportExportController extends Controller {
                 "legend" => ["display" => false]
             ]
         ];
+
 
         $ticket_by_weekday_url = $charts_base_url . urlencode(json_encode($ticket_by_weekday_data));
 
