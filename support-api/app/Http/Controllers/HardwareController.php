@@ -342,6 +342,12 @@ class HardwareController extends Controller
 
         }
 
+        if(!$hardware->is_exclusive_use && $data['is_exclusive_use'] && count($data['users']) > 1) {
+            return response([
+                'message' => 'Exclusive use hardware can be associated to no more than one user. Hardware not updated.',
+            ], 400);
+        }
+
         $oldCompanyId = $hardware->company_id;
 
         // Aggiorna l'hardware
