@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Jobs\StoreDgveryLive;
 use App\Jobs\StoreDgveryTrackingError;
+use App\Jobs\UpdateDgveryLive;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -22,6 +23,12 @@ class WebhookController extends Controller {
             case 'ticket.new_live_academelearning':
                 // Handle ticket created event
                 dispatch(new StoreDgveryLive($request->all()));
+
+                break;
+            case 'ticket.update_live_academelearning':
+
+                // Handle ticket udpated event
+                dispatch(new UpdateDgveryLive($request->all()));
 
                 break;
             case 'ticket.new_tracking_error_academelearning':
