@@ -229,7 +229,7 @@ return [
         "phone" => "Telefono",
         "on_site_technician" => "Tecnico in sede",
         "platform" => "Piattaforma",
-        "internal" => "Interno",
+        "internal" => "Supporto",
         "automatic" => "Automatico",
     ],
 

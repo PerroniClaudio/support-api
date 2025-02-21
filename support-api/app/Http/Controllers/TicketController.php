@@ -135,7 +135,7 @@ class TicketController extends Controller {
                 'priority' => $ticketType['default_priority'],
                 'unread_mess_for_adm' => $user["is_admin"] == 1 ? 0 : 1,
                 'unread_mess_for_usr' => $user["is_admin"] == 1 ? 1 : 0,
-                'source' => $user["is_admin"] == 1 ? ($request->source ?? null) : 'piattaforma',
+                'source' => $user["is_admin"] == 1 ? ($request->source ?? null) : 'platform',
             ]);
 
             if ($request->file('file') != null) {

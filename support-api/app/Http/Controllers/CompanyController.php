@@ -13,7 +13,8 @@ class CompanyController extends Controller {
      * Display a listing of the resource.
      */
     public function index(Request $request) {
-        $isAdminRequest = $request->user()["is_admin"] == 1;
+        $authUser = $request->user();
+        $isAdminRequest = $authUser["is_admin"] == 1;
 
         if ($isAdminRequest) {
             $companies = Company::all();
@@ -23,7 +24,9 @@ class CompanyController extends Controller {
                 $companies = [];
             }
         } else {
-            $companies = [];
+            $companies = [
+                $authUser->is_admin ? $authUser->company : $authUser->company->only(['id', 'name']),
+            ];
         }
 
         return response([
@@ -198,7 +201,7 @@ class CompanyController extends Controller {
         $user = $request->user();
 
         // Se non è admin o non è della compagnia e company_admin allora non è autorizzato
-        if (!($user["is_admin"] == 1 || $user["company_id"] == $company["id"])) {
+        if (!($user["is_admin"] == 1 || ($user["company_id"] == $company["id"]))) {
             return response([
                 'message' => 'Unauthorized',
             ], 401);

@@ -814,7 +814,7 @@ class TicketReportExportController extends Controller {
         $ticket_by_source_data = [
             "type" => "horizontalBar",
             "data" => [
-                "labels" => ["Email", "Telefono", "Tecnico onsite", "Piattaforma", "Interno", "Automatico"],
+                "labels" => ["Email", "Telefono", "Tecnico onsite", "Piattaforma", "Supporto", "Automatico"],
                 "datasets" => [[
                     "label" => "Numero di Ticket",
                     "data" => [
