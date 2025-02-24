@@ -182,7 +182,7 @@ class TicketController extends Controller {
             HardwareAuditLog::create([
                 'modified_by' => $user->id,
                 'log_subject' => 'hardware_ticket',
-                'log_type' => 'created',
+                'log_type' => 'create',
                 'new_data' => json_encode([
                     'ticket_id' => $ticket->id,
                     'hardware_ids' => $addedHardware,

@@ -124,7 +124,7 @@ class HardwareImport implements ToCollection
                         'modified_by' => $this->authUser->id,
                         'hardware_id' => $hardware->id,
                         'log_subject' => 'hardware_company',
-                        'log_type' => 'created',
+                        'log_type' => 'create',
                         'new_data' => json_encode(['company_id' => $hardware->company_id]),
                     ]);
                 }

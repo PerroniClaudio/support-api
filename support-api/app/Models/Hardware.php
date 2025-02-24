@@ -47,6 +47,9 @@ class Hardware extends Model {
 
         // Aggiunge un log quando viene modificato il campo company_id
         static::updating(function ($model) {
+          
+          $model->updated_at = now();
+
           if ($model->isDirty('company_id')) {
               $oldCompanyId = $model->getOriginal('company_id');
               $newCompanyId = $model->company_id;

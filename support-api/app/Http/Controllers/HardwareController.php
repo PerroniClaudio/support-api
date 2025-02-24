@@ -2,13 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\HardwareLogsExport;
 use App\Exports\HardwareTemplateExport;
 use App\Imports\HardwareImport;
 use App\Models\Company;
 use App\Models\Hardware;
 use App\Models\HardwareAuditLog;
 use App\Models\HardwareType;
-use App\Models\HardwareUserAuditLog;
 use App\Models\TypeFormFields;
 use App\Models\User;
 use Carbon\Carbon;
@@ -209,7 +209,7 @@ class HardwareController extends Controller {
                 'modified_by' => $authUser->id,
                 'hardware_id' => $hardware->id,
                 'log_subject' => 'hardware_company',
-                'log_type' => 'created',
+                'log_type' => 'create',
                 'new_data' => json_encode(['company_id' => $hardware->company_id]),
             ]);
         }
@@ -219,15 +219,9 @@ class HardwareController extends Controller {
             // $hardware->users()->attach($data['users']);
 
             foreach ($data['users'] as $userId) {
-                $hardware->users()->syncWithoutDetaching($userId, [
+                $hardware->users()->attach($userId, [
                     'created_at' => Carbon::now(),
                     'updated_at' => Carbon::now(),
-                ]);
-                HardwareUserAuditLog::create([
-                    'type' => 'created',
-                    'modified_by' => $authUser->id,
-                    'hardware_id' => $hardware->id,
-                    'user_id' => $userId,
                 ]);
             }
         }
@@ -321,6 +315,7 @@ class HardwareController extends Controller {
             'make' => 'required|string',
             'model' => 'required|string',
             'serial_number' => 'required|string',
+            'is_exclusive_use' => 'required|boolean',
             'company_asset_number' => 'nullable|string',
             'purchase_date' => 'nullable|date',
             'company_id' => 'nullable|int',
@@ -359,7 +354,7 @@ class HardwareController extends Controller {
         $hardware->update($data);
 
         if ($hardware->company_id != $oldCompanyId) {
-            $logType = $oldCompanyId ? ($hardware->company_id ? 'updated' : 'deleted') : 'created';
+            $logType = $oldCompanyId ? ($hardware->company_id ? 'update' : 'delete') : 'create';
             $oldData = $oldCompanyId ? json_encode(['company_id' => $oldCompanyId]) : null;
             $newData = $hardware->company_id ? json_encode(['company_id' => $hardware->company_id]) : null;
             HardwareAuditLog::create([
@@ -380,26 +375,14 @@ class HardwareController extends Controller {
         $usersToAdd = collect($data['users'])->diff($hardware->users->pluck('id'));
 
         foreach ($usersToAdd as $userId) {
-            $hardware->users()->syncWithoutDetaching($userId, [
+            $hardware->users()->attach($userId, [
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
-            ]);
-            HardwareUserAuditLog::create([
-                'type' => 'created',
-                'modified_by' => $authUser->id,
-                'hardware_id' => $hardware->id,
-                'user_id' => $userId,
             ]);
         }
 
         foreach ($usersToRemove as $userId) {
             $hardware->users()->detach($userId);
-            HardwareUserAuditLog::create([
-                'type' => 'deleted',
-                'modified_by' => $authUser->id,
-                'hardware_id' => $hardware->id,
-                'user_id' => $userId,
-            ]);
         }
 
         return response([
@@ -494,7 +477,7 @@ class HardwareController extends Controller {
             'modified_by' => $user->id,
             'hardware_id' => $hardwareId,
             'log_subject' => 'hardware',
-            'log_type' => 'restored',
+            'log_type' => 'restore',
             'old_data' => null,
             'new_data' => json_encode($hardware->toArray()),
         ]);
@@ -555,26 +538,14 @@ class HardwareController extends Controller {
         $usersToAdd = collect($data['users'])->diff($hardware->users->pluck('id'));
 
         foreach ($usersToAdd as $userId) {
-            $hardware->users()->syncWithoutDetaching($userId, [
+            $hardware->users()->attach($userId, [
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
-            ]);
-            HardwareUserAuditLog::create([
-                'type' => 'created',
-                'modified_by' => $authUser->id,
-                'hardware_id' => $hardware->id,
-                'user_id' => $userId,
             ]);
         }
 
         foreach ($usersToRemove as $userId) {
             $hardware->users()->detach($userId);
-            HardwareUserAuditLog::create([
-                'type' => 'deleted',
-                'modified_by' => $authUser->id,
-                'hardware_id' => $hardware->id,
-                'user_id' => $userId,
-            ]);
         }
 
         return response([
@@ -829,5 +800,31 @@ class HardwareController extends Controller {
 
         // return $pdf->stream();
         return $pdf->download($name);
+    }
+
+    public function getHardwareLog (Hardware $hardware, Request $request){
+        $authUser = $request->user();
+        // if (!$authUser->is_admin && !($authUser->is_company_admin && ($hardware->company_id == $authUser->company_id))) {
+        if (!$authUser->is_admin) {
+            return response([
+                'message' => 'You are not allowed to view this hardware log',
+            ], 403);
+        }
+
+        $logs = HardwareAuditLog::where('hardware_id', $hardware->id)->orWhere(function ($query) use ($hardware) {
+            $query->whereJsonContains('old_data->id', $hardware->id)
+                  ->orWhereJsonContains('new_data->id', $hardware->id);
+        })
+        ->with('author')
+        ->get();
+
+        return response([
+            'logs' => $logs,
+        ], 200);
+    }
+
+    public function hardwareLogsExport(Hardware $hardware) {
+        $name = 'hardware_' . $hardware->id .'_logs_' . time() . '.xlsx';
+        return Excel::download(new HardwareLogsExport($hardware->id), $name);
     }
 }

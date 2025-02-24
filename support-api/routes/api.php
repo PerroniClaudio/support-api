@@ -226,7 +226,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post("/hardwaremassive", [App\Http\Controllers\HardwareController::class, "importHardware"]);
     Route::get("hardware-user/{hardware}/{user}/download-assignment-pdf", [App\Http\Controllers\HardwareController::class, "downloadUserAssignmentPdf"]);
     Route::post("/delete-hardware-user", [App\Http\Controllers\HardwareController::class, "deleteHardwareUser"]); //rimuovi un'associazione utente-hardware
-    // Route::get("/hardware-log/{hardware}", [App\Http\Controllers\HardwareController::class, "getHardwareLog"]);
+    Route::get("/hardware-logs/{hardware}/export", [App\Http\Controllers\HardwareController::class, "hardwareLogsExport"]);
+    Route::get("/hardware-logs/{hardware}", [App\Http\Controllers\HardwareController::class, "getHardwareLog"]);
 });
 
 // Documentation Routes

@@ -238,4 +238,23 @@ return [
         "rented" => "Noleggio",
         "other" => "Altro",
     ],
+
+    'hardware_audit_log_actions' => [
+        'update' => 'Aggiornato',
+        'updated' => 'Aggiornato',
+        'create' => 'Creato',
+        'created' => 'Creato',
+        'delete' => 'Eliminato',
+        'deleted' => 'Eliminato',
+        'restore' => 'Ripristinato',
+        'restored' => 'Ripristinato',
+        'permanent-delete' => 'Eliminato definitivamente'
+    ],
+
+    'hardware_audit_log_subjects' => [
+        'hardware' => 'Hardware',
+        'hardware_user' => 'Associazione con utente',
+        'hardware_ticket' => 'Associazione con ticket',
+        'hardware_company' => 'Associazione con azienda',
+    ],
 ];
