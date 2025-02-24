@@ -9,9 +9,12 @@ class HardwareAuditLog extends Model {
   // Specifica il nome della tabella
   protected $table = 'hardware_audit_log';
 
+  // è stato deciso che i dati dell'hardware dismesso non gli servono, 
+  // quindi, dal momento che l'hardware resta nel gestionale finchè non viene dismesso, si può tenere hardware_id come foreign key.
+  // Gli utenti non vengono eliminati, quindi anche user_id si può tenere come foreign key.
   protected $fillable = [
-    'modified_by',
-    'hardware_id',
+    'modified_by', // Foreign key to User table (id)
+    'hardware_id', // Foreign key to Hardware table (id).
     'old_data',
     'new_data',
     'log_subject', //hardware, hardware_user, hardware_company
