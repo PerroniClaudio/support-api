@@ -463,106 +463,14 @@ class UserController extends Controller {
         $google2fa = new Google2FA();
         $secret = decrypt($user->two_factor_secret);
 
-        if (isset($request->code)) {
-            if (!$google2fa->verifyKey($secret, $request->code)) {
-                return response([
-                    'message' => 'Invalid code',
-                ], 401);
-            }
-
+        if (!$google2fa->verifyKey($secret, $request->code)) {
             return response([
-                'success' => true,
-            ], 200);
-        } else if (isset($request->recovery_code)) {
-            $codes = $user->recoveryCodes();
-
-            $hash = false;
-            foreach ($codes as $code) {
-                if (hash_equals($code, $request->recovery_code)) {
-                    $hash = true;
-                    break;
-                }
-            }
-
-            if (!$hash) {
-                return response([
-                    'message' => 'Invalid recovery code',
-                ], 401);
-            }
-
-
-            return response([
-                'success' => true,
-            ], 200);
-        }
-    }
-
-
-
-    public function onboarding(Request $request) {
-        $user = User::find(Auth::user()->id);
-
-        $validated = $request->validate([
-            'email' => 'required|email',
-            'phone' => 'required|string|max:20',
-            'name' => 'required|string',
-            'surname' => 'required|string',
-            'office' => 'required|exists:offices,id',
-        ]);
-
-        $user->update([
-            'email' => $validated['email'],
-            'phone' => $validated['phone'],
-            'name' => $validated['name'],
-            'surname' => $validated['surname'],
-            'office_id' => $validated['office'],
-        ]);
-
-        return response([
-            'user' => $user,
-        ], 200);
-    }
-
-    public function updateProfile(Request $request) {
-        $user = User::find(Auth::user()->id);
-
-        $validated = $request->validate([
-            'phone' => 'required|string|max:20',
-            'name' => 'required|string',
-            'surname' => 'required|string',
-        ]);
-
-        $user->update([
-            'phone' => $validated['phone'],
-            'name' => $validated['name'],
-            'surname' => $validated['surname'],
-        ]);
-
-        return response([
-            'user' => $user,
-        ], 200);
-    }
-
-    public function passwordUpdate(Request $request) {
-        $user = User::find(Auth::user()->id);
-
-        $validated = $request->validate([
-            'password' => 'required|string',
-            'new_password' => 'required|string',
-        ]);
-
-        if (!Hash::check($validated['password'], $user->password)) {
-            return response([
-                'message' => 'Invalid password',
-            ], 400);
+                'message' => 'Invalid code',
+            ], 401);
         }
 
-        $user->update([
-            'password' => Hash::make($validated['new_password']),
-        ]);
-
         return response([
-            'user' => $user,
+            'success' => true,
         ], 200);
     }
 }
