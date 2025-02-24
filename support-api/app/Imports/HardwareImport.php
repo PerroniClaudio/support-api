@@ -141,10 +141,13 @@ class HardwareImport implements ToCollection
                     if($hardware->is_exclusive_use && count($users) > 1) {
                         throw new \Exception('Uso esclusivo impostato ma ci sono più utenti per l\'hardware con seriale ' . $row[2]);
                     }
-
+                    $responsibleUser = User::find($row[12]);
+                    if(!$responsibleUser){
+                        $responsibleUser = User::find($this->authUser->id);
+                    }
                     // Non usiamo il sync perchè non eseguirebbe la funzione di boot del modello personalizzato HardwareUser
                     foreach ($users as $user) {
-                        $hardware->users()->attach($user, ['created_by' => $this->authUser->id ?? null]);
+                        $hardware->users()->attach($user, ['created_by' => $this->authUser->id ?? null, "responsible_user_id" => $responsibleUser->id ?? $this->authUser->id ?? null]);
                     }
                 }
             }

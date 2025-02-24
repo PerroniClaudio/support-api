@@ -83,7 +83,7 @@ class Hardware extends Model {
   public function users() {
     return $this->belongsToMany(User::class, 'hardware_user')
       ->using(HardwareUser::class)
-      ->withPivot('created_by', 'created_at', 'updated_at');
+      ->withPivot('created_by', 'responsible_user_id', 'created_at', 'updated_at');
   }
 
   public function tickets() {

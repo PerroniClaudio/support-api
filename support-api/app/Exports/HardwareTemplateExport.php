@@ -26,6 +26,7 @@ class HardwareTemplateExport implements FromArray
             "Uso esclusivo (Si/No, Se manca viene impostato su No)",
             "ID Azienda",
             "ID utenti (separati da virgola)",
+            "ID utente responsabile dell'assegnazione (deve essere admin o del supporto)"
         ];
         
         return [

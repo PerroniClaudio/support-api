@@ -9,6 +9,14 @@ class HardwareUser extends Pivot
 {
     public $timestamps = true;
     protected $table = 'hardware_user';
+    
+    protected $fillable = [
+        'created_at',
+        'updated_at',
+        'created_by',
+        'responsible_user_id',
+    ];
+
 
     protected static function boot()
     {
@@ -20,6 +28,7 @@ class HardwareUser extends Pivot
             $model->created_at = Carbon::now();
             $model->updated_at = Carbon::now();
             $model->created_by = $model->created_by ?? auth()->id() ?? null;
+            $model->responsible_user_id = $model->responsible_user_id ?? $model->created_by ?? auth()->id() ?? null;
             HardwareAuditLog::create([
                 'log_subject' => 'hardware_user',
                 'log_type' => 'create',

@@ -80,10 +80,10 @@
           @if (isset($relation))
             <p style="font-size: 14px;"><b>Assegnato in data:</b> {{ $relation->pivot->created_at->format('d/m/Y H:i') }}</p>
             @php
-              $assignedBy = App\Models\User::find($relation->pivot->created_by);
+              $responsibleUser = App\Models\User::find($relation->pivot->responsible_user_id);
             @endphp
-            <p style="font-size: 14px;"><b>ID gestore assegnazione:</b> {{ $relation->pivot->created_by }}</p>
-            <p style="font-size: 14px;"><b>Gestore assegnazione:</b> {{ $assignedBy->name . ($assignedBy->surname ? ' ' . $assignedBy->surname : '') }}</p>
+            <p style="font-size: 14px;"><b>ID responsabile assegnazione:</b> {{ $relation->pivot->created_by }}</p>
+            <p style="font-size: 14px;"><b>Responsabile assegnazione:</b> {{ $responsibleUser->name . ($responsibleUser->surname ? ' ' . $responsibleUser->surname : '') }}</p>
             
           @else
             <p>Associazione non trovata</p>
@@ -102,7 +102,7 @@
       </p>
       <br>
       <p style="font-size: 14px;">
-        {{ $assignedBy->name . ($assignedBy->surname ? ' ' . $assignedBy->surname : '') }}: ______________________________________ 
+        {{ $responsibleUser->name . ($responsibleUser->surname ? ' ' . $responsibleUser->surname : '') }}: ______________________________________ 
       </p>
     </div>
 
