@@ -32,20 +32,28 @@ class HardwareUser extends Pivot
             HardwareAuditLog::create([
                 'log_subject' => 'hardware_user',
                 'log_type' => 'create',
-                'modified_by' => auth()->id(),
+                'modified_by' => $model->created_by,
                 'hardware_id' => $model->hardware_id,
                 'old_data' => null,
-                'new_data' => json_encode(["user_id" => $model->user_id]),
+                'new_data' => json_encode([
+                    "user_id" => $model->user_id,
+                    "responsible_user_id" => $model->responsible_user_id, // Responsabile associazione (che esce sul pdf)
+                ]),
             ]);
         });
 
         static::deleting(function ($model) {
+            // Non carica in automatico i valori aggiuntivi della tabella pivot
+            $pivot = Hardware::find($model->hardware_id)->users()->wherePivot('user_id', $model->user_id)->first()->pivot;
             HardwareAuditLog::create([
                 'log_subject' => 'hardware_user',
                 'log_type' => 'delete',
                 'modified_by' => auth()->id(),
                 'hardware_id' => $model->hardware_id,
-                'old_data' => json_encode(["user_id" => $model->user_id]),
+                'old_data' => json_encode([
+                    "user_id" => $model->user_id,
+                    "responsible_user_id" => $pivot->responsible_user_id,
+                ]),
                 'new_data' => null,
             ]);
         });

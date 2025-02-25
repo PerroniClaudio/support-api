@@ -566,10 +566,11 @@ class TicketController extends Controller {
         // $new_value = $fields['is_user_error'] ? 'Cliente' : 'Supporto';
         $new_value = $ticket['is_user_error'] ? 'Cliente' : 'Supporto';
 
+        // La responsabilità del dato non è la responsabilità del ticket (che non esiste al momento).
         $update = TicketStatusUpdate::create([
             'ticket_id' => $ticket->id,
             'user_id' => $request->user()->id,
-            'content' => "Responsabilità del ticket assegnata a: " . $new_value,
+            'content' => "Responsabilità del dato assegnata a: " . $new_value,
             'type' => 'blame',
         ]);
 
