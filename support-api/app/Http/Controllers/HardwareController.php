@@ -378,6 +378,7 @@ class HardwareController extends Controller {
             $hardware->users()->attach($userId, [
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
+                // Qui si potrebbe aggiungere il campo responsible_user_id ma bisogna creare il frontend per settarlo
             ]);
         }
 
@@ -536,6 +537,25 @@ class HardwareController extends Controller {
 
         $usersToRemove = $hardware->users->pluck('id')->diff($data['users']);
         $usersToAdd = collect($data['users'])->diff($hardware->users->pluck('id'));
+
+        // Solo l'admin può rimuovere associazioni hardware-user
+        if(!$authUser->is_admin && count($usersToRemove) > 0){
+            return response([
+                'message' => 'You are not allowed to remove users from hardware',
+            ], 403);
+        }
+
+        // L'hardware ad uso sclusivo può essere associato a un solo utente
+        if($hardware->is_exclusive_use && 
+            (count($usersToAdd) > 0 && 
+                // Qui forse basterebbe $request->users->count() > 1
+                (($hardware->users->count() - count($usersToRemove) + count($usersToAdd)) > 1)
+            )
+        ) {
+            return response([
+                'message' => 'This hardware can be associated to only one user.',
+            ], 400);
+        }
 
         foreach ($usersToAdd as $userId) {
             $hardware->users()->attach($userId, [
