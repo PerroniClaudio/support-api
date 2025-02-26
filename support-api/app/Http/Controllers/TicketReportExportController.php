@@ -509,17 +509,19 @@ class TicketReportExportController extends Controller {
 
             $current_status = "Aperto";
 
-            if (strpos($latest_status_update->content, 'In attesa') !== false) {
-                $current_status = "In Attesa";
-            }
-            if (strpos($latest_status_update->content, 'Assegnato') !== false) {
-                $current_status = "Assegnato";
-            }
-            if (strpos($latest_status_update->content, 'In corso') !== false) {
-                $current_status = "In corso";
-            }
-            if ($latest_status_update->type == 'closing') {
-                $current_status = "Chiuso";
+            if($latest_status_update) {
+                if (strpos($latest_status_update->content, 'In attesa') !== false) {
+                    $current_status = "In Attesa";
+                }
+                if (strpos($latest_status_update->content, 'Assegnato') !== false) {
+                    $current_status = "Assegnato";
+                }
+                if (strpos($latest_status_update->content, 'In corso') !== false) {
+                    $current_status = "In corso";
+                }
+                if ($latest_status_update->type == 'closing') {
+                    $current_status = "Chiuso";
+                }
             }
 
 
@@ -669,14 +671,14 @@ class TicketReportExportController extends Controller {
 
         // 3 - Grafico a barre categoria di ticket 
 
-        $different_categories_with_count['incident'] = collect($different_categories_with_count['incident'])
+        $different_categories_with_count['incident'] = collect($different_categories_with_count['incident'] ?? [])
             ->sortByDesc(function ($count) {
                 return $count;
             })
             ->take(5)
             ->toArray();
 
-        $different_categories_with_count['request'] = collect($different_categories_with_count['request'])
+        $different_categories_with_count['request'] = collect($different_categories_with_count['request'] ?? [])
             ->sortByDesc(function ($count) {
                 return $count;
             })
@@ -701,7 +703,7 @@ class TicketReportExportController extends Controller {
                 "legend" => ["display" => false],
             ]
         ];
-        $maxValue = max(array_values($ticket_by_category_incident_bar_data['data']['datasets'][0]['data']));
+        $maxValue = max([0, ...array_values($ticket_by_category_incident_bar_data['data']['datasets'][0]['data'])]);
         if ($maxValue < 5) {
             $ticket_by_category_incident_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
             $ticket_by_category_incident_bar_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = 1;
@@ -739,14 +741,14 @@ class TicketReportExportController extends Controller {
 
         // 4 - Grafico tipo di ticket
 
-        $different_type_with_count['incident'] = collect($different_type_with_count['incident'])
+        $different_type_with_count['incident'] = collect($different_type_with_count['incident'] ?? [])
             ->sortByDesc(function ($count) {
                 return $count;
             })
             ->take(5)
             ->toArray();
 
-        $different_type_with_count['request'] = collect($different_type_with_count['request'])
+        $different_type_with_count['request'] = collect($different_type_with_count['request'] ?? [])
             ->sortByDesc(function ($count) {
                 return $count;
             })
@@ -774,7 +776,7 @@ class TicketReportExportController extends Controller {
             ]
         ];
 
-        $maxValue = max(array_values($ticket_by_type_incident_bar_data['data']['datasets'][0]['data']));
+        $maxValue = max([0, ...array_values($ticket_by_type_incident_bar_data['data']['datasets'][0]['data'])]);
         if ($maxValue < 5) {
             $ticket_by_type_incident_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
             $ticket_by_type_incident_bar_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = 1;
