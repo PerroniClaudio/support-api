@@ -554,27 +554,47 @@ class TicketController extends Controller {
             ], 401);
         }
 
-        // $old_value = $ticket['is_user_error'] ? 'Cliente' : 'Supporto';
+        // Ottieni i campi di $fields che hanno un valore diverso dallo stesso campo in $ticket
+        $dirtyFields = array_filter($fields, function ($value, $key) use ($ticket) {
+            return $ticket->$key !== $value;
+        }, ARRAY_FILTER_USE_BOTH);
 
-        $ticket->update([
-            'is_user_error' => $fields['is_user_error'],
-            'was_user_self_sufficient' => $fields['was_user_self_sufficient'],
-            'is_form_correct' => $fields['is_form_correct'],
-            'is_user_error_problem' => $fields['is_user_error_problem'],
-        ]);
+        $ticket->update($dirtyFields);
 
-        // $new_value = $fields['is_user_error'] ? 'Cliente' : 'Supporto';
-        $new_value = $ticket['is_user_error'] ? 'Cliente' : 'Supporto';
+        foreach ($dirtyFields as $key => $value) {
+            $propertyText = '';
+            $newValue = '';
+            switch ($key) {
+                case 'is_user_error':
+                    $propertyText = 'Responsabilità del dato assegnata a: ';
+                    $newValue = $value ? 'Cliente' : 'Supporto';
+                    break;
+                case 'was_user_self_sufficient':
+                    $propertyText = 'Cliente autonomo impostato su: ';
+                    $newValue = $value ? 'Si' : 'No';
+                    break;
+                case 'is_form_correct':
+                    $propertyText = 'Form corretto impostato su: ';
+                    $newValue = $value ? 'Si' : 'No';
+                    break;
+                case 'is_user_error_problem':
+                    $propertyText = 'Responsabilità del problema assegnata a: ';
+                    $newValue = $value ? 'Cliente' : 'Supporto';
+                    break;
+                default:
+                    'Errore';
+                    break;
+            }
 
-        // La responsabilità del dato non è la responsabilità del ticket (che non esiste al momento).
-        $update = TicketStatusUpdate::create([
-            'ticket_id' => $ticket->id,
-            'user_id' => $request->user()->id,
-            'content' => "Responsabilità del dato assegnata a: " . $new_value,
-            'type' => 'blame',
-        ]);
+            $update = TicketStatusUpdate::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $request->user()->id,
+                'content' => $propertyText . $newValue,
+                'type' => 'blame',
+            ]);
 
-        dispatch(new SendUpdateEmail($update));
+            dispatch(new SendUpdateEmail($update));
+        }
 
         return response([
             'ticket' => $ticket,
