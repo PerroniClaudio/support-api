@@ -418,13 +418,16 @@ class TicketTypeController extends Controller {
 
         $newTicketType = TicketType::where('id', $newTicketType["id"])->with("category")->first();
 
-
         // Deve duplicare anche il webform e i gruppi
         TypeFormFields::where('ticket_type_id', $ticketType->id)->get()->each(function ($formField) use ($newTicketType) {
             $newFormField = $formField->replicate();
             $newFormField->ticket_type_id = $newTicketType->id;
             $newFormField->save();
-        });
+            // Deve duplicare anche le associazioni coi tipi di hardware degli eventuali campi di tipo hardware
+            if ($formField->field_type == 'hardware') {
+                $newFormField->hardwareTypes()->sync($formField->hardwareTypes()->get());
+            }
+        });        
 
         $ticketType->groups()->get()->each(function ($group) use ($newTicketType) {
             $newTicketType->groups()->attach($group->id);
