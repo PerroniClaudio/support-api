@@ -98,6 +98,14 @@ class User extends Authenticatable {
     }
 
     /**
+     * get user's custom groups
+     */
+
+    public function customUserGroups() {
+        return $this->belongsToMany(CustomUserGroup::class, 'user_custom_groups', 'user_id', 'custom_user_group_id');
+    }
+
+    /**
      * get user's attendances
      */
 
@@ -119,8 +127,8 @@ class User extends Authenticatable {
 
     public function hardware() {
         return $this->belongsToMany(Hardware::class, 'hardware_user', 'user_id', 'hardware_id')
-                    ->using(HardwareUser::class)
-                    ->withPivot('created_by', 'responsible_user_id', 'created_at', 'updated_at');
+            ->using(HardwareUser::class)
+            ->withPivot('created_by', 'responsible_user_id', 'created_at', 'updated_at');
     }
 
     public function createOtp() {
@@ -134,6 +142,4 @@ class User extends Authenticatable {
 
         return $otp;
     }
-    
-    
 }
