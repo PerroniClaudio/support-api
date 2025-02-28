@@ -87,10 +87,15 @@ class Company extends Model {
     public function temporaryLogoUrl() {
         if ($this->logo_url) {
             return Storage::disk('gcs')->temporaryUrl(
-                $this->logo_url, now()->addMinutes(70)
+                $this->logo_url,
+                now()->addMinutes(70)
             );
         }
-    
+
         return '';
+    }
+
+    public function customUserGroups() {
+        return $this->hasMany(CustomUserGroup::class);
     }
 }
