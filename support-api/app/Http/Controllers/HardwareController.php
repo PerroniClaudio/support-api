@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\HardwareAssignationTemplateExport;
+use App\Exports\HardwareDeletionTemplateExport;
 use App\Exports\HardwareLogsExport;
 use App\Exports\HardwareTemplateExport;
+use App\Imports\HardwareAssignationsImport;
+use App\Imports\HardwareDeletionsImport;
 use App\Imports\HardwareImport;
 use App\Models\Company;
 use App\Models\Hardware;
@@ -483,7 +487,7 @@ class HardwareController extends Controller {
             'new_data' => json_encode($hardware->toArray()),
         ]);
         return response([
-            'message' => 'Hardware deleted successfully',
+            'message' => 'Hardware restored successfully',
         ], 200);
     }
 
@@ -739,6 +743,16 @@ class HardwareController extends Controller {
         $name = 'hardware_import_template_' . time() . '.xlsx';
         return Excel::download(new HardwareTemplateExport(), $name);
     }
+    
+    public function exportAssignationTemplate() {
+        $name = 'hardware_assignation_template_' . time() . '.xlsx';
+        return Excel::download(new HardwareAssignationTemplateExport(), $name);
+    }
+    
+    public function exportDeletionTemplate() {
+        $name = 'hardware_assignation_template_' . time() . '.xlsx';
+        return Excel::download(new HardwareDeletionTemplateExport(), $name);
+    }
 
     public function importHardware(Request $request) {
 
@@ -768,7 +782,85 @@ class HardwareController extends Controller {
                 Excel::import(new HardwareImport($authUser), $file, 'xlsx');
             } catch (\Exception $e) {
                 return response([
-                    'message' => 'An error occurred while importing the file. Please check the file and try again.',
+                    'message' => 'An error occurred while importing the file. Please check the file and try again.' . ($e->getMessage() ?? ''),
+                    'error' => $e->getMessage(),
+                ], 400);
+            }
+        }
+
+        return response([
+            'message' => "Success",
+        ], 200);
+    }
+    
+    public function importHardwareAssignations(Request $request) {
+
+        $authUser = $request->user();
+        if (!$authUser->is_admin) {
+            return response([
+                'message' => 'You are not allowed to import hardware assignations',
+            ], 403);
+        }
+
+        $request->validate([
+            'file' => 'required|mimes:xlsx',
+        ]);
+
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+
+            $extension = $file->getClientOriginalExtension();
+
+            if (!($extension === 'xlsx')) {
+                return response([
+                    'message' => 'Invalid file type. Please upload an XLSX or XLS file.',
+                ], 400);
+            }
+
+            try {
+                Excel::import(new HardwareAssignationsImport($authUser), $file, 'xlsx');
+            } catch (\Exception $e) {
+                return response([
+                    'message' => 'An error occurred while importing the file. Please check the file and try again.' . ($e->getMessage() ?? ''),
+                    'error' => $e->getMessage(),
+                ], 400);
+            }
+        }
+
+        return response([
+            'message' => "Success",
+        ], 200);
+    }
+    
+    public function importHardwareDeletions(Request $request) {
+
+        $authUser = $request->user();
+        if (!$authUser->is_admin) {
+            return response([
+                'message' => 'You are not allowed to import hardware deletions',
+            ], 403);
+        }
+
+        $request->validate([
+            'file' => 'required|mimes:xlsx',
+        ]);
+
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+
+            $extension = $file->getClientOriginalExtension();
+
+            if (!($extension === 'xlsx')) {
+                return response([
+                    'message' => 'Invalid file type. Please upload an XLSX or XLS file.',
+                ], 400);
+            }
+
+            try {
+                Excel::import(new HardwareDeletionsImport($authUser), $file, 'xlsx');
+            } catch (\Exception $e) {
+                return response([
+                    'message' => 'An error occurred while importing the file. Please check the file and try again.' . ($e->getMessage() ?? ''),
                     'error' => $e->getMessage(),
                 ], 400);
             }

@@ -213,6 +213,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/hardware-list-full", [App\Http\Controllers\HardwareController::class, "hardwareListWithTrashed"]);
     Route::post("/hardware", [App\Http\Controllers\HardwareController::class, "store"]);
     Route::get("/hardware/export-template", [App\Http\Controllers\HardwareController::class, "exportTemplate"]);
+    Route::get("/hardware-assign/export-template", [App\Http\Controllers\HardwareController::class, "exportAssignationTemplate"]);
+    Route::get("/hardware-delete/export-template", [App\Http\Controllers\HardwareController::class, "exportDeletionTemplate"]);
     Route::delete("/hardware/{hardware}", [App\Http\Controllers\HardwareController::class, "destroy"]);
     Route::post("/hardware-restore/{hardware}", [App\Http\Controllers\HardwareController::class, "restore"]);
     Route::delete("/hardware-trashed/{hardware}", [App\Http\Controllers\HardwareController::class, "destroyTrashed"]);
@@ -224,6 +226,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/fake-hardware-field", [App\Http\Controllers\HardwareController::class, "fakeHardwareField"]);
     Route::get("/hardware-tickets/{hardware}", [App\Http\Controllers\HardwareController::class, "hardwareTickets"]);
     Route::post("/hardwaremassive", [App\Http\Controllers\HardwareController::class, "importHardware"]);
+    Route::post("/hardware-assign-massive", [App\Http\Controllers\HardwareController::class, "importHardwareAssignations"]);
+    Route::post("/hardware-delete-massive", [App\Http\Controllers\HardwareController::class, "importHardwareDeletions"]);
     Route::get("hardware-user/{hardware}/{user}/download-assignment-pdf", [App\Http\Controllers\HardwareController::class, "downloadUserAssignmentPdf"]);
     Route::post("/delete-hardware-user", [App\Http\Controllers\HardwareController::class, "deleteHardwareUser"]); //rimuovi un'associazione utente-hardware
     Route::get("/hardware-logs/{hardware}/export", [App\Http\Controllers\HardwareController::class, "hardwareLogsExport"]);

@@ -31,9 +31,9 @@ class Hardware extends Model {
         parent::boot();
         // è stato deciso di tenere i log delle assegnazioni, nel caso dell'azienda si deve intercettare il company_id nell'hardware.
         
-        // Aggiunge un log quando vene creato un nuovo hardware, se company_id è diverso da null
+        // Aggiunge un log quando viene creato un nuovo hardware
         static::created(function ($model) {
-            if ($model->company_id != null) {
+            // if ($model->company_id != null) {
                 HardwareAuditLog::create([
                   'log_subject' => 'hardware',
                   'log_type' => 'create',
@@ -42,33 +42,40 @@ class Hardware extends Model {
                   'old_data' => null,
                   'new_data' => json_encode($model->toArray()),
                 ]);
-            }
+            // }
         });
 
-        // Aggiunge un log quando viene modificato il campo company_id
+        // Aggiunge un log quando viene modificato un hardware
         static::updating(function ($model) {
           
           $model->updated_at = now();
 
-          if ($model->isDirty('company_id')) {
-              $oldCompanyId = $model->getOriginal('company_id');
-              $newCompanyId = $model->company_id;
+          HardwareAuditLog::create([
+            'log_subject' => 'hardware',
+            'log_type' => 'update',
+            'modified_by' => auth()->id(),
+            'hardware_id' => $model->id,
+            'old_data' => json_encode($model->getOriginal()),
+            'new_data' => json_encode($model->toArray()),
+          ]);
 
-              $type = $oldCompanyId == null
-                  ? 'create'
-                  : ($newCompanyId == null
-                      ? 'delete'
-                      : 'update');
-
-              HardwareAuditLog::create([
-                'log_subject' => 'hardware',
-                'log_type' => $type,
-                'modified_by' => auth()->id(),
-                'hardware_id' => $model->id,
-                'old_data' => in_array($type, ['delete', 'update']) ? json_encode($model->getOriginal()) : null,
-                'new_data' => in_array($type, ['create', 'update']) ? json_encode($model->toArray()) : null,
-              ]);
-          }
+          // if ($model->isDirty('company_id')) {
+          //     $oldCompanyId = $model->getOriginal('company_id');
+          //     $newCompanyId = $model->company_id;
+          //     $type = $oldCompanyId == null
+          //         ? 'create'
+          //         : ($newCompanyId == null
+          //             ? 'delete'
+          //             : 'update');
+          //     HardwareAuditLog::create([
+          //       'log_subject' => 'hardware',
+          //       'log_type' => $type,
+          //       'modified_by' => auth()->id(),
+          //       'hardware_id' => $model->id,
+          //       'old_data' => in_array($type, ['delete', 'update']) ? json_encode($model->getOriginal()) : null,
+          //       'new_data' => in_array($type, ['create', 'update']) ? json_encode($model->toArray()) : null,
+          //     ]);
+          // }
         });
     }
 
