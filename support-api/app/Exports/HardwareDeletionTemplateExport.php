@@ -14,8 +14,7 @@ class HardwareDeletionTemplateExport implements FromArray
         $template_data = [];
         $headers = [
             "ID hardware *",
-            "Tipo di eliminazione Soft/Definitiva *",
-            "ID responsabile dell'eliminazione (deve essere admin o del supporto). Se non indicato viene impostato l'ID di chi carica il file."
+            "Tipo di eliminazione Soft/Definitiva/Recupero *",
         ];
         
         return [

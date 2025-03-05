@@ -914,7 +914,7 @@ class HardwareController extends Controller {
         return $pdf->download($name);
     }
 
-    public function getHardwareLog (Hardware $hardware, Request $request){
+    public function getHardwareLog ($hardwareId, Request $request){
         $authUser = $request->user();
         // if (!$authUser->is_admin && !($authUser->is_company_admin && ($hardware->company_id == $authUser->company_id))) {
         if (!$authUser->is_admin) {
@@ -922,10 +922,10 @@ class HardwareController extends Controller {
                 'message' => 'You are not allowed to view this hardware log',
             ], 403);
         }
-
-        $logs = HardwareAuditLog::where('hardware_id', $hardware->id)->orWhere(function ($query) use ($hardware) {
-            $query->whereJsonContains('old_data->id', $hardware->id)
-                  ->orWhereJsonContains('new_data->id', $hardware->id);
+        
+        $logs = HardwareAuditLog::where('hardware_id', $hardwareId)->orWhere(function ($query) use ($hardwareId) {
+            $query->whereJsonContains('old_data->id', $hardwareId)
+                  ->orWhereJsonContains('new_data->id', $hardwareId);
         })
         ->with('author')
         ->get();
@@ -935,8 +935,8 @@ class HardwareController extends Controller {
         ], 200);
     }
 
-    public function hardwareLogsExport(Hardware $hardware) {
-        $name = 'hardware_' . $hardware->id .'_logs_' . time() . '.xlsx';
-        return Excel::download(new HardwareLogsExport($hardware->id), $name);
+    public function hardwareLogsExport($hardwareId) {
+        $name = 'hardware_' . $hardwareId .'_logs_' . time() . '.xlsx';
+        return Excel::download(new HardwareLogsExport($hardwareId), $name);
     }
 }

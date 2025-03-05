@@ -174,7 +174,9 @@ class TicketController extends Controller {
                         $hardware = Hardware::find($id);
                         if ($hardware) {
                             $ticket->hardware()->syncWithoutDetaching($id);
-                            $addedHardware[] = $id;
+                            if (!in_array($id, $addedHardware)) {
+                                $addedHardware[] = $id;
+                            }
                         }
                     }
                 }
