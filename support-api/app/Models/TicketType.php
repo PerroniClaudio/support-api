@@ -22,6 +22,7 @@ class TicketType extends Model {
         'description',
         'is_massive_enabled',
         'expected_processing_time',
+        'is_custom_group_exclusive',
     ];
 
     public function tickets() {

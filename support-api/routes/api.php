@@ -201,6 +201,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post("/ticket-type-groups/delete", [App\Http\Controllers\TicketTypeController::class, "deleteGroups"]);
     Route::post("/ticket-type-companies", [App\Http\Controllers\TicketTypeController::class, "updateCompanies"]);
     Route::post("/ticket-type/duplicate", [App\Http\Controllers\TicketTypeController::class, "duplicateTicketType"]);
+
+    // Custom groups
+    Route::get("/ticket-type/{ticketType}/custom-groups", [App\Http\Controllers\TicketTypeController::class, "getCustomGroups"]);
+    Route::post("/ticket-type/custom-groups", [App\Http\Controllers\TicketTypeController::class, "addCustomGroup"]);
+    Route::delete("/ticket-type/custom-groups", [App\Http\Controllers\TicketTypeController::class, "removeCustomGroup"]);
+    Route::get("/ticket-type/{ticketType}/available-custom-groups", [App\Http\Controllers\TicketTypeController::class, "getAvailableCustomGroups"]);
+    Route::post("/ticket-type/{ticketType}/custom-group-exclusive", [App\Http\Controllers\TicketTypeController::class, "setCustomGroupExclusive"]);
 });
 
 // File Upload Routes

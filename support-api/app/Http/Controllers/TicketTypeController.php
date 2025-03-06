@@ -71,9 +71,9 @@ class TicketTypeController extends Controller {
             'default_sla_solve' => 'required|numeric',
             'default_sla_take' => 'required|numeric'
         ]);
-        
+
         // $ticketType = TicketType::create($validated);
-        
+
         $fillableFields = array_merge(
             $request->only((new TicketType)->getFillable())
         );
@@ -147,7 +147,7 @@ class TicketTypeController extends Controller {
         $fillableFields = array_merge(
             $request->only((new TicketType)->getFillable())
         );
-    
+
         $ticketType->update($fillableFields);
 
         // $ticketType->update($validated);
@@ -164,14 +164,14 @@ class TicketTypeController extends Controller {
      */
     public function destroy(TicketType $ticketType, Request $request) {
         $user = $request->user();
-        if(!$user['is_admin']) {
+        if (!$user['is_admin']) {
             return response(['message' => 'Unauthorized'], 401);
         }
 
         $ticketType = TicketType::where('id', $ticketType["id"])->first();
         // Modificato quando l'azienda è stata resa facoltativa. se non ha l'azienda non dovrebbe avere nemmeno ticket allegati.
         // quindi si elimina direttamente, altrimenti countRelatedTickets dà errore, perchè passa dall'azienda.
-        if($ticketType->company && $ticketType->countRelatedTickets() > 0){
+        if ($ticketType->company && $ticketType->countRelatedTickets() > 0) {
             $ticketType->update([
                 'is_deleted' => true,
             ]);
@@ -186,7 +186,7 @@ class TicketTypeController extends Controller {
                 return response(['message' => 'Ticket type not found'], 404);
             }
         }
-        
+
         return response([
             'message' => 'Ticket type deleted successfully',
         ], 200);
@@ -342,7 +342,7 @@ class TicketTypeController extends Controller {
         $fillableFields = array_merge(
             $request->only((new TypeFormFields)->getFillable())
         );
-    
+
         $formField = TypeFormFields::create($fillableFields);
 
         if ($request['field_type'] == 'hardware') {
@@ -357,19 +357,19 @@ class TicketTypeController extends Controller {
 
     public function deleteFormField($formFieldId, Request $request) {
         $user = $request->user();
-        
+
         if (!$user['is_admin']) {
             return response(['message' => 'Unauthorized'], 401);
         }
-        
+
         $formField = TypeFormFields::find($formFieldId);
-        
+
         if (!$formField) {
             return response(['message' => 'Form field not found'], 404);
         }
-        
+
         $formField->delete();
-        
+
         return response(['message' => 'Form field deleted successfully'], 200);
     }
 
@@ -378,14 +378,14 @@ class TicketTypeController extends Controller {
         $ticketType = TicketType::where('id', $ticketTypeId)->first();
         $count = 0;
         // Non essendo più obbligatoria la compagnia, si deve controllare prima se è stata assegnata.
-        if($ticketType->company){
+        if ($ticketType->company) {
             $count = $ticketType->countRelatedTickets();
         }
         return response([
             'count' => $count,
         ], 200);
     }
-    
+
     public function countTicketsInType(TicketType $ticketType) {
         $tickets = $ticketType->tickets()->get();
         return response([
@@ -427,7 +427,7 @@ class TicketTypeController extends Controller {
             if ($formField->field_type == 'hardware') {
                 $newFormField->hardwareTypes()->sync($formField->hardwareTypes()->get());
             }
-        });        
+        });
 
         $ticketType->groups()->get()->each(function ($group) use ($newTicketType) {
             $newTicketType->groups()->attach($group->id);
@@ -435,6 +435,72 @@ class TicketTypeController extends Controller {
 
         return response([
             'ticketType' => $newTicketType
+        ], 200);
+    }
+
+    function getCustomGroups(TicketType $ticketType) {
+        $customGroups = $ticketType->customGroups()->get();
+        return response([
+            'customGroups' => $customGroups,
+        ], 200);
+    }
+
+    function getAvailableCustomGroups(TicketType $ticketType) {
+        $customGroups = $ticketType->customGroups()->get();
+
+        $allCustomGroups = Company::where('id', $ticketType->company_id)->first()->customUserGroups()->get();
+
+        $availableCustomGroups = $allCustomGroups->diff($customGroups);
+
+        return response([
+            'customGroups' => $availableCustomGroups,
+        ], 200);
+    }
+
+    function addCustomGroup(Request $request) {
+        $fields = $request->validate([
+            'ticket_type_id' => 'required|numeric',
+            'custom_user_group_ids' => 'required|json',
+        ]);
+
+        $group_ids = json_decode($fields['custom_user_group_ids']);
+
+        $ticketType = TicketType::where('id', $fields['ticket_type_id'])->first();
+
+        $ticketType->customGroups()->syncWithoutDetaching($group_ids);
+
+        $customGroups = $ticketType->customGroups()->get();
+
+        return response([
+            'customGroups' => $customGroups,
+        ], 200);
+    }
+
+    function removeCustomGroup(Request $request) {
+        $fields = $request->validate([
+            'ticket_type_id' => 'required|numeric',
+            'custom_user_group_id' => 'required|numeric',
+        ]);
+
+        $ticketType = TicketType::where('id', $fields['ticket_type_id'])->first();
+        $ticketType->customGroups()->detach($fields['custom_user_group_id']);
+
+        $customGroups = $ticketType->customGroups()->get();
+
+        return response([
+            'customGroups' => $customGroups,
+        ], 200);
+    }
+
+    function setCustomGroupExclusive(TicketType $ticketType, Request $request) {
+        $fields = $request->validate([
+            'is_custom_group_exclusive' => 'required|boolean',
+        ]);
+
+        $ticketType->update($fields);
+
+        return response([
+            'ticketType' => $ticketType,
         ], 200);
     }
 }
