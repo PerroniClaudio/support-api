@@ -1176,8 +1176,10 @@ class TicketController extends Controller {
 
         // ignora i ticket creati dopo $request->to, escludi quelli con created_at dopo il to ,e quelli chiusi prima di $request->from
 
+        $queryTo = \Carbon\Carbon::parse($request->to)->endOfDay()->toDateTimeString();
+
         $tickets = Ticket::where('company_id', $request->company_id)
-            ->where('created_at', '<=', $request->to)
+            ->where('created_at', '<=', $queryTo)
             ->where('description', 'NOT LIKE', 'Ticket importato%')
             ->whereDoesntHave('statusUpdates', function ($query) use ($request) {
                 $query->where('type', 'closing')
