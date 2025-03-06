@@ -110,7 +110,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/custom-groups/{customUserGroup}/available-ticket-types", [CompanyController::class, "getAvailableTicketTypes"]);
 
     Route::post("/custom-groups/users", [CompanyController::class, "addUsersToGroup"]);
-    Route::post("/custom-groups/{customUserGroup}/ticket-types", [CompanyController::class, "addTicketTypesToGroup"]);
+    Route::post("/custom-groups/ticket-types", [CompanyController::class, "addTicketTypesToGroup"]);
 
     Route::delete("/custom-groups/users", [CompanyController::class, "removeUsersFromGroup"]);
     Route::delete("/custom-groups/ticket-types", [CompanyController::class, "removeTicketTypesFromGroup"]);

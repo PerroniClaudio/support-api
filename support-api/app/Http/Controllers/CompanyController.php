@@ -552,7 +552,7 @@ class CompanyController extends Controller {
         ], 200);
     }
 
-    public function getTicketTypesForGroup(CustomUserGroup $customUserGroup) {
+    public function getCustomUserGroupTicketTypes(CustomUserGroup $customUserGroup) {
 
         $ticketTypes = $customUserGroup->ticketTypes()->get();
 
@@ -577,7 +577,7 @@ class CompanyController extends Controller {
     public function addTicketTypesToGroup(Request $request) {
 
         $request->validate([
-            'ticket_type_ids' => 'required|array',
+            'ticket_type_ids' => 'required|json',
             'custom_user_group_id' => 'required|int|exists:custom_user_groups,id',
         ]);
 
@@ -589,7 +589,8 @@ class CompanyController extends Controller {
 
         $customUserGroup = CustomUserGroup::findOrFail($request->custom_user_group_id);
 
-        $customUserGroup->ticketTypes()->syncWithoutDetaching($request->ticket_type_ids);
+        $ticket_type_ids = json_decode($request->ticket_type_ids);
+        $customUserGroup->ticketTypes()->syncWithoutDetaching($ticket_type_ids);
 
         return response([
             'group' => $customUserGroup,
@@ -599,7 +600,7 @@ class CompanyController extends Controller {
     public function removeTicketTypesFromGroup(Request $request) {
 
         $request->validate([
-            'ticket_type_ids' => 'required|array',
+            'ticket_type_ids' => 'required|json',
             'custom_user_group_id' => 'required|int|exists:custom_user_groups,id',
         ]);
 
@@ -610,8 +611,8 @@ class CompanyController extends Controller {
         }
 
         $customUserGroup = CustomUserGroup::findOrFail($request->custom_user_group_id);
-
-        $customUserGroup->ticketTypes()->detach($request->ticket_type_ids);
+        $ticket_type_ids = json_decode($request->ticket_type_ids);
+        $customUserGroup->ticketTypes()->detach($ticket_type_ids);
 
         return response([
             'group' => $customUserGroup,
