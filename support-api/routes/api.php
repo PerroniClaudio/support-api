@@ -95,6 +95,27 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/companies/{company}/weekly-times", [CompanyController::class, "getWeeklyTimes"]);
     Route::post("/companies/{company}/weekly-times", [CompanyController::class, "editWeeklyTime"]);
     Route::post("/companies/{company}/logo", [CompanyController::class, "uploadLogo"]);
+
+    // Gruppi custom
+
+    Route::get("/companies/{company}/custom-groups", [CompanyController::class, "getCustomUserGroups"]);
+    Route::post("/companies/custom-groups", [CompanyController::class, "storeCustomUserGroup"]);
+    Route::get("/custom-groups/{customUserGroup}", [CompanyController::class, "getCustomUserGroup"]);
+
+
+
+    Route::get("/custom-groups/{customUserGroup}/users", [CompanyController::class, "getUsersForGroup"]);
+    Route::get("/custom-groups/{customUserGroup}/ticket-types", [CompanyController::class, "getCustomUserGroupTicketTypes"]);
+    Route::get("/custom-groups/{customUserGroup}/available-users", [CompanyController::class, "getAvailableUsers"]);
+    Route::get("/custom-groups/{customUserGroup}/available-ticket-types", [CompanyController::class, "getAvailableTicketTypes"]);
+
+    Route::post("/custom-groups/users", [CompanyController::class, "addUsersToGroup"]);
+    Route::post("/custom-groups/ticket-types", [CompanyController::class, "addTicketTypesToGroup"]);
+
+    Route::delete("/custom-groups/users", [CompanyController::class, "removeUsersFromGroup"]);
+    Route::delete("/custom-groups/ticket-types", [CompanyController::class, "removeTicketTypesFromGroup"]);
+
+    Route::post("/custom-groups/{customUserGroup}", [CompanyController::class, "updateCustomUserGroup"]);
 });
 
 // Office Routes

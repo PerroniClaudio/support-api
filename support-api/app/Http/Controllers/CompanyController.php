@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Brand;
 use App\Models\Company;
+use App\Models\CustomUserGroup;
 use App\Models\Supplier;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -378,7 +380,7 @@ class CompanyController extends Controller {
 
     public function uploadLogo(Company $company, Request $request) {
 
-        if(!$company) {
+        if (!$company) {
             return response([
                 'message' => 'Company not found',
             ], 404);
@@ -402,5 +404,218 @@ class CompanyController extends Controller {
                 'company' => $company
             ]);
         }
+    }
+
+    // Gruppi custom
+
+
+    public function getCustomUserGroups(Company $company) {
+
+        $customUserGroups = $company->customUserGroups()->get();
+
+        return response([
+            'groups' => $customUserGroups,
+        ], 200);
+    }
+
+    public function updateCustomUserGroup(CustomUserGroup $customUserGroup, Request $request) {
+
+        $request->validate([
+            'name' => 'required|string',
+        ]);
+
+        $user = $request->user();
+
+        if (!$user->is_company_admin) {
+            return response(['message' => 'Unauthorized'], 401);
+        }
+
+        $customUserGroup->update([
+            'name' => $request->name,
+        ]);
+
+        return response([
+            'group' => $customUserGroup,
+        ], 200);
+    }
+
+    public function getCustomUserGroup(CustomUserGroup $customUserGroup) {
+        return response([
+            'group' => $customUserGroup,
+        ], 200);
+    }
+
+    public function storeCustomUserGroup(Request $request) {
+
+        $request->validate([
+            'name' => 'required|string|unique:custom_user_groups',
+            'company_id' => 'required|int|exists:companies,id',
+        ]);
+
+        $user = $request->user();
+
+        if (!$user->is_company_admin) {
+            return response(['message' => 'Unauthorized'], 401);
+        }
+
+        $customUserGroup = CustomUserGroup::create([
+            'name' => $request->name,
+            'company_id' => $request->company_id,
+            'created_by' => $user->id,
+        ]);
+
+        return response([
+            'group' => $customUserGroup,
+        ], 201);
+    }
+
+    public function getUsersForGroup(CustomUserGroup $customUserGroup) {
+
+        $users = $customUserGroup->users()->get();
+
+        return response([
+            'users' => $users,
+        ], 200);
+    }
+
+    public function getAvailableUsers(CustomUserGroup $customUserGroup) {
+
+        $company = Company::find($customUserGroup->company->id);
+        $users = $company->users()->whereDoesntHave('customUserGroups', function ($query) use ($customUserGroup) {
+            $query->where('custom_user_groups.id', $customUserGroup->id);
+        })->get();
+
+        return response([
+            'users' => $users,
+        ], 200);
+    }
+
+    public function addUsersToGroup(Request $request) {
+
+        $request->validate([
+            'user_ids' => 'required|json',
+            'custom_user_group_id' => 'required|int|exists:custom_user_groups,id',
+        ]);
+
+        $user = $request->user();
+
+        if (!$user->is_company_admin) {
+            return response(['message' => 'Unauthorized'], 401);
+        }
+
+        $customUserGroup = CustomUserGroup::findOrFail($request->custom_user_group_id);
+
+        $user_ids = json_decode($request->user_ids);
+
+        $customUserGroup->users()->syncWithoutDetaching($user_ids);
+
+        return response([
+            'group' => $customUserGroup,
+        ], 200);
+    }
+
+    public function removeUsersFromGroup(Request $request) {
+
+        $request->validate([
+            'user_ids' => 'required|json',
+            'custom_user_group_id' => 'required|int|exists:custom_user_groups,id',
+        ]);
+
+        $user = $request->user();
+
+        if (!$user->is_company_admin) {
+            return response(['message' => 'Unauthorized'], 401);
+        }
+
+        $customUserGroup = CustomUserGroup::findOrFail($request->custom_user_group_id);
+        $user_ids = json_decode($request->user_ids);
+
+        $customUserGroup->users()->detach($user_ids);
+
+        return response([
+            'group' => $customUserGroup,
+        ], 200);
+    }
+
+    public function deleteCustomUserGroup(CustomUserGroup $customUserGroup) {
+
+        if ($customUserGroup->users()->count() > 0) {
+            return response([
+                'message' => 'Group has users',
+            ], 400);
+        }
+
+        $customUserGroup->delete();
+
+        return response([
+            'group' => $customUserGroup,
+        ], 200);
+    }
+
+    public function getCustomUserGroupTicketTypes(CustomUserGroup $customUserGroup) {
+
+        $ticketTypes = $customUserGroup->ticketTypes()->get();
+
+        return response([
+            'ticketTypes' => $ticketTypes,
+        ], 200);
+    }
+
+    public function getAvailableTicketTypes(CustomUserGroup $customUserGroup) {
+
+        $company = Company::find($customUserGroup->company->id);
+
+        $ticketTypes = $company->ticketTypes()->whereDoesntHave('customGroups', function ($query) use ($customUserGroup) {
+            $query->where('custom_user_groups.id', $customUserGroup->id);
+        })->get();
+
+        return response([
+            'ticketTypes' => $ticketTypes,
+        ], 200);
+    }
+
+    public function addTicketTypesToGroup(Request $request) {
+
+        $request->validate([
+            'ticket_type_ids' => 'required|json',
+            'custom_user_group_id' => 'required|int|exists:custom_user_groups,id',
+        ]);
+
+        $user = $request->user();
+
+        if (!$user->is_company_admin) {
+            return response(['message' => 'Unauthorized'], 401);
+        }
+
+        $customUserGroup = CustomUserGroup::findOrFail($request->custom_user_group_id);
+
+        $ticket_type_ids = json_decode($request->ticket_type_ids);
+        $customUserGroup->ticketTypes()->syncWithoutDetaching($ticket_type_ids);
+
+        return response([
+            'group' => $customUserGroup,
+        ], 200);
+    }
+
+    public function removeTicketTypesFromGroup(Request $request) {
+
+        $request->validate([
+            'ticket_type_ids' => 'required|json',
+            'custom_user_group_id' => 'required|int|exists:custom_user_groups,id',
+        ]);
+
+        $user = $request->user();
+
+        if (!$user->is_company_admin) {
+            return response(['message' => 'Unauthorized'], 401);
+        }
+
+        $customUserGroup = CustomUserGroup::findOrFail($request->custom_user_group_id);
+        $ticket_type_ids = json_decode($request->ticket_type_ids);
+        $customUserGroup->ticketTypes()->detach($ticket_type_ids);
+
+        return response([
+            'group' => $customUserGroup,
+        ], 200);
     }
 }

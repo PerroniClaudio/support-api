@@ -30,10 +30,9 @@ class TicketType extends Model {
         // return $this->hasMany(Ticket::class);
         return Ticket::where('type_id', $this->id)->get();
     }
-    
+
     // Restituisce il numero di ticket di questo tipo e con questa compagnia (ogni tipo è associato ad una sola compagnia)
-    public function countRelatedTickets()
-    {
+    public function countRelatedTickets() {
         return $this->company->tickets()->where('type_id', $this->id)->count();
     }
 
@@ -53,7 +52,7 @@ class TicketType extends Model {
         return $this->belongsTo(Company::class, 'company_id');
     }
 
-    
+
     public function category() {
         return $this->belongsTo(TicketTypeCategory::class, 'ticket_type_category_id');
     }
@@ -70,4 +69,7 @@ class TicketType extends Model {
         return $this->belongsToMany(HardwareType::class, 'hardware_type_ticket_type', 'ticket_type_id', 'hardware_type_id');
     }
 
+    public function customGroups() {
+        return $this->belongsToMany(CustomUserGroup::class, 'ticket_types_custom_groups', 'ticket_type_id', 'custom_user_group_id');
+    }
 }
