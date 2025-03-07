@@ -15,13 +15,15 @@ class SendUpdateEmail implements ShouldQueue {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     protected $update;
+    protected $isAutomatic;
 
 
     /**
      * Create a new job instance.
      */
-    public function __construct($update) {
+    public function __construct($update, $isAutomatic = false) {
         $this->update = $update;
+        $this->isAutomatic = $isAutomatic;
     }
 
     /**
@@ -44,7 +46,7 @@ class SendUpdateEmail implements ShouldQueue {
           $mail = env('MAIL_TO_ADDRESS');
           $handler = $ticket->handler;
           // Inviarla anche a tutti i membri del gruppo?
-          Mail::to($mail)->send(new UpdateEmail($ticket, $company, $ticketType, $category, $link, $this->update, $user));
+          Mail::to($mail)->send(new UpdateEmail($ticket, $company, $ticketType, $category, $link, $this->update, $user, $this->isAutomatic));
           
           // Per il gestore
           if($handler) {

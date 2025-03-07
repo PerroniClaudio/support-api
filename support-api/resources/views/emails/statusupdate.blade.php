@@ -4,7 +4,11 @@
 @endcomponent
 </h2>
 
+@if ($isAutomatic)
+Update automatico.
+@else
 L'utente {{ $user->name }} ha fatto un update.
+@endif
 
 {{ $category->is_problem ? "Incident" : "Request" }} n° {{ $ticket->id }} <br>
 Azienda: {{ $company->name }} <br>

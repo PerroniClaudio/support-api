@@ -794,7 +794,8 @@ class TicketController extends Controller {
             'type' => 'assign',
         ]);
 
-        dispatch(new SendUpdateEmail($update));
+        // Spostato dopo lo status update così la mail prende lo stato aggiornato
+        // dispatch(new SendUpdateEmail($update));
 
         // Se lo stato è 'Nuovo' aggiornarlo in assegnato
         $ticketStages = config('app.ticket_stages');
@@ -813,6 +814,8 @@ class TicketController extends Controller {
             // Invalida la cache per chi ha creato il ticket e per i referenti.
             $ticket->invalidateCache();
         }
+
+        dispatch(new SendUpdateEmail($update));
 
         return response([
             'ticket' => $ticket,
