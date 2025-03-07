@@ -894,11 +894,15 @@ class HardwareController extends Controller {
 
         $relation = $hardware->users()->wherePivot('user_id', $user->id)->first();
 
+        $brand = $hardware->company->brands()->first();
+        $google_url = $brand->withGUrl()->logo_url;
+
         $data = [
             'title' => $name,
             'hardware' => $hardware,
             'user' => $user,
             'relation' => $relation,
+            'logo_url' => $google_url,
         ];
 
         Pdf::setOptions([
