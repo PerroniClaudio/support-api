@@ -291,7 +291,12 @@ class UserController extends Controller {
                 $ticketTypes = $ticketTypes->concat($group->ticketTypes()->with('category')->get());
             }
         } else {
-            $ticketTypes = $user->company->ticketTypes()->with('category')->get();
+            $ticketTypes = $user->company->ticketTypes()->where("is_custom_group_exclusive", false)->with('category')->get();
+
+            $customGroups = $user->customUserGroups()->get();
+            foreach ($customGroups as $customGroup) {
+                $ticketTypes = $ticketTypes->concat($customGroup->ticketTypes()->with('category')->get());
+            }
         }
 
         return response([
