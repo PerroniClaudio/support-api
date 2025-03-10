@@ -13,7 +13,7 @@
     <table width="100%">
       <tr>
         <td>
-          <h1 style="font-size: 24px;">Associazione hardware-utente</h1>
+          <h1 style="font-size: 22px;">Modulo di assegnazione hardware all'utente</h1>
         </td>
         <td style="text-align: right;">
           @php
@@ -32,18 +32,18 @@
     </table>
     <hr>
 
-    <div class="box" style="margin-bottom: 8px;">
+    <div class="box" style="margin-bottom: 8px; border-color: #44403c;">
       <p class="box-heading"><b>Azienda</b></p>
       <div>
-        <p style="font-size: 14px;"><b>ID:</b> {{ $hardware->company->id }}</p>
+        {{-- <p style="font-size: 14px;"><b>ID:</b> {{ $hardware->company->id }}</p> --}}
         <p style="font-size: 14px;"><b>Denominazione:</b> {{ $hardware->company->name }}</p>
       </div>
     </div>
 
-    <div class="box" style="margin-bottom: 8px;">
+    <div class="box" style="margin-bottom: 8px; border-color: #44403c;">
         <p class="box-heading"><b>Hardware</b></p>
         <div>
-          <p style="font-size: 14px;"><b>ID:</b> {{ $hardware->id }}</p>
+          {{-- <p style="font-size: 14px;"><b>ID:</b> {{ $hardware->id }}</p> --}}
           <p style="font-size: 14px;"><b>Marca:</b> {{ $hardware->make }}</p>
           <p style="font-size: 14px;"><b>Modello:</b> {{ $hardware->model }}</p>
           <p style="font-size: 14px;"><b>Seriale:</b> {{ $hardware->serial_number }}</p>
@@ -64,17 +64,17 @@
           @endif
         </div>
     </div>
-    <div class="box" style="margin-bottom: 8px;">
+    <div class="box" style="margin-bottom: 8px; border-color: #44403c;">
         <p class="box-heading"><b>Utente</b></p>
         <div>
-          <p style="font-size: 14px;"><b>ID:</b> {{ $user->id }}</p>
+          {{-- <p style="font-size: 14px;"><b>ID:</b> {{ $user->id }}</p> --}}
           <p style="font-size: 14px;"><b>Nome:</b> {{ $user->name }}</p>
           <p style="font-size: 14px;"><b>Cognome:</b> {{ $user->surname }}</p>
           <p style="font-size: 14px;"><b>Email:</b> {{ $user->email }}</p>
         </div>
     </div>
     
-    <div class="box" style="margin-bottom: 8px;">
+    <div class="box" style="margin-bottom: 8px; border-color: #44403c;">
         <p class="box-heading"><b>Dettaglio associazione</b></p>
         <div>
           @if (isset($relation))
@@ -82,7 +82,7 @@
             @php
               $responsibleUser = App\Models\User::find($relation->pivot->responsible_user_id);
             @endphp
-            <p style="font-size: 14px;"><b>ID responsabile assegnazione:</b> {{ $relation->pivot->created_by }}</p>
+            {{-- <p style="font-size: 14px;"><b>ID responsabile assegnazione:</b> {{ $relation->pivot->created_by }}</p> --}}
             <p style="font-size: 14px;"><b>Responsabile assegnazione:</b> {{ $responsibleUser->name . ($responsibleUser->surname ? ' ' . $responsibleUser->surname : '') }}</p>
             
           @else
