@@ -1095,7 +1095,9 @@ class TicketController extends Controller {
                 if (strpos($update->content, 'In attesa') !== false) {
                     $avanzamento["attesa"]++;
                 }
-                if (strpos($update->content, 'Assegnato') !== false) {
+                if (
+                    (strpos($update->content, 'Assegnato') !== false) || (strpos($update->content, 'assegnato') !== false)
+                ) {
                     $avanzamento["assegnato"]++;
                 }
                 if (strpos($update->content, 'In corso') !== false) {
@@ -1245,7 +1247,9 @@ class TicketController extends Controller {
                         if (strpos($update->content, 'In attesa') !== false) {
                             $avanzamento["attesa"]++;
                         }
-                        if (strpos($update->content, 'Assegnato') !== false) {
+                        if (
+                            (strpos($update->content, 'Assegnato') !== false) || (strpos($update->content, 'assegnato') !== false)
+                        ) {
                             $avanzamento["assegnato"]++;
                         }
                         if (strpos($update->content, 'In corso') !== false) {

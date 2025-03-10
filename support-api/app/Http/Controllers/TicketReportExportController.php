@@ -231,6 +231,46 @@ class TicketReportExportController extends Controller {
         return array_slice($colorShadesBank, 0, $number);
     }
 
+    private function getColorShadesForUsers($number = 1, $random = false) {
+        $colorShadesBank = [
+            "#f97316",
+            "#f59e0b",
+            "#eab308",
+            "#84cc16",
+            "#22c55e",
+            "#10b981",
+            "#14b8a6",
+            "#06b6d4",
+            "#0ea5e9",
+            "#2563eb",
+            "#6366f1",
+            "#8b5cf6",
+            "#a855f7",
+            "#d946ef",
+            "#db2777",
+            "#f43f5e"
+        ];
+
+        if ($random) {
+            // shuffle($colorShadesBank);
+
+            $colorShades = [];
+            $groups = array_chunk($colorShadesBank, 4);
+
+            for ($i = 0; $i < $number; $i++) {
+                $colorShades[] = $groups[$i % count($groups)][rand(0, 3)];
+            }
+
+            return $colorShades;
+        }
+
+        while ($number > count($colorShadesBank)) {
+            $colorShadesBank = array_merge($colorShadesBank, $colorShadesBank);
+        }
+
+        return array_slice($colorShadesBank, 0, $number);
+    }
+
     public function exportpdf(Ticket $ticket) {
 
         $name = time() . '_' . $ticket->id . '_tickets.xlsx';
@@ -265,7 +305,9 @@ class TicketReportExportController extends Controller {
                 if (strpos($update->content, 'In attesa') !== false) {
                     $avanzamento["attesa"]++;
                 }
-                if (strpos($update->content, 'Assegnato') !== false) {
+                if (
+                    (strpos($update->content, 'Assegnato') !== false) || (strpos($update->content, 'assegnato') !== false)
+                ) {
                     $avanzamento["assegnato"]++;
                 }
                 if (strpos($update->content, 'In corso') !== false) {
@@ -338,7 +380,24 @@ class TicketReportExportController extends Controller {
             "sabato" => 0,
             "domenica" => 0
         ];
-        $ticket_by_priority = [];
+        $ticket_by_priority = [
+            "critical" => [
+                "incidents" => 0,
+                "requests" => 0,
+            ],
+            "high" => [
+                "incidents" => 0,
+                "requests" => 0,
+            ],
+            "medium" => [
+                "incidents" => 0,
+                "requests" => 0,
+            ],
+            "low" => [
+                "incidents" => 0,
+                "requests" => 0,
+            ],
+        ];
         $tickets_by_user = [];
         $ticket_by_source = [];
         $reduced_tickets = [];
@@ -358,6 +417,11 @@ class TicketReportExportController extends Controller {
 
         $closed_tickets_count = 0;
         $other_tickets_count = 0;
+
+        $wrong_type = [
+            "incident" => 0,
+            "request" => 0
+        ];
 
         foreach ($tickets_data as $ticket) {
             $date = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $ticket['data']['created_at'])->format('Y-m-d');
@@ -444,11 +508,12 @@ class TicketReportExportController extends Controller {
 
             // Per priorità
 
-            if (!isset($ticket_by_priority[$ticket['data']['priority']])) {
-                $ticket_by_priority[$ticket['data']['priority']] = 0;
+            if ($ticket['data']['ticketType']['category']['is_problem'] == 1) {
+                $ticket_by_priority[$ticket['data']['priority']]['incidents']++;
+            } else {
+                $ticket_by_priority[$ticket['data']['priority']]['requests']++;
             }
 
-            $ticket_by_priority[$ticket['data']['priority']]++;
 
             // Per utente
 
@@ -509,7 +574,7 @@ class TicketReportExportController extends Controller {
 
             $current_status = "Aperto";
 
-            if($latest_status_update) {
+            if ($latest_status_update) {
                 if (strpos($latest_status_update->content, 'In attesa') !== false) {
                     $current_status = "In Attesa";
                 }
@@ -523,6 +588,23 @@ class TicketReportExportController extends Controller {
                     $current_status = "Chiuso";
                 }
             }
+
+            // Form non corretto
+
+            if ($ticket['data']['is_form_correct'] == 0) {
+                if ($ticket['data']['ticketType']['category']['is_problem'] == 1) {
+                    $wrong_type['incident']++;
+                } else {
+                    $wrong_type['request']++;
+                }
+            }
+
+            if ($ticket['closing_message']['date'] != "") {
+                $closed_at = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $ticket['closing_message']['date'])->format('d/m/Y H:i');
+            } else {
+                $closed_at = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $ticket['data']['updated_at'])->format('d/m/Y H:i');
+            }
+
 
 
             // Ticket ridotto
@@ -538,6 +620,7 @@ class TicketReportExportController extends Controller {
                 "status_updates" => $ticket['status_updates'],
                 "description" => $ticket['data']['description'],
                 "closing_message" => $ticket['closing_message'],
+                "closed_at" => $ticket['data']['status'] == 5 ? $closed_at : "",
                 'should_show_more' => false,
                 'ticket_frontend_url' => env('FRONTEND_URL') . '/support/user/ticket/' . $ticket['data']['id'],
                 'current_status' => $current_status,
@@ -610,7 +693,6 @@ class TicketReportExportController extends Controller {
         $base_request_color = "#9bbed0";
 
         // 1 - Numero di Ticket Chiusi per Categoria
-
         $ticket_by_category_data = [
             "type" => "bar",
             "data" => [
@@ -629,10 +711,30 @@ class TicketReportExportController extends Controller {
             ],
             "options" => [
                 "title" => ["display" => true, "text" => "Ticket Chiusi per Categoria"],
-                "legend" => ["display" => false]
+                "legend" => ["display" => false],
+
             ]
         ];
+
+        if (($total_requests < 5) || ($total_incidents < 5)) {
+            $ticket_by_category_data['options']['scales']['yAxes'][0]['ticks']['beginAtZero'] = true;
+            $ticket_by_category_data['options']['scales']['yAxes'][0]['ticks']['stepSize'] = 1;
+            $ticket_by_category_data['options']['scales']['yAxes'][0]['ticks']['max'] = 10;
+        } else {
+            $ticket_by_category_data['options']["plugins"]["datalabels"] = [
+                "display" => true,
+                "color" => "white",
+                "align" => "center",
+                "anchor" => "center",
+                "font" => [
+                    "weight" => "bold"
+                ]
+            ];
+        }
+
+
         $ticket_by_category_url = $charts_base_url . urlencode(json_encode($ticket_by_category_data));
+
 
 
         // 2 - Ticket chiusi nel tempo 
@@ -663,10 +765,18 @@ class TicketReportExportController extends Controller {
                 ],
                 "legend" => [
                     "display" => true,
+                ],
 
-                ]
             ]
         ];
+
+        // $maxValue = max(array_values($ticket_closed_time_data['data']['datasets'][0]['data']));
+        // if ($maxValue < 5) {
+        //     $ticket_closed_time_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
+        //     $ticket_closed_time_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = 1;
+        //     $ticket_closed_time_data['options']['scales']['xAxes'][0]['ticks']['max'] = 10;
+        // }
+
         $ticket_closed_time_url = $charts_base_url . urlencode(json_encode($ticket_closed_time_data));
 
         // 3 - Grafico a barre categoria di ticket 
@@ -675,14 +785,14 @@ class TicketReportExportController extends Controller {
             ->sortByDesc(function ($count) {
                 return $count;
             })
-            ->take(5)
+            // ->take(5)
             ->toArray();
 
         $different_categories_with_count['request'] = collect($different_categories_with_count['request'] ?? [])
             ->sortByDesc(function ($count) {
                 return $count;
             })
-            ->take(5)
+            // ->take(5)
             ->toArray();
 
         $ticket_by_category_incident_bar_data = [
@@ -701,12 +811,24 @@ class TicketReportExportController extends Controller {
             "options" => [
                 "title" => ["display" => true, "text" => "Incident per Categoria"],
                 "legend" => ["display" => false],
+
             ]
         ];
         $maxValue = max([0, ...array_values($ticket_by_category_incident_bar_data['data']['datasets'][0]['data'])]);
         if ($maxValue < 5) {
             $ticket_by_category_incident_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
             $ticket_by_category_incident_bar_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = 1;
+            $ticket_by_category_incident_bar_data['options']['scales']['xAxes'][0]['ticks']['max'] = 10;
+        } else {
+            $ticket_by_category_incident_bar_data['options']["plugins"]["datalabels"] = [
+                "display" => true,
+                "color" => "white",
+                "align" => "center",
+                "anchor" => "center",
+                "font" => [
+                    "weight" => "bold"
+                ]
+            ];
         }
 
         $ticket_by_category_incident_bar_url = $charts_base_url . urlencode(json_encode($ticket_by_category_incident_bar_data));
@@ -735,6 +857,17 @@ class TicketReportExportController extends Controller {
         if ($maxValue < 5) {
             $ticket_by_category_request_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
             $ticket_by_category_request_bar_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = 1;
+            $ticket_by_category_request_bar_data['options']['scales']['xAxes'][0]['ticks']['max'] = 10;
+        } else {
+            $ticket_by_category_request_bar_data['options']["plugins"]["datalabels"] = [
+                "display" => true,
+                "color" => "white",
+                "align" => "center",
+                "anchor" => "center",
+                "font" => [
+                    "weight" => "bold"
+                ]
+            ];
         }
 
         $ticket_by_category_request_bar_url = $charts_base_url . urlencode(json_encode($ticket_by_category_request_bar_data));
@@ -770,7 +903,7 @@ class TicketReportExportController extends Controller {
                 ]]
             ],
             "options" => [
-                "title" => ["display" => true, "text" => "Incident più frequenti per Tipo"],
+                "title" => ["display" => true, "text" => "Top 5 Incident per Tipo"],
                 "legend" => ["display" => false],
 
             ]
@@ -780,6 +913,17 @@ class TicketReportExportController extends Controller {
         if ($maxValue < 5) {
             $ticket_by_type_incident_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
             $ticket_by_type_incident_bar_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = 1;
+            $ticket_by_type_incident_bar_data['options']['scales']['xAxes'][0]['ticks']['max'] = 10;
+        } else {
+            $ticket_by_type_incident_bar_data['options']["plugins"]["datalabels"] = [
+                "display" => true,
+                "color" => "white",
+                "align" => "center",
+                "anchor" => "center",
+                "font" => [
+                    "weight" => "bold"
+                ]
+            ];
         }
 
         $ticket_by_type_incident_bar_url = $charts_base_url . urlencode(json_encode($ticket_by_type_incident_bar_data));
@@ -798,7 +942,7 @@ class TicketReportExportController extends Controller {
                 ]]
             ],
             "options" => [
-                "title" => ["display" => true, "text" => "Request più frequenti per Tipo"],
+                "title" => ["display" => true, "text" => "Top 5 Request per Tipo"],
                 "legend" => ["display" => false]
             ]
         ];
@@ -807,6 +951,17 @@ class TicketReportExportController extends Controller {
         if ($maxValue < 5) {
             $ticket_by_type_request_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
             $ticket_by_type_request_bar_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = 1;
+            $ticket_by_type_request_bar_data['options']['scales']['xAxes'][0]['ticks']['max'] = 10;
+        } else {
+            $ticket_by_type_request_bar_data['options']["plugins"]["datalabels"] = [
+                "display" => true,
+                "color" => "white",
+                "align" => "center",
+                "anchor" => "center",
+                "font" => [
+                    "weight" => "bold"
+                ]
+            ];
         }
 
         $ticket_by_type_request_bar_url = $charts_base_url . urlencode(json_encode($ticket_by_type_request_bar_data));
@@ -832,9 +987,28 @@ class TicketReportExportController extends Controller {
             ],
             "options" => [
                 "title" => ["display" => true, "text" => "Ticket per Provenienza"],
-                "legend" => ["display" => false]
+                "legend" => ["display" => false],
+
             ]
         ];
+
+        $maxValue = max(array_values($ticket_by_source_data['data']['datasets'][0]['data']));
+        if ($maxValue < 5) {
+            $ticket_by_source_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
+            $ticket_by_source_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = 1;
+            $ticket_by_source_data['options']['scales']['xAxes'][0]['ticks']['max'] = 10;
+        } else {
+            $ticket_by_source_data['options']["plugins"]["datalabels"] = [
+                "display" => true,
+                "color" => "white",
+                "align" => "center",
+                "anchor" => "center",
+                "font" => [
+                    "weight" => "bold"
+                ]
+            ];
+        }
+
         $ticket_by_source_url = $charts_base_url . urlencode(json_encode($ticket_by_source_data));
 
         // 6 - Ticket per giorno della settimana
@@ -854,9 +1028,27 @@ class TicketReportExportController extends Controller {
             ],
             "options" => [
                 "title" => ["display" => true, "text" => "Ticket per Giorno della Settimana"],
-                "legend" => ["display" => false]
+                "legend" => ["display" => false],
+
             ]
         ];
+
+        $maxValue = max(array_values($ticket_by_weekday_data['data']['datasets'][0]['data']));
+        if ($maxValue < 5) {
+            $ticket_by_weekday_data['options']['scales']['yAxes'][0]['ticks']['beginAtZero'] = true;
+            $ticket_by_weekday_data['options']['scales']['yAxes'][0]['ticks']['stepSize'] = 1;
+            $ticket_by_weekday_data['options']['scales']['yAxes'][0]['ticks']['max'] = 10;
+        } else {
+            $ticket_by_weekday_data['options']["plugins"]["datalabels"] = [
+                "display" => true,
+                "color" => "white",
+                "align" => "center",
+                "anchor" => "center",
+                "font" => [
+                    "weight" => "bold"
+                ]
+            ];
+        }
 
 
         $ticket_by_weekday_url = $charts_base_url . urlencode(json_encode($ticket_by_weekday_data));
@@ -918,31 +1110,80 @@ class TicketReportExportController extends Controller {
         // 8 - Barre per priorità dei ticket
 
         $ticket_by_priority = [
-            "Critica" => $ticket_by_priority['critical'] ?? 0,
-            "Alta" => $ticket_by_priority['high'] ?? 0,
-            "Media" => $ticket_by_priority['medium'] ?? 0,
-            "Bassa" => $ticket_by_priority['low'] ?? 0,
+            "Critica" => $ticket_by_priority['critical'] ?? [
+                "incidents" => 0,
+                "requests" => 0,
+            ],
+            "Alta" => $ticket_by_priority['high'] ?? [
+                "incidents" => 0,
+                "requests" => 0,
+            ],
+            "Media" => $ticket_by_priority['medium'] ?? [
+                "incidents" => 0,
+                "requests" => 0,
+            ],
+            "Bassa" => $ticket_by_priority['low'] ?? [
+                "incidents" => 0,
+                "requests" => 0,
+            ],
         ];
 
         $ticket_by_priority_bar_data = [
             "type" => "horizontalBar",
             "data" => [
                 "labels" => array_keys($ticket_by_priority),
-                "datasets" => [[
-                    "label" => "Numero di Ticket",
-                    "data" => array_values($ticket_by_priority),
-                    "backgroundColor" => $this->getColorShades(4, false, true, false)
-                ]]
+                "datasets" => [
+                    [
+                        "label" => "Incidents",
+                        "data" => array_values(array_column($ticket_by_priority, 'incidents')),
+                        "backgroundColor" => $base_incident_color
+                    ],
+                    [
+                        "label" => "Requests",
+                        "data" => array_values(array_column($ticket_by_priority, 'requests')),
+                        "backgroundColor" => $base_request_color
+                    ]
+                ]
             ],
             "options" => [
                 "title" => ["display" => true, "text" => "Ticket per Priorità"],
-                "legend" => ["display" => false]
+                "legend" => ["display" => true],
+                "scales" => [
+                    "xAxes" => [[
+                        "stacked" => true
+                    ]],
+                    "yAxes" => [[
+                        "stacked" => true
+                    ]]
+                ],
+                "plugins" => [
+                    "datalabels" => [
+                        "display" => true,
+                        "color" => "white",
+                        "font" => [
+                            "size" => 8
+                        ]
+                    ]
+                ]
             ]
         ];
+
+        $maxValue = max(array_values($ticket_by_priority_bar_data['data']['datasets'][0]['data']));
+        if ($maxValue < 5) {
+            $ticket_by_priority_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
+            $ticket_by_priority_bar_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = 1;
+            $ticket_by_priority_bar_data['options']['scales']['xAxes'][0]['ticks']['max'] = 10;
+        }
+
 
         $ticket_by_priority_url = $charts_base_url . urlencode(json_encode($ticket_by_priority_bar_data));
 
         // 9 - Ticket per utente
+
+        $tickets_by_user = collect($tickets_by_user)->sortByDesc(function ($count) {
+            return $count;
+        })->toArray();
+
 
         $tickets_by_user_data = [
             "type" => "bar",
@@ -964,14 +1205,33 @@ class TicketReportExportController extends Controller {
                 "datasets" => [[
                     "label" => "Numero di Ticket",
                     "data" => array_values($tickets_by_user),
-                    "backgroundColor" => $this->getColorShades(count(array_keys($tickets_by_user)), true)
+                    "backgroundColor" => $this->getColorShadesForUsers(count(array_keys($tickets_by_user)), true)
                 ]]
             ],
             "options" => [
                 "title" => ["display" => true, "text" => "Ticket per Utente"],
-                "legend" => ["display" => false]
+                "legend" => ["display" => false],
+
             ]
         ];
+
+        $maxValue = max(array_values($tickets_by_user_data['data']['datasets'][0]['data']));
+        if ($maxValue < 5) {
+            $tickets_by_user_data['options']['scales']['yAxes'][0]['ticks']['beginAtZero'] = true;
+            $tickets_by_user_data['options']['scales']['yAxes'][0]['ticks']['stepSize'] = 1;
+            $tickets_by_user_data['options']['scales']['yAxes'][0]['ticks']['max'] = 10;
+        } else {
+            $tickets_by_user_data['options']["plugins"]["datalabels"] = [
+                "display" => true,
+                "color" => "white",
+                "align" => "center",
+                "anchor" => "center",
+                "font" => [
+                    "weight" => "bold"
+                ]
+            ];
+        }
+
 
         $tickets_by_user_url = $charts_base_url . urlencode(json_encode($tickets_by_user_data));
 
@@ -1020,6 +1280,50 @@ class TicketReportExportController extends Controller {
 
         $tickets_sla_url = $charts_base_url . urlencode(json_encode($tickets_sla_data));
 
+        // 11 - Form non corretto 
+
+        $wrong_type_data = [
+            "type" => "bar",
+            "data" => [
+                "labels" => [
+                    "Request",
+                    "Incident"
+                ],
+                "datasets" => [[
+                    "label" => "Numero di Ticket",
+                    "data" => [
+                        $wrong_type['request'],
+                        $wrong_type['incident']
+                    ],
+                    "backgroundColor" => [$base_request_color, $base_incident_color]
+                ]]
+            ],
+            "options" => [
+                "title" => ["display" => true, "text" => "Form non corretto"],
+                "legend" => ["display" => false],
+
+            ]
+        ];
+
+        $maxValue = max(array_values($wrong_type_data['data']['datasets'][0]['data']));
+        if ($maxValue < 5) {
+            $wrong_type_data['options']['scales']['yAxes'][0]['ticks']['beginAtZero'] = true;
+            $wrong_type_data['options']['scales']['yAxes'][0]['ticks']['stepSize'] = 1;
+            $wrong_type_data['options']['scales']['yAxes'][0]['ticks']['max'] = 10;
+        } else {
+            $wrong_type_data['options']["plugins"]["datalabels"] = [
+                "display" => true,
+                "color" => "white",
+                "align" => "center",
+                "anchor" => "center",
+                "font" => [
+                    "weight" => "bold"
+                ]
+            ];
+        }
+
+        $wrong_type_url = $charts_base_url . urlencode(json_encode($wrong_type_data));
+
 
         // Logo da usare
 
@@ -1050,7 +1354,8 @@ class TicketReportExportController extends Controller {
             'ticket_by_priority_url' => $ticket_by_priority_url,
             'tickets_by_user_url' => $tickets_by_user_url,
             'tickets_sla_url' => $tickets_sla_url,
-            'logo_url' => $google_url
+            'logo_url' => $google_url,
+            'wrong_type_url' => $wrong_type_url
 
         ];
 
