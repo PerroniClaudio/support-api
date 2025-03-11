@@ -2,8 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\HardwareAssignationTemplateExport;
+use App\Exports\HardwareDeletionTemplateExport;
 use App\Exports\HardwareLogsExport;
 use App\Exports\HardwareTemplateExport;
+use App\Imports\HardwareAssignationsImport;
+use App\Imports\HardwareDeletionsImport;
 use App\Imports\HardwareImport;
 use App\Models\Company;
 use App\Models\Hardware;
@@ -483,7 +487,7 @@ class HardwareController extends Controller {
             'new_data' => json_encode($hardware->toArray()),
         ]);
         return response([
-            'message' => 'Hardware deleted successfully',
+            'message' => 'Hardware restored successfully',
         ], 200);
     }
 
@@ -739,6 +743,16 @@ class HardwareController extends Controller {
         $name = 'hardware_import_template_' . time() . '.xlsx';
         return Excel::download(new HardwareTemplateExport(), $name);
     }
+    
+    public function exportAssignationTemplate() {
+        $name = 'hardware_assignation_template_' . time() . '.xlsx';
+        return Excel::download(new HardwareAssignationTemplateExport(), $name);
+    }
+    
+    public function exportDeletionTemplate() {
+        $name = 'hardware_assignation_template_' . time() . '.xlsx';
+        return Excel::download(new HardwareDeletionTemplateExport(), $name);
+    }
 
     public function importHardware(Request $request) {
 
@@ -768,7 +782,85 @@ class HardwareController extends Controller {
                 Excel::import(new HardwareImport($authUser), $file, 'xlsx');
             } catch (\Exception $e) {
                 return response([
-                    'message' => 'An error occurred while importing the file. Please check the file and try again.',
+                    'message' => 'An error occurred while importing the file. Please check the file and try again.' . ($e->getMessage() ?? ''),
+                    'error' => $e->getMessage(),
+                ], 400);
+            }
+        }
+
+        return response([
+            'message' => "Success",
+        ], 200);
+    }
+    
+    public function importHardwareAssignations(Request $request) {
+
+        $authUser = $request->user();
+        if (!$authUser->is_admin) {
+            return response([
+                'message' => 'You are not allowed to import hardware assignations',
+            ], 403);
+        }
+
+        $request->validate([
+            'file' => 'required|mimes:xlsx',
+        ]);
+
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+
+            $extension = $file->getClientOriginalExtension();
+
+            if (!($extension === 'xlsx')) {
+                return response([
+                    'message' => 'Invalid file type. Please upload an XLSX or XLS file.',
+                ], 400);
+            }
+
+            try {
+                Excel::import(new HardwareAssignationsImport($authUser), $file, 'xlsx');
+            } catch (\Exception $e) {
+                return response([
+                    'message' => 'An error occurred while importing the file. Please check the file and try again.' . ($e->getMessage() ?? ''),
+                    'error' => $e->getMessage(),
+                ], 400);
+            }
+        }
+
+        return response([
+            'message' => "Success",
+        ], 200);
+    }
+    
+    public function importHardwareDeletions(Request $request) {
+
+        $authUser = $request->user();
+        if (!$authUser->is_admin) {
+            return response([
+                'message' => 'You are not allowed to import hardware deletions',
+            ], 403);
+        }
+
+        $request->validate([
+            'file' => 'required|mimes:xlsx',
+        ]);
+
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+
+            $extension = $file->getClientOriginalExtension();
+
+            if (!($extension === 'xlsx')) {
+                return response([
+                    'message' => 'Invalid file type. Please upload an XLSX or XLS file.',
+                ], 400);
+            }
+
+            try {
+                Excel::import(new HardwareDeletionsImport($authUser), $file, 'xlsx');
+            } catch (\Exception $e) {
+                return response([
+                    'message' => 'An error occurred while importing the file. Please check the file and try again.' . ($e->getMessage() ?? ''),
                     'error' => $e->getMessage(),
                 ], 400);
             }
@@ -802,11 +894,15 @@ class HardwareController extends Controller {
 
         $relation = $hardware->users()->wherePivot('user_id', $user->id)->first();
 
+        $brand = $hardware->company->brands()->first();
+        $google_url = $brand->withGUrl()->logo_url;
+
         $data = [
             'title' => $name,
             'hardware' => $hardware,
             'user' => $user,
             'relation' => $relation,
+            'logo_url' => $google_url,
         ];
 
         Pdf::setOptions([
@@ -822,7 +918,7 @@ class HardwareController extends Controller {
         return $pdf->download($name);
     }
 
-    public function getHardwareLog (Hardware $hardware, Request $request){
+    public function getHardwareLog ($hardwareId, Request $request){
         $authUser = $request->user();
         // if (!$authUser->is_admin && !($authUser->is_company_admin && ($hardware->company_id == $authUser->company_id))) {
         if (!$authUser->is_admin) {
@@ -830,10 +926,10 @@ class HardwareController extends Controller {
                 'message' => 'You are not allowed to view this hardware log',
             ], 403);
         }
-
-        $logs = HardwareAuditLog::where('hardware_id', $hardware->id)->orWhere(function ($query) use ($hardware) {
-            $query->whereJsonContains('old_data->id', $hardware->id)
-                  ->orWhereJsonContains('new_data->id', $hardware->id);
+        
+        $logs = HardwareAuditLog::where('hardware_id', $hardwareId)->orWhere(function ($query) use ($hardwareId) {
+            $query->whereJsonContains('old_data->id', $hardwareId)
+                  ->orWhereJsonContains('new_data->id', $hardwareId);
         })
         ->with('author')
         ->get();
@@ -843,8 +939,8 @@ class HardwareController extends Controller {
         ], 200);
     }
 
-    public function hardwareLogsExport(Hardware $hardware) {
-        $name = 'hardware_' . $hardware->id .'_logs_' . time() . '.xlsx';
-        return Excel::download(new HardwareLogsExport($hardware->id), $name);
+    public function hardwareLogsExport($hardwareId) {
+        $name = 'hardware_' . $hardwareId .'_logs_' . time() . '.xlsx';
+        return Excel::download(new HardwareLogsExport($hardwareId), $name);
     }
 }

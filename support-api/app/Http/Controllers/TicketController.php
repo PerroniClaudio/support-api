@@ -136,7 +136,42 @@ class TicketController extends Controller {
                 'unread_mess_for_adm' => $user["is_admin"] == 1 ? 0 : 1,
                 'unread_mess_for_usr' => $user["is_admin"] == 1 ? 1 : 0,
                 'source' => $user["is_admin"] == 1 ? ($request->source ?? null) : 'platform',
+                'is_user_error' => 1, // is_user_error viene usato per la responsabilità del dato e di default è assegnata al cliente.
             ]);
+
+            if ($request->parent_ticket_id) {
+                $parentTicket = Ticket::find($request->parent_ticket_id);
+                if ($parentTicket) {
+                    $ticket->parent_ticket_id = $parentTicket->id;
+                    $ticket->save();
+
+                    // Chiude il ticket padre, segnala che il ticket procede in quello nuovo 
+
+                    $parentTicket->status = 5;
+                    $parentTicket->is_rejected = 1;
+                    $parentTicket->is_form_correct = 0;
+
+                    $parentTicket->save();
+
+                    TicketStatusUpdate::create([
+                        'ticket_id' => $parentTicket->id,
+                        'user_id' => $user->id,
+                        'content' => 'Ticket chiuso automaticamente in quanto è stato aperto un nuovo ticket collegato: ' . $ticket->id,
+                        'type' => 'closing',
+                    ]);
+
+                    TicketStatusUpdate::create([
+                        'ticket_id' => $ticket->id,
+                        'user_id' => $user->id,
+                        'content' => 'Questo ticket è stato aperto come continuazione del ticket: ' . $parentTicket->id,
+                        'type' => 'note',
+                    ]);
+
+                    // Invalida la cache per chi ha creato il ticket e per i referenti.
+
+                    $parentTicket->invalidateCache();
+                }
+            }
 
             if ($request->file('file') != null) {
                 $file = $request->file('file');
@@ -146,9 +181,6 @@ class TicketController extends Controller {
                     'file' => $file_name,
                 ]);
             }
-
-            // cache()->forget('user_' . $user->id . '_tickets');
-            // cache()->forget('user_' . $user->id . '_tickets_with_closed');
 
             TicketMessage::create([
                 'ticket_id' => $ticket->id,
@@ -174,7 +206,9 @@ class TicketController extends Controller {
                         $hardware = Hardware::find($id);
                         if ($hardware) {
                             $ticket->hardware()->syncWithoutDetaching($id);
-                            $addedHardware[] = $id;
+                            if (!in_array($id, $addedHardware)) {
+                                $addedHardware[] = $id;
+                            }
                         }
                     }
                 }
@@ -195,21 +229,6 @@ class TicketController extends Controller {
             cache()->forget('user_' . $user->id . '_tickets_with_closed');
 
             $brand_url = $ticket->brandUrl();
-
-            // Debug: qualche elemento col name non viene trovato
-            $firstMessage = $ticket->messages[0]->message;
-            $data = json_decode($firstMessage, true);
-            $ticketUser = $ticket->user;
-            $company = $ticket->company;
-            $ticketType =  $ticket->ticketType;
-            $debugString = 'DEBUG: Ticket ID: ' . $ticket->id
-                . ' - Ticket User: ' . ($ticketUser->name ?? 'No name')
-                . (isset($data['office']) ? ' - Office set: ' . (Office::find($data['office'])->name ?? $data['office'])  : ' - Office not set')
-                . (isset($data['referer_it']) ? ' - Referer IT set: ' . (User::find($data['referer_it'])->name ?? $data['referer_it']) : ' - Referer IT not set, ')
-                . (isset($data['referer']) ? ($data['referer'] != '0' ? ' - Referer set: ' . (User::find($data['referer'])->name ?? $data['referer']) : ' - Referer set: ' . $data['referer']) : ' - Referer not set, ')
-                . (' - Ticket Type name: ' . ($ticketType->name ?? 'No name'))
-                . (' - Ticket company name: ' . ($company->name ?? 'No name'));
-            Log::info($debugString);
 
             dispatch(new SendOpenTicketEmail($ticket, $brand_url));
 
@@ -530,6 +549,39 @@ class TicketController extends Controller {
             'ticket' => $ticket,
         ], 200);
     }
+    
+    public function updateTicketIsBillable(Ticket $ticket, Request $request) {
+        $fields = $request->validate([
+            'is_billable' => 'required|boolean',
+        ]);
+
+        if ($request->user()["is_admin"] != 1) {
+            return response([
+                'message' => 'The user must be an admin.',
+            ], 401);
+        }
+
+        // Verifica se il campo 'is_billable' è stato modificato
+        $ticket->is_billable = $fields['is_billable'];
+        $isValueChanged = $ticket->isDirty('is_billable');
+
+        if ($isValueChanged) {
+            $ticket->save();
+
+            $update = TicketStatusUpdate::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $request->user()->id,
+                'content' => "Ticket impostato come: " . ($fields['is_billable'] ? 'Fatturabile' : 'Non fatturabile'),
+                'type' => 'billing',
+            ]);
+    
+            dispatch(new SendUpdateEmail($update));
+        }
+
+        return response([
+            'ticket' => $ticket,
+        ], 200);
+    }
 
     public function getTicketBlame(Ticket $ticket) {
         return response([
@@ -792,7 +844,8 @@ class TicketController extends Controller {
             'type' => 'assign',
         ]);
 
-        dispatch(new SendUpdateEmail($update));
+        // Spostato dopo lo status update così la mail prende lo stato aggiornato
+        // dispatch(new SendUpdateEmail($update));
 
         // Se lo stato è 'Nuovo' aggiornarlo in assegnato
         $ticketStages = config('app.ticket_stages');
@@ -811,6 +864,8 @@ class TicketController extends Controller {
             // Invalida la cache per chi ha creato il ticket e per i referenti.
             $ticket->invalidateCache();
         }
+
+        dispatch(new SendUpdateEmail($update));
 
         return response([
             'ticket' => $ticket,
@@ -1024,6 +1079,36 @@ class TicketController extends Controller {
             'tickets' => $tickets,
         ], 200);
     }
+    
+    /**
+     * Show only the tickets belonging to the authenticated admin groups.
+     */
+    public function adminGroupsBillingTickets(Request $request) {
+        // Se si vuole mostrare tutti i ticket a prescindere dal gruppo serve un superadmin. altrimenti si fanno vedere tutti e amen.
+        $user = $request->user();
+
+        if ($user["is_admin"] != 1) {
+            return response([
+                'message' => 'The user must be an admin.',
+            ], 401);
+        }
+
+        $groups = $user->groups;
+
+        $withClosed = $request->query('with-closed') == 'true' ? true : false;
+
+        if ($withClosed) {
+            // $tickets = Ticket::whereIn('group_id', $groups->pluck('id'))->with('user')->get();
+            $tickets = Ticket::whereIn('group_id', $groups->pluck('id'))->where('is_billable', null)->get();
+        } else {
+            // $tickets = Ticket::where("status", "!=", 5)->whereIn('group_id', $groups->pluck('id'))->with('user')->get();
+            $tickets = Ticket::where("status", "!=", 5)->whereIn('group_id', $groups->pluck('id'))->where('is_billable', null)->get();
+        }
+
+        return response([
+            'tickets' => $tickets,
+        ], 200);
+    }
 
     /**
      * Show closing messages of the ticket
@@ -1090,7 +1175,9 @@ class TicketController extends Controller {
                 if (strpos($update->content, 'In attesa') !== false) {
                     $avanzamento["attesa"]++;
                 }
-                if (strpos($update->content, 'Assegnato') !== false) {
+                if (
+                    (strpos($update->content, 'Assegnato') !== false) || (strpos($update->content, 'assegnato') !== false)
+                ) {
                     $avanzamento["assegnato"]++;
                 }
                 if (strpos($update->content, 'In corso') !== false) {
@@ -1174,8 +1261,10 @@ class TicketController extends Controller {
 
         // ignora i ticket creati dopo $request->to, escludi quelli con created_at dopo il to ,e quelli chiusi prima di $request->from
 
+        $queryTo = \Carbon\Carbon::parse($request->to)->endOfDay()->toDateTimeString();
+
         $tickets = Ticket::where('company_id', $request->company_id)
-            ->where('created_at', '<=', $request->to)
+            ->where('created_at', '<=', $queryTo)
             ->where('description', 'NOT LIKE', 'Ticket importato%')
             ->whereDoesntHave('statusUpdates', function ($query) use ($request) {
                 $query->where('type', 'closing')
@@ -1238,7 +1327,9 @@ class TicketController extends Controller {
                         if (strpos($update->content, 'In attesa') !== false) {
                             $avanzamento["attesa"]++;
                         }
-                        if (strpos($update->content, 'Assegnato') !== false) {
+                        if (
+                            (strpos($update->content, 'Assegnato') !== false) || (strpos($update->content, 'assegnato') !== false)
+                        ) {
                             $avanzamento["assegnato"]++;
                         }
                         if (strpos($update->content, 'In corso') !== false) {

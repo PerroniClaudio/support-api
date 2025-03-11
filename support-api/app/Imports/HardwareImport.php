@@ -15,18 +15,19 @@ use Illuminate\Support\Collection;
 class HardwareImport implements ToCollection
 {
     // TEMPLATE IMPORT:
-    // "Marca",
-    // "Modello",
-    // "Seriale",
-    // "Uso esclusivo (Si/No, Se manca viene impostato su No)",
+    // "Marca *",
+    // "Modello *",
+    // "Seriale *",
+    // "Tipo (testo, preso dalla lista nel gestionale)",
     // "Data d'acquisto (gg/mm/aaaa)",
-    // "Proprietà",
+    // "Proprietà (testo, preso tra le opzioni nel gestionale)",
     // "Specificare (se proprietà è Altro)",
     // "Cespite aziendale",
     // "Note",
-    // "Tipo (testo, preso dalla lista nel gestionale)",
-    // "ID Azienda"
-    // "ID utenti (separati da virgola)"
+    // "Uso esclusivo (Si/No, Se manca viene impostato su No)",
+    // "ID Azienda",
+    // "ID utenti (separati da virgola)",
+    // "ID utente responsabile dell'assegnazione (deve essere admin o del supporto)"
 
     protected $authUser;
 
@@ -49,6 +50,12 @@ class HardwareImport implements ToCollection
                     continue;
                 }
 
+                if (empty($row[0])) {
+                    throw new \Exception('Il campo marca è vuoto in una delle righe.');
+                }
+                if (empty($row[1])) {
+                    throw new \Exception('Il campo modello è vuoto in una delle righe.');
+                }
                 if (empty($row[2])) {
                     throw new \Exception('Il campo seriale è vuoto in una delle righe.');
                 }

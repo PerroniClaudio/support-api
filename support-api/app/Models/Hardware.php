@@ -26,51 +26,83 @@ class Hardware extends Model {
     'is_exclusive_use',
   ];
 
-  protected static function boot()
-    {
-        parent::boot();
-        // è stato deciso di tenere i log delle assegnazioni, nel caso dell'azienda si deve intercettare il company_id nell'hardware.
-        
-        // Aggiunge un log quando vene creato un nuovo hardware, se company_id è diverso da null
-        static::created(function ($model) {
-            if ($model->company_id != null) {
-                HardwareAuditLog::create([
-                  'log_subject' => 'hardware',
-                  'log_type' => 'create',
-                  'modified_by' => auth()->id(),
-                  'hardware_id' => $model->id,
-                  'old_data' => null,
-                  'new_data' => json_encode($model->toArray()),
-                ]);
-            }
-        });
+  protected static function boot() {
+    parent::boot();
+    // è stato deciso di tenere i log delle assegnazioni, nel caso dell'azienda si deve intercettare il company_id nell'hardware.
+    
+    // Aggiunge un log quando viene creato un nuovo hardware
+    static::created(function ($model) {
+        // if ($model->company_id != null) {
+            HardwareAuditLog::create([
+              'log_subject' => 'hardware',
+              'log_type' => 'create',
+              'modified_by' => auth()->id(),
+              'hardware_id' => $model->id,
+              'old_data' => null,
+              'new_data' => json_encode($model->toArray()),
+            ]);
+        // }
+    });
 
-        // Aggiunge un log quando viene modificato il campo company_id
-        static::updating(function ($model) {
-          
-          $model->updated_at = now();
+    // Aggiunge un log quando viene modificato un hardware
+    static::updating(function ($model) {
+      
+      $model->updated_at = now();
 
-          if ($model->isDirty('company_id')) {
-              $oldCompanyId = $model->getOriginal('company_id');
-              $newCompanyId = $model->company_id;
+      $originalData = $model->getOriginal();
+      $updatedData = $model->toArray();
 
-              $type = $oldCompanyId == null
-                  ? 'create'
-                  : ($newCompanyId == null
-                      ? 'delete'
-                      : 'update');
-
-              HardwareAuditLog::create([
-                'log_subject' => 'hardware',
-                'log_type' => $type,
-                'modified_by' => auth()->id(),
-                'hardware_id' => $model->id,
-                'old_data' => in_array($type, ['delete', 'update']) ? json_encode($model->getOriginal()) : null,
-                'new_data' => in_array($type, ['create', 'update']) ? json_encode($model->toArray()) : null,
-              ]);
+      // Trasforma l'eventuale array di oggetti "users" in array di numeri (id). gli altri li toglie perchè non sono previsti.
+      foreach ($updatedData as $key => $value) {
+        if (is_array($value) && isset($value[0]) && is_object($value[0])) {
+          if($key == 'users') {
+            $updatedData[$key] = array_map(function ($item) {
+              return $item->id;
+            }, $value);
+          } else {
+            unset($updatedData[$key]);
           }
-        });
-    }
+        }
+      }
+
+      HardwareAuditLog::create([
+        'log_subject' => 'hardware',
+        'log_type' => 'update',
+        'modified_by' => auth()->id(),
+        'hardware_id' => $model->id,
+        'old_data' => json_encode($originalData),
+        'new_data' => json_encode($updatedData),
+      ]);
+    });
+
+    // Aggiunge un log quando viene eliminato un hardware (soft delete)
+    static::deleting(function ($model) {
+      $deleteType = $model->isForceDeleting() ? 'force_delete' : 'soft_delete';
+
+      $model->users = $model->users()->pluck('user_id')->toArray();
+      HardwareAuditLog::create([
+        'log_subject' => 'hardware',
+        'log_type' => $deleteType,
+        'modified_by' => auth()->id(),
+        'hardware_id' => $model->id,
+        'old_data' => json_encode($model->toArray()),
+        'new_data' => null,
+      ]);
+    });
+
+    // Aggiunge un log quando viene ripristinato un hardware
+    static::restored(function ($model) {
+      $model->users = $model->users()->pluck('user_id')->toArray();
+      HardwareAuditLog::create([
+        'log_subject' => 'hardware',
+        'log_type' => 'restore',
+        'modified_by' => auth()->id(),
+        'hardware_id' => $model->id,
+        'old_data' => null,
+        'new_data' => json_encode($model->toArray()),
+      ]);
+    });
+  }
 
   public function company() {
     return $this->belongsTo(Company::class);
@@ -95,4 +127,3 @@ class Hardware extends Model {
 
 }
 
-        

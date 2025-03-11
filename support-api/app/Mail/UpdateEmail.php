@@ -40,7 +40,7 @@ class UpdateEmail extends Mailable
     /**
      * Create a new message instance.
      */
-    public function __construct(public Ticket $ticket, public $company, public $ticketType, public $category, public $link, public $update, public $user)
+    public function __construct(public Ticket $ticket, public $company, public $ticketType, public $category, public $link, public $update, public $user, public $isAutomatic = false)
     {
         //
         $this->updateTypes = config('app.update_types');

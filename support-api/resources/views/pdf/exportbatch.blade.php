@@ -146,11 +146,11 @@
                                     <p class="text-small">Ticket creati nel periodo</p>
                                 </td>
                                 <td>
-                                    <p style="font-weight: 600">{{ $request_number }}</p>
+                                    <p style="font-weight: 600">{{ $incident_number }}</p>
                                     <p class="text-small">Numero di Incident</p>
                                 </td>
                                 <td>
-                                    <p style="font-weight: 600">{{ $incident_number }}</p>
+                                    <p style="font-weight: 600">{{ $request_number }}</p>
                                     <p class="text-small">Numero di Request</p>
                                 </td>
                             </tr>
@@ -183,6 +183,16 @@
                     </td>
 
                 </tr>
+
+                <tr>
+                    <td style="background-color: #fff;border-radius: 8px; padding: 4px">
+                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($wrong_type_url)) }}"
+                            style="width: 100%; height: auto;">
+                    </td>
+
+
+
+                </tr>
             </table>
         </div>
 
@@ -198,14 +208,20 @@
             <tbody>
                 @foreach ($tickets as $ticket)
                     <tr>
-                        <td style="width:25%"><a href="#ticket-{{ $ticket['id'] }}">Ticket
-                                #{{ $ticket['id'] }}</a></td>
-                        <td style="width:25%">{{ $ticket['opened_at'] }}</td>
-                        <td style="width:25%">
+                        <td style="width:20%">
+                            <a href="#ticket-{{ $ticket['id'] }}">Ticket
+                                #{{ $ticket['id'] }}
+                            </a>
+                        </td>
+                        <td style="width:20%" class="text-small">{{ $ticket['opened_at'] }}</td>
+                        <td style="width:20%">
                             {{ $ticket['incident_request'] }}
                         </td>
-                        <td style="width:25%">
+                        <td style="width:20%">
                             {{ $ticket['opened_by'] }}
+                        </td>
+                        <td style="width:20%">
+                            {{ $ticket['current_status'] }}
                         </td>
                     </tr>
                 @endforeach
@@ -340,7 +356,7 @@
 
                     @if ($ticket['closing_message']['message'] != '')
                         <div class="ticket-closing">
-                            <p><span class="ticket-section-title">Chiusura</span></p>
+                            <p><span class="ticket-section-title">Chiusura - {{ $ticket['closed_at'] }}</span></p>
                             <p>{{ $ticket['closing_message']['message'] }}</p>
                         </div>
                     @endif
@@ -475,7 +491,7 @@
 
                     @if ($ticket['closing_message']['message'] != '')
                         <div class="ticket-closing">
-                            <p><span class="ticket-section-title">Chiusura</span></p>
+                            <p><span class="ticket-section-title">Chiusura - {{ $ticket['closed_at'] }}</span></p>
                             <p>{{ $ticket['closing_message']['message'] }}</p>
                         </div>
                     @endif

@@ -481,7 +481,7 @@ class CompanyController extends Controller {
     public function getAvailableUsers(CustomUserGroup $customUserGroup) {
 
         $company = Company::find($customUserGroup->company->id);
-        $users = $company->users()->whereDoesntHave('customUserGroups', function ($query) use ($customUserGroup) {
+        $users = $company->users()->where('is_deleted', 0)->whereDoesntHave('customUserGroups', function ($query) use ($customUserGroup) {
             $query->where('custom_user_groups.id', $customUserGroup->id);
         })->get();
 
@@ -565,7 +565,7 @@ class CompanyController extends Controller {
 
         $company = Company::find($customUserGroup->company->id);
 
-        $ticketTypes = $company->ticketTypes()->whereDoesntHave('customGroups', function ($query) use ($customUserGroup) {
+        $ticketTypes = $company->ticketTypes()->where('is_deleted', 0)->whereDoesntHave('customGroups', function ($query) use ($customUserGroup) {
             $query->where('custom_user_groups.id', $customUserGroup->id);
         })->get();
 

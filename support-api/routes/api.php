@@ -60,6 +60,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post("/ticket/{ticket}/file", [App\Http\Controllers\TicketController::class, "storeFile"]);
     Route::post("/ticket/{ticket}/files", [App\Http\Controllers\TicketController::class, "storeFiles"]);
     Route::post("/ticket/{ticket}/priority-update", [App\Http\Controllers\TicketController::class, "updateTicketPriority"]);
+    Route::post("/ticket/{ticket}/billable-update", [App\Http\Controllers\TicketController::class, "updateTicketIsBillable"]);
     Route::get("/ticket/{ticket}/blame", [App\Http\Controllers\TicketController::class, "getTicketBlame"]);
     Route::post("/ticket/{ticket}/blame", [App\Http\Controllers\TicketController::class, "updateTicketBlame"]);
     Route::post("/ticket/{ticket}/blame-update", [App\Http\Controllers\TicketController::class, "updateTicketBlame"]);
@@ -70,6 +71,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post("/ticket/file/{id}/delete", [App\Http\Controllers\TicketController::class, "deleteFile"]);
     Route::post("/ticket/file/{id}/recover", [App\Http\Controllers\TicketController::class, "recoverFile"]);
     Route::get("/ticket-admin", [App\Http\Controllers\TicketController::class, "adminGroupsTickets"]);
+    Route::get("/ticket-admin-billing", [App\Http\Controllers\TicketController::class, "adminGroupsBillingTickets"]);
     Route::post("/ticket/{ticket}/assign-to-admin", [App\Http\Controllers\TicketController::class, "assignToAdminUser"]);
     Route::post("/ticket/{ticket}/assign-to-group", [App\Http\Controllers\TicketController::class, "assignToGroup"]);
     Route::get("/ticket/{ticket}/closing-messages", [App\Http\Controllers\TicketController::class, "closingMessages"]);
@@ -201,6 +203,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post("/ticket-type-groups/delete", [App\Http\Controllers\TicketTypeController::class, "deleteGroups"]);
     Route::post("/ticket-type-companies", [App\Http\Controllers\TicketTypeController::class, "updateCompanies"]);
     Route::post("/ticket-type/duplicate", [App\Http\Controllers\TicketTypeController::class, "duplicateTicketType"]);
+
+    // Custom groups
+    Route::get("/ticket-type/{ticketType}/custom-groups", [App\Http\Controllers\TicketTypeController::class, "getCustomGroups"]);
+    Route::post("/ticket-type/custom-groups", [App\Http\Controllers\TicketTypeController::class, "addCustomGroup"]);
+    Route::delete("/ticket-type/custom-groups", [App\Http\Controllers\TicketTypeController::class, "removeCustomGroup"]);
+    Route::get("/ticket-type/{ticketType}/available-custom-groups", [App\Http\Controllers\TicketTypeController::class, "getAvailableCustomGroups"]);
+    Route::post("/ticket-type/{ticketType}/custom-group-exclusive", [App\Http\Controllers\TicketTypeController::class, "setCustomGroupExclusive"]);
 });
 
 // File Upload Routes
@@ -234,6 +243,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/hardware-list-full", [App\Http\Controllers\HardwareController::class, "hardwareListWithTrashed"]);
     Route::post("/hardware", [App\Http\Controllers\HardwareController::class, "store"]);
     Route::get("/hardware/export-template", [App\Http\Controllers\HardwareController::class, "exportTemplate"]);
+    Route::get("/hardware-assign/export-template", [App\Http\Controllers\HardwareController::class, "exportAssignationTemplate"]);
+    Route::get("/hardware-delete/export-template", [App\Http\Controllers\HardwareController::class, "exportDeletionTemplate"]);
     Route::delete("/hardware/{hardware}", [App\Http\Controllers\HardwareController::class, "destroy"]);
     Route::post("/hardware-restore/{hardware}", [App\Http\Controllers\HardwareController::class, "restore"]);
     Route::delete("/hardware-trashed/{hardware}", [App\Http\Controllers\HardwareController::class, "destroyTrashed"]);
@@ -245,6 +256,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/fake-hardware-field", [App\Http\Controllers\HardwareController::class, "fakeHardwareField"]);
     Route::get("/hardware-tickets/{hardware}", [App\Http\Controllers\HardwareController::class, "hardwareTickets"]);
     Route::post("/hardwaremassive", [App\Http\Controllers\HardwareController::class, "importHardware"]);
+    Route::post("/hardware-assign-massive", [App\Http\Controllers\HardwareController::class, "importHardwareAssignations"]);
+    Route::post("/hardware-delete-massive", [App\Http\Controllers\HardwareController::class, "importHardwareDeletions"]);
     Route::get("hardware-user/{hardware}/{user}/download-assignment-pdf", [App\Http\Controllers\HardwareController::class, "downloadUserAssignmentPdf"]);
     Route::post("/delete-hardware-user", [App\Http\Controllers\HardwareController::class, "deleteHardwareUser"]); //rimuovi un'associazione utente-hardware
     Route::get("/hardware-logs/{hardware}/export", [App\Http\Controllers\HardwareController::class, "hardwareLogsExport"]);
