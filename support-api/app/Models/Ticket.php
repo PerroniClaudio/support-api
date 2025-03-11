@@ -36,7 +36,8 @@ class Ticket extends Model {
         'work_mode',
         'source',
         'is_rejected',
-        'parent_ticket_id'
+        'parent_ticket_id',
+        'is_billable'
     ];
 
     public function toSearchableArray() {

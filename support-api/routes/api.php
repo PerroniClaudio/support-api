@@ -71,6 +71,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post("/ticket/file/{id}/delete", [App\Http\Controllers\TicketController::class, "deleteFile"]);
     Route::post("/ticket/file/{id}/recover", [App\Http\Controllers\TicketController::class, "recoverFile"]);
     Route::get("/ticket-admin", [App\Http\Controllers\TicketController::class, "adminGroupsTickets"]);
+    Route::get("/ticket-admin-billing", [App\Http\Controllers\TicketController::class, "adminGroupsBillingTickets"]);
     Route::post("/ticket/{ticket}/assign-to-admin", [App\Http\Controllers\TicketController::class, "assignToAdminUser"]);
     Route::post("/ticket/{ticket}/assign-to-group", [App\Http\Controllers\TicketController::class, "assignToGroup"]);
     Route::get("/ticket/{ticket}/closing-messages", [App\Http\Controllers\TicketController::class, "closingMessages"]);

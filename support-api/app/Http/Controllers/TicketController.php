@@ -1079,6 +1079,36 @@ class TicketController extends Controller {
             'tickets' => $tickets,
         ], 200);
     }
+    
+    /**
+     * Show only the tickets belonging to the authenticated admin groups.
+     */
+    public function adminGroupsBillingTickets(Request $request) {
+        // Se si vuole mostrare tutti i ticket a prescindere dal gruppo serve un superadmin. altrimenti si fanno vedere tutti e amen.
+        $user = $request->user();
+
+        if ($user["is_admin"] != 1) {
+            return response([
+                'message' => 'The user must be an admin.',
+            ], 401);
+        }
+
+        $groups = $user->groups;
+
+        $withClosed = $request->query('with-closed') == 'true' ? true : false;
+
+        if ($withClosed) {
+            // $tickets = Ticket::whereIn('group_id', $groups->pluck('id'))->with('user')->get();
+            $tickets = Ticket::whereIn('group_id', $groups->pluck('id'))->where('is_billable', null)->get();
+        } else {
+            // $tickets = Ticket::where("status", "!=", 5)->whereIn('group_id', $groups->pluck('id'))->with('user')->get();
+            $tickets = Ticket::where("status", "!=", 5)->whereIn('group_id', $groups->pluck('id'))->where('is_billable', null)->get();
+        }
+
+        return response([
+            'tickets' => $tickets,
+        ], 200);
+    }
 
     /**
      * Show closing messages of the ticket
