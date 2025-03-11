@@ -36,6 +36,7 @@ class Ticket extends Model {
         'work_mode',
         'source',
         'is_rejected',
+        'parent_ticket_id'
     ];
 
     public function toSearchableArray() {
@@ -67,7 +68,7 @@ class Ticket extends Model {
     public function referer() {
         // Si usa newQueryWithoutRelationships per evitare di caricare i messaggi, che non servono
         $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
-        if(!!$ticketWithoutMessages){
+        if (!!$ticketWithoutMessages) {
             $messages = $ticketWithoutMessages->messages;
             if (count($messages) > 0) {
                 $message_obj = json_decode($messages[0]->message);
@@ -104,57 +105,6 @@ class Ticket extends Model {
     public function messages() {
         return $this->hasMany(TicketMessage::class);
     }
-
-    // // Messaggi non letti inviati dagli utenti
-    // public function unreadUsersMessages() {
-    //     $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
-    //     $usersIds = User::all()->where('is_admin', 0)->pluck('id');
-    //     $messages = $ticketWithoutMessages->messages->whereIn('user_id', $usersIds);
-    //     $unreadMessages = $messages->where('is_read', 0);
-    //     return count($unreadMessages);
-    // }
-    // // Questa funzione permette di usare $ticket->append('unread_users_messages') per aggiungere la proprietà al ticlet o $ticket->unread_users_messages per accedere alla proprietà (laravel esegue in automatico la funzione unreadUsersMessages per calcolarne il valore)
-    // public function getUnreadUsersMessagesAttribute()
-    // {
-    //     return $this->unreadUsersMessages();
-    // }
-    // // Imposta i messaggi degli utenti come letti
-    // public function setUsersMessagesAsRead() {
-    //     $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
-    //     $usersIds = User::all()->where('is_admin', 0)->pluck('id');
-    //     $messages = $ticketWithoutMessages->messages->whereIn('user_id', $usersIds);
-    //     $unreadMessages = $messages->where('is_read', 0);
-    //     foreach($unreadMessages as $message){
-    //         $message->is_read = 1;
-    //         $message->save();
-    //     }
-    // }
-
-    // // Messaggi non letti inviati dagli admin
-    // public function unreadAdminsMessages() {
-    //     $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
-    //     $adminsIds = User::all()->where('is_admin', 1)->pluck('id');
-    //     $messages = $ticketWithoutMessages->messages->whereIn('user_id', $adminsIds);
-    //     $unreadMessages = $messages->where('is_read', 0);
-    //     return count($unreadMessages);
-    // }
-    // // Questa funzione permette di usare $ticket->append('unread_admins_messages') per aggiungere la proprietà al ticlet o $ticket->unread_admins_messages per accedere alla proprietà (laravel esegue in automatico la funzione unreadAdminsMessages per calcolarne il valore)
-    // public function getUnreadAdminsMessagesAttribute()
-    // {
-    //     return $this->unreadAdminsMessages();
-    // }
-    // // Imposta i messaggi degli admin come letti
-    // public function setAdminsMessagesAsRead() {
-    //     $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
-    //     $adminsIds = User::all()->where('is_admin', 1)->pluck('id');
-    //     $messages = $ticketWithoutMessages->messages->whereIn('user_id', $adminsIds);
-    //     $unreadMessages = $messages->where('is_read', 0);
-    //     foreach($unreadMessages as $message){
-    //         $message->is_read = 1;
-    //         $message->save();
-    //     }
-    // }
-
 
     /** get  status updates  */
 
@@ -301,36 +251,7 @@ class Ticket extends Model {
         return count($waitingRecords);
     }
 
-    // public function calculateRemainingTime() {
-
-    //     // $statusUpdatesGo = $this->statusUpdates()->where('type', 'status')->where(function ($query) {
-    //     //     $query->where('content', 'not like', '%in attesa%')
-    //     //         ->orWhere('content', 'not like', '%risolto%')
-    //     //         ->orWhere('content', 'not like', '%chiuso%');
-    //     // })->get();
-
-    //     // $statusUpdatesStops = $this->statusUpdates()->where('type', 'status')->where(function ($query) {
-    //     //     $query->where('content', 'like', '%in attesa%')
-    //     //         ->orWhere('content', 'like', '%risolto%')
-    //     //         ->orWhere('content', 'like', '%chiuso%');
-    //     // })->get();
-
-    //     // Prende tutti gli staus update di tipo status, in ordine cronologico 
-    //     // Crea l'array vuoto $time_frames (conterrà elementi di questo tipo: {type: go/pause, start: 0, end: 0})
-    //     // Crea la variabile $now_going = true
-
-
-    //     $totalTime = $this->sla; // Total available time to solve the ticket
-    //     $timeToSubtract = 0; // Time to subtract from the total available time
-
-    //     foreach ($statusUpdates as $update) {
-    //         // Calculate the time between status updates
-    //         // You may need to adjust this part based on your specific requirements and the format of your timestamps
-    //         $timeDiff = $update->created_at->diffInMinutes($this->created_at);
-
-    //         $totalTime -= $timeDiff;
-    //     }
-
-    //     return $totalTime;
-    // }
+    public function parent() {
+        return $this->belongsTo(Ticket::class, 'parent_ticket_id');
+    }
 }
