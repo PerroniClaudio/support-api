@@ -214,6 +214,7 @@ return [
         "group_assign" => "Assegnamento di gruppo",
         "sla" => "Cambio SLA",
         "blame" => "Cambio responsabilità",
+        "billing" => "Fatturazione",
     ],
 
     /* 

@@ -136,6 +136,7 @@ class TicketController extends Controller {
                 'unread_mess_for_adm' => $user["is_admin"] == 1 ? 0 : 1,
                 'unread_mess_for_usr' => $user["is_admin"] == 1 ? 1 : 0,
                 'source' => $user["is_admin"] == 1 ? ($request->source ?? null) : 'platform',
+                'is_user_error' => 1, // is_user_error viene usato per la responsabilità del dato e di default è assegnata al cliente.
             ]);
 
             if ($request->file('file') != null) {
@@ -527,6 +528,39 @@ class TicketController extends Controller {
         ]);
 
         dispatch(new SendUpdateEmail($update));
+
+        return response([
+            'ticket' => $ticket,
+        ], 200);
+    }
+    
+    public function updateTicketIsBillable(Ticket $ticket, Request $request) {
+        $fields = $request->validate([
+            'is_billable' => 'required|boolean',
+        ]);
+
+        if ($request->user()["is_admin"] != 1) {
+            return response([
+                'message' => 'The user must be an admin.',
+            ], 401);
+        }
+
+        // Verifica se il campo 'is_billable' è stato modificato
+        $ticket->is_billable = $fields['is_billable'];
+        $isValueChanged = $ticket->isDirty('is_billable');
+
+        if ($isValueChanged) {
+            $ticket->save();
+
+            $update = TicketStatusUpdate::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $request->user()->id,
+                'content' => "Ticket impostato come: " . ($fields['is_billable'] ? 'Fatturabile' : 'Non fatturabile'),
+                'type' => 'billing',
+            ]);
+    
+            dispatch(new SendUpdateEmail($update));
+        }
 
         return response([
             'ticket' => $ticket,
