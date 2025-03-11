@@ -138,6 +138,40 @@ class TicketController extends Controller {
                 'source' => $user["is_admin"] == 1 ? ($request->source ?? null) : 'platform',
             ]);
 
+            if ($request->parent_ticket_id) {
+                $parentTicket = Ticket::find($request->parent_ticket_id);
+                if ($parentTicket) {
+                    $ticket->parent_ticket_id = $parentTicket->id;
+                    $ticket->save();
+
+                    // Chiude il ticket padre, segnala che il ticket procede in quello nuovo 
+
+                    $parentTicket->status = 5;
+                    $parentTicket->is_rejected = 1;
+                    $parentTicket->is_form_correct = 0;
+
+                    $parentTicket->save();
+
+                    TicketStatusUpdate::create([
+                        'ticket_id' => $parentTicket->id,
+                        'user_id' => $user->id,
+                        'content' => 'Ticket chiuso automaticamente in quanto è stato aperto un nuovo ticket collegato: ' . $ticket->id,
+                        'type' => 'closing',
+                    ]);
+
+                    TicketStatusUpdate::create([
+                        'ticket_id' => $ticket->id,
+                        'user_id' => $user->id,
+                        'content' => 'Questo ticket è stato aperto come continuazione del ticket: ' . $parentTicket->id,
+                        'type' => 'note',
+                    ]);
+
+                    // Invalida la cache per chi ha creato il ticket e per i referenti.
+
+                    $parentTicket->invalidateCache();
+                }
+            }
+
             if ($request->file('file') != null) {
                 $file = $request->file('file');
                 $file_name = time() . '_' . $file->getClientOriginalName();
@@ -146,9 +180,6 @@ class TicketController extends Controller {
                     'file' => $file_name,
                 ]);
             }
-
-            // cache()->forget('user_' . $user->id . '_tickets');
-            // cache()->forget('user_' . $user->id . '_tickets_with_closed');
 
             TicketMessage::create([
                 'ticket_id' => $ticket->id,
@@ -197,21 +228,6 @@ class TicketController extends Controller {
             cache()->forget('user_' . $user->id . '_tickets_with_closed');
 
             $brand_url = $ticket->brandUrl();
-
-            // Debug: qualche elemento col name non viene trovato
-            $firstMessage = $ticket->messages[0]->message;
-            $data = json_decode($firstMessage, true);
-            $ticketUser = $ticket->user;
-            $company = $ticket->company;
-            $ticketType =  $ticket->ticketType;
-            $debugString = 'DEBUG: Ticket ID: ' . $ticket->id
-                . ' - Ticket User: ' . ($ticketUser->name ?? 'No name')
-                . (isset($data['office']) ? ' - Office set: ' . (Office::find($data['office'])->name ?? $data['office'])  : ' - Office not set')
-                . (isset($data['referer_it']) ? ' - Referer IT set: ' . (User::find($data['referer_it'])->name ?? $data['referer_it']) : ' - Referer IT not set, ')
-                . (isset($data['referer']) ? ($data['referer'] != '0' ? ' - Referer set: ' . (User::find($data['referer'])->name ?? $data['referer']) : ' - Referer set: ' . $data['referer']) : ' - Referer not set, ')
-                . (' - Ticket Type name: ' . ($ticketType->name ?? 'No name'))
-                . (' - Ticket company name: ' . ($company->name ?? 'No name'));
-            Log::info($debugString);
 
             dispatch(new SendOpenTicketEmail($ticket, $brand_url));
 
