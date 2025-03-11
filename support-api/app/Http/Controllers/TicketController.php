@@ -1096,13 +1096,22 @@ class TicketController extends Controller {
         $groups = $user->groups;
 
         $withClosed = $request->query('with-closed') == 'true' ? true : false;
+        $withSet = $request->query('with-set') == 'true' ? true : false;
 
         if ($withClosed) {
-            // $tickets = Ticket::whereIn('group_id', $groups->pluck('id'))->with('user')->get();
-            $tickets = Ticket::whereIn('group_id', $groups->pluck('id'))->where('is_billable', null)->get();
+            // $tickets = Ticket::whereIn('group_id', $groups->pluck('id'))->where('is_billable', null)->get();
+            if($withSet){
+                $tickets = Ticket::whereIn('group_id', $groups->pluck('id'))->get();
+            } else {
+                $tickets = Ticket::whereIn('group_id', $groups->pluck('id'))->where('is_billable', null)->get();
+            }
         } else {
-            // $tickets = Ticket::where("status", "!=", 5)->whereIn('group_id', $groups->pluck('id'))->with('user')->get();
-            $tickets = Ticket::where("status", "!=", 5)->whereIn('group_id', $groups->pluck('id'))->where('is_billable', null)->get();
+            // $tickets = Ticket::where("status", "!=", 5)->whereIn('group_id', $groups->pluck('id'))->where('is_billable', null)->get();
+            if($withSet){
+                $tickets = Ticket::where("status", "!=", 5)->whereIn('group_id', $groups->pluck('id'))->get();
+            } else {
+                $tickets = Ticket::where("status", "!=", 5)->whereIn('group_id', $groups->pluck('id'))->where('is_billable', null)->get();
+            }
         }
 
         return response([
