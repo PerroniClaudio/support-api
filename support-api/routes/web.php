@@ -1,26 +1,8 @@
 <?php
 
-use App\Jobs\SendCloseTicketEmail;
-use App\Jobs\SendNewMessageEmail;
-use App\Jobs\SendWelcomeEmail;
 use App\Mail\OtpEmail;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Mail;
-use App\Mail\StatusUpdateMail;
-use App\Models\User;
-use App\Models\Company;
-use App\Models\Ticket;
-use App\Models\TicketMessage;
-use App\Models\Supplier;
-use App\Models\TicketReportExport;
-use App\Models\TicketStats;
-use App\Models\TicketType;
-use App\Models\TicketTypeCategory;
-
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\Log;
-use Laravel\Fortify\Http\Controllers\TwoFactorAuthenticatedSessionController;
 
 
 /*
@@ -52,6 +34,16 @@ Route::get('/testmail', function () {
 });
 
 Route::get('/test', function () {
+    $hardwareId = request()->query('hw');
+    $hardware = App\Models\Hardware::find($hardwareId);
+    $brand = $hardware->company->brands()->first();
+    $google_url = $brand->withGUrl()->logo_url;
+
+    echo 'hardwareId: ' . $hardwareId . '<br>';
+    echo 'marca: ' . $brand->make . '<br>';
+    echo 'modello: ' . $brand->model . '<br>';
+    echo $google_url . '<br>';
+    echo '<img src="' . $google_url . '" alt="Brand Logo"><br>';
     return "test";
 });
 
