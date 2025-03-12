@@ -25,10 +25,8 @@ class Kernel extends ConsoleKernel {
 
         // AUTO_ASSIGN_TICKET=true
         $isAutoAssignEnabled = env('AUTO_ASSIGN_TICKET', false);
-        \Illuminate\Support\Facades\Log::info('Kernel isAutoAssignEnabled: ' . $isAutoAssignEnabled);
         
         if($isAutoAssignEnabled) {
-            \Illuminate\Support\Facades\Log::info('Kernel is scheduling AutoAssignTicket');
             $schedule->job(new \App\Jobs\AutoAssignTicket)->everyThirtyMinutes();
         }
     }
