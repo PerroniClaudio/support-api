@@ -16,10 +16,7 @@
           <h1 style="font-size: 22px;">Modulo di assegnazione hardware all'utente</h1>
         </td>
         <td style="text-align: right;">
-          @php
-           $logoUrl = $hardware->company->temporaryLogoUrl();
-          @endphp
-          @if ($logoUrl)
+          @if (isset($logo_url))
             {{-- Tra il logo dell'azienda cliente e quello del gestionale penso abbia più senso quello del gestionale, e si evitano problematiche di utilizzo di loghi altrui. --}}
             {{-- <img src="data:image;base64, {{ base64_encode(file_get_contents($logoUrl)) }}" alt="Company Logo" style="max-height: 100px; max-width: 200px;"> --}}
             <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logo_url)) }}"
