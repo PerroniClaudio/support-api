@@ -388,7 +388,7 @@ class UserController extends Controller {
         }
 
         return response([
-            'name' => $user["name"] . " " . $user["surname"],
+            'name' => ($user["name"] ?? '') . " " . ($user["surname"] ?? ''),
         ], 200);
     }
 
