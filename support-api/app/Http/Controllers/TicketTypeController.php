@@ -448,7 +448,9 @@ class TicketTypeController extends Controller {
     function getAvailableCustomGroups(TicketType $ticketType) {
         $customGroups = $ticketType->customGroups()->get();
 
-        $allCustomGroups = Company::where('id', $ticketType->company_id)->first()->customUserGroups()->get();
+        $company = Company::where('id', $ticketType->company_id)->first();
+
+        $allCustomGroups = $company ? $company->customUserGroups()->get() : collect();
 
         $availableCustomGroups = $allCustomGroups->diff($customGroups);
 
