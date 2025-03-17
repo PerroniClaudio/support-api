@@ -97,7 +97,7 @@ class WikiObjectController extends Controller {
             $company_id = isset($request->company_id) ? $request->company_id : null;
             $wikiObject = WikiObject::create([
                 'name' => $validated['name'],
-                'uploaded_name' =>  $bucket_path . $uploaded_name,
+                'uploaded_name' => $uploaded_name,
                 'type' => $validated['type'],
                 'mime_type' => $mime_type,
                 'path' => $validated['path'],
@@ -118,7 +118,7 @@ class WikiObjectController extends Controller {
          * @disregard P1009 Undefined type
          */
         $url = Storage::disk('gcs')->temporaryUrl(
-            $wikiObject->uploaded_name,
+            'wiki_objects' . $wikiObject->path . $wikiObject->uploaded_name,
             now()->addMinutes(65)
         );
 
