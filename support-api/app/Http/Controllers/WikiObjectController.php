@@ -91,13 +91,13 @@ class WikiObjectController extends Controller {
             $uploaded_name = time() . '_' . $file->getClientOriginalName();
             $mime_type = $file->getClientMimeType();
             $file_size = $file->getSize();
-            $bucket_path = 'wiki_objects/' . $validated['path'] . '/';
+            $bucket_path = 'wiki_objects' . $validated['path'] . '';
             $file->storeAs($bucket_path, $uploaded_name, 'gcs');
 
             $company_id = isset($request->company_id) ? $request->company_id : null;
             $wikiObject = WikiObject::create([
-                'name' => $bucket_path . $validated['name'],
-                'uploaded_name' => $uploaded_name,
+                'name' => $validated['name'],
+                'uploaded_name' =>  $bucket_path . $uploaded_name,
                 'type' => $validated['type'],
                 'mime_type' => $mime_type,
                 'path' => $validated['path'],
