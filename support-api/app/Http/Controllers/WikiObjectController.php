@@ -66,7 +66,25 @@ class WikiObjectController extends Controller {
             'is_public' => 'required|boolean',
         ]);
 
-        if ($request->file('file') != null) {
+        if ($request->type == 'folder') {
+
+
+            $company_id = isset($request->company_id) ? $request->company_id : null;
+            $wikiObject = WikiObject::create([
+                'name' => $validated['name'],
+                'uploaded_name' => $validated['name'],
+                'mime_type' => 'folder',
+                'type' => $validated['type'],
+                'path' => $validated['path'],
+                'is_public' => $validated['is_public'],
+                'company_id' => $company_id,
+                'uploaded_by' => $user->id,
+            ]);
+
+            return response([
+                'wikiObject' => $wikiObject,
+            ], 201);
+        } else  if ($request->file('file') != null) {
 
             $file = $request->file('file');
 
