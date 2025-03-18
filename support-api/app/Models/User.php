@@ -132,14 +132,15 @@ class User extends Authenticatable {
     }
 
     public function createOtp() {
-        $otp = Otp::create([
-            'email' => $this->email,
-            'otp' => rand(1000, 9999),
-            'expires_at' => now()->addMinutes(120),
-        ]);
+        // $otp = Otp::create([
+        //     'email' => $this->email,
+        //     'otp' => rand(1000, 9999),
+        //     'expires_at' => now()->addMinutes(120),
+        // ]);
 
-        Mail::to($this->email)->send(new OtpEmail($otp->otp));
+        // Mail::to($this->email)->send(new OtpEmail($otp->otp));
 
-        return $otp;
+        // return $otp;
+        return true;
     }
 }
