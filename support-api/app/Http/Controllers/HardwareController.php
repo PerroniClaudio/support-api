@@ -707,6 +707,21 @@ class HardwareController extends Controller {
                     $query->select('id', 'name', 'surname', 'email', 'is_admin', 'is_company_admin', 'company_id', 'is_deleted');
                 }
             ])->get();
+
+            foreach ($tickets as $ticket) {
+                $ticket->referer = $ticket->referer();
+                if ($ticket->referer) {
+                    $ticket->referer->makeHidden(['email_verified_at', 'microsoft_token', 'created_at', 'updated_at', 'phone', 'city', 'zip_code', 'address']);
+                }
+                // Nascondere i dati utente se è stato aperto dal supporto
+                if ($ticket->user->is_admin) {
+                    $ticket->user->id = 1;
+                    $ticket->user->name = "Supporto";
+                    $ticket->user->surname = "";
+                    $ticket->user->email = "Supporto";
+                }
+            }
+            
             return response([
                 'tickets' => $tickets,
             ], 200);
@@ -726,6 +741,20 @@ class HardwareController extends Controller {
             $tickets = $tickets->filter(function ($ticket) use ($authUser) {
                 return $ticket->user_id == $authUser->id || (!!$ticket->referer() && $ticket->referer()->id == $authUser->id);
             });
+
+            foreach ($tickets as $ticket) {
+                $ticket->referer = $ticket->referer();
+                if ($ticket->referer) {
+                    $ticket->referer->makeHidden(['email_verified_at', 'microsoft_token', 'created_at', 'updated_at', 'phone', 'city', 'zip_code', 'address']);
+                }
+                // Nascondere i dati utente se è stato aperto dal supporto
+                if ($ticket->user->is_admin) {
+                    $ticket->user->id = 1;
+                    $ticket->user->name = "Supporto";
+                    $ticket->user->surname = "";
+                    $ticket->user->email = "Supporto";
+                }
+            }
 
             $tickets = $tickets->values()->toArray();
 
