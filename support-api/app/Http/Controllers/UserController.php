@@ -356,6 +356,7 @@ class UserController extends Controller {
             $users = null;
         }
 
+        
         return response([
             'admins' => $users,
         ], 200);
