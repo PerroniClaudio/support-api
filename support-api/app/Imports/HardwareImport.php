@@ -37,8 +37,8 @@ class HardwareImport implements ToCollection
     // 4 "Data d'acquisto (gg/mm/aaaa)",
     // 5 "Proprietà (testo, preso tra le opzioni nel gestionale)",
     // 6 "Specificare (se proprietà è Altro)",
-    // 7 "Cespite aziendale (compilare almeno uno tra cespite aziendale e etichetta)",
-    // 8 "Etichetta (compilare almeno uno tra cespite aziendale e etichetta)",
+    // 7 "Cespite aziendale (compilare almeno uno tra cespite aziendale e identificativo)",
+    // 8 "Identificativo (compilare almeno uno tra cespite aziendale e identificativo)",
     // 9 "Note",
     // 10 "Uso esclusivo (Si/No, Se manca viene impostato su No)",
     // 11 "ID Azienda",
@@ -131,7 +131,7 @@ class HardwareImport implements ToCollection
                     }
                 }
 
-                // Il controllo che ci sia almeno uno tra cespite aziendale e etichetta è fatto nel boot del modello, nel metodo creating.
+                // Il controllo che ci sia almeno uno tra cespite aziendale e identificativo è fatto nel boot del modello, nel metodo creating.
                 $hardware = Hardware::create([
                     'make' => $row[0],
                     'model' => $row[1],
