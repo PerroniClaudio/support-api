@@ -181,6 +181,7 @@ class HardwareController extends Controller {
             'serial_number' => 'required|string',
             'is_exclusive_use' => 'required|boolean',
             'company_asset_number' => 'nullable|string',
+            'support_label' => 'nullable|string',
             'purchase_date' => 'nullable|date',
             'company_id' => 'nullable|int',
             'hardware_type_id' => 'nullable|int',
@@ -188,6 +189,14 @@ class HardwareController extends Controller {
             'ownership_type_note' => 'nullable|string',
             'notes' => 'nullable|string',
             'users' => 'nullable|array',
+        ]);
+        
+        // Controlla cha almeno uno dei due sia impostato
+        $request->validate([
+            'company_asset_number' => 'nullable|string',
+            'support_label' => 'nullable|string',
+        ], [
+            'at_least_one.required' => 'Deve essere specificato almeno uno tra company_asset_number e support_label.',
         ]);
 
         if (isset($data['company_id']) && !Company::find($data['company_id'])) {
@@ -321,6 +330,7 @@ class HardwareController extends Controller {
             'serial_number' => 'required|string',
             'is_exclusive_use' => 'required|boolean',
             'company_asset_number' => 'nullable|string',
+            'support_label' => 'nullable|string',
             'purchase_date' => 'nullable|date',
             'company_id' => 'nullable|int',
             'hardware_type_id' => 'nullable|int',

@@ -15,19 +15,35 @@ use Illuminate\Support\Collection;
 class HardwareImport implements ToCollection
 {
     // TEMPLATE IMPORT:
-    // "Marca *",
-    // "Modello *",
-    // "Seriale *",
-    // "Tipo (testo, preso dalla lista nel gestionale)",
-    // "Data d'acquisto (gg/mm/aaaa)",
-    // "Proprietà (testo, preso tra le opzioni nel gestionale)",
-    // "Specificare (se proprietà è Altro)",
-    // "Cespite aziendale",
-    // "Note",
-    // "Uso esclusivo (Si/No, Se manca viene impostato su No)",
-    // "ID Azienda",
-    // "ID utenti (separati da virgola)",
-    // "ID utente responsabile dell'assegnazione (deve essere admin o del supporto)"
+    // 0 "Marca *",
+    // 1 "Modello *",
+    // 2 "Seriale *",
+    // 3 "Tipo (testo, preso dalla lista nel gestionale)",
+    // 4 "Data d'acquisto (gg/mm/aaaa)",
+    // 5 "Proprietà (testo, preso tra le opzioni nel gestionale)",
+    // 6 "Specificare (se proprietà è Altro)",
+    // 7 "Cespite aziendale",
+    // 8 "Note",
+    // 9 "Uso esclusivo (Si/No, Se manca viene impostato su No)",
+    // 10 "ID Azienda",
+    // 11 "ID utenti (separati da virgola)",
+    // 12 "ID utente responsabile dell'assegnazione (deve essere admin o del supporto)"
+
+    // Nuovo template:
+    // 0 "Marca *",
+    // 1 "Modello *",
+    // 2 "Seriale *",
+    // 3 "Tipo (testo, preso dalla lista nel gestionale)",
+    // 4 "Data d'acquisto (gg/mm/aaaa)",
+    // 5 "Proprietà (testo, preso tra le opzioni nel gestionale)",
+    // 6 "Specificare (se proprietà è Altro)",
+    // 7 "Cespite aziendale (compilare almeno uno tra cespite aziendale e etichetta)",
+    // 8 "Etichetta (compilare almeno uno tra cespite aziendale e etichetta)",
+    // 9 "Note",
+    // 10 "Uso esclusivo (Si/No, Se manca viene impostato su No)",
+    // 11 "ID Azienda",
+    // 12 "ID utenti (separati da virgola)",
+    // 13 "ID utente responsabile dell'assegnazione (deve essere admin o del supporto)"
 
     protected $authUser;
 
@@ -67,14 +83,15 @@ class HardwareImport implements ToCollection
                     // continue;
                 }
 
-                
-                $hardwareType = HardwareType::whereRaw('LOWER(name) = ?', [strtolower($row[3])])->first();
-                if(!$hardwareType) {
-                    throw new \Exception('Tipo hardware non trovato per l\'hardware con seriale ' . $row[2]);
+                if(!empty($row[3])){
+                    $hardwareType = HardwareType::whereRaw('LOWER(name) = ?', [strtolower($row[3])])->first();
+                    if(!$hardwareType) {
+                        throw new \Exception('Tipo hardware non trovato per l\'hardware con seriale ' . $row[2]);
+                    }
                 }
                 
-                if($row[10] != null){
-                    $isCompanyPresent = Company::find($row[10]);
+                if(!empty($row[11])){
+                    $isCompanyPresent = Company::find($row[11]);
                     if(!$isCompanyPresent) {
                         throw new \Exception('ID Azienda errato per l\'hardware con seriale ' . $row[2]);
                     }
@@ -88,13 +105,15 @@ class HardwareImport implements ToCollection
                 $hardwareOwnershipTypes = config('app.hardware_ownership_types');
                 $lowerOwnershipTypes = array_map('strtolower', $hardwareOwnershipTypes);
                 $ownershipType = array_search(strtolower($row[5]), $lowerOwnershipTypes);
-                if(!(in_array(strtolower($row[5]), $lowerOwnershipTypes))
-                ) {
-                    throw new \Exception('1 - Tipo di proprietà non valido per l\'hardware con seriale ' . $row[2] . 'valore: ' . $row[5] . ' - Possibili valori: ' . implode(', ', $lowerOwnershipTypes));
-                }
-                if(!$ownershipType
-                ) {
-                    throw new \Exception('2 - Tipo di proprietà non valido per l\'hardware con seriale ' . $row[2]);
+                if(!empty($row[5])){
+                    if(!(in_array(strtolower($row[5]), $lowerOwnershipTypes))
+                    ) {
+                        throw new \Exception('1 - Tipo di proprietà non valido per l\'hardware con seriale ' . $row[2] . 'valore: ' . $row[5] . ' - Possibili valori: ' . implode(', ', $lowerOwnershipTypes));
+                    }
+                    if(!$ownershipType
+                    ) {
+                        throw new \Exception('2 - Tipo di proprietà non valido per l\'hardware con seriale ' . $row[2]);
+                    }
                 }
 
                 // Gestione della data di acquisto
@@ -112,6 +131,7 @@ class HardwareImport implements ToCollection
                     }
                 }
 
+                // Il controllo che ci sia almeno uno tra cespite aziendale e etichetta è fatto nel boot del modello, nel metodo creating.
                 $hardware = Hardware::create([
                     'make' => $row[0],
                     'model' => $row[1],
@@ -121,9 +141,10 @@ class HardwareImport implements ToCollection
                     'ownership_type' => $ownershipType ?? null,
                     'ownership_type_note' => $row[6] ?? null,
                     'company_asset_number' => $row[7] ?? null,
-                    'notes' => $row[8] ?? null,
-                    'is_exclusive_use' => strtolower($row[9]) == 'si' ? 1 : 0,
-                    'company_id' => $row[10] ?? null,
+                    'support_label' => $row[8] ?? null,
+                    'notes' => $row[9] ?? null,
+                    'is_exclusive_use' => strtolower($row[10]) == 'si' ? 1 : 0,
+                    'company_id' => $row[11] ?? null,
                 ]);
 
                 if(isset($hardware->company_id)){
@@ -136,19 +157,19 @@ class HardwareImport implements ToCollection
                     ]);
                 }
                 
-                if($row[11] != null) {
-                    if($row[10] == null) {
+                if($row[12] != null) {
+                    if($row[11] == null) {
                         throw new \Exception('ID Azienda mancante per l\'hardware con seriale ' . $row[2]);
                     }
-                    $isCorrect = User::where('company_id', $row[10])->whereIn('id', explode(',', $row[11]))->count() == count(explode(',', $row[11]));
+                    $isCorrect = User::where('company_id', $row[11])->whereIn('id', explode(',', $row[12]))->count() == count(explode(',', $row[12]));
                     if(!$isCorrect) {
                         throw new \Exception('ID utenti errati per l\'hardware con seriale ' . $row[2]);
                     }
-                    $users = explode(',', $row[11]);
+                    $users = explode(',', $row[12]);
                     if($hardware->is_exclusive_use && count($users) > 1) {
                         throw new \Exception('Uso esclusivo impostato ma ci sono più utenti per l\'hardware con seriale ' . $row[2]);
                     }
-                    $responsibleUser = User::find($row[12]);
+                    $responsibleUser = User::find($row[13]);
                     if(!$responsibleUser){
                         $responsibleUser = User::find($this->authUser->id);
                     }
