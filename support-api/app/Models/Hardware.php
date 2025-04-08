@@ -17,6 +17,7 @@ class Hardware extends Model {
     'model',
     'serial_number',
     'company_asset_number',
+    'support_label',
     'purchase_date',
     'company_id',
     'hardware_type_id',
@@ -30,6 +31,14 @@ class Hardware extends Model {
     parent::boot();
     // è stato deciso di tenere i log delle assegnazioni, nel caso dell'azienda si deve intercettare il company_id nell'hardware.
     
+    static::creating(function ($model) {
+      // Esegue controlli prima di salvare il modello.
+      // Deve esserci obbligatoriamente o ill cespite aziendale o l'etichetta.
+      if (!$model->company_asset_number && !$model->support_label) {
+        throw new \Exception('Deve essere specificato il cespite aziendale o l\'etichetta.');
+      }
+    });
+
     // Aggiunge un log quando viene creato un nuovo hardware
     static::created(function ($model) {
         // if ($model->company_id != null) {
@@ -51,6 +60,10 @@ class Hardware extends Model {
 
       $originalData = $model->getOriginal();
       $updatedData = $model->toArray();
+
+      if (!$updatedData['company_asset_number'] && !$updatedData['support_label']) {
+        throw new \Exception('Deve essere specificato il cespite aziendale o l\'etichetta.');
+      }
 
       // Trasforma l'eventuale array di oggetti "users" in array di numeri (id). gli altri li toglie perchè non sono previsti.
       foreach ($updatedData as $key => $value) {
