@@ -33,9 +33,9 @@ class Hardware extends Model {
     
     static::creating(function ($model) {
       // Esegue controlli prima di salvare il modello.
-      // Deve esserci obbligatoriamente o ill cespite aziendale o l'etichetta.
+      // Deve esserci obbligatoriamente o il cespite aziendale o l'identificativo.
       if (!$model->company_asset_number && !$model->support_label) {
-        throw new \Exception('Deve essere specificato il cespite aziendale o l\'etichetta.');
+        throw new \Exception('Deve essere specificato il cespite aziendale o l\'identificativo.');
       }
     });
 
@@ -62,7 +62,7 @@ class Hardware extends Model {
       $updatedData = $model->toArray();
 
       if (!$updatedData['company_asset_number'] && !$updatedData['support_label']) {
-        throw new \Exception('Deve essere specificato il cespite aziendale o l\'etichetta.');
+        throw new \Exception('Deve essere specificato il cespite aziendale o l\'identificativo.');
       }
 
       // Trasforma l'eventuale array di oggetti "users" in array di numeri (id). gli altri li toglie perchè non sono previsti.

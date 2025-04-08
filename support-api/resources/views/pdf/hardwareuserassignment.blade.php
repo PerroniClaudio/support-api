@@ -49,8 +49,9 @@
           @endif
           @if (isset($hardware->company_asset_number))
             <p style="font-size: 14px;"><b>Cespite aziendale:</b> {{ $hardware->company_asset_number }}</p>
-          {{-- @elseif (isset($hardware->support_label))
-            <p style="font-size: 14px;"><b>Etichetta:</b> {{ $hardware->asset_number }}</p> Non so se l'etichetta la vuole mostrare nel pdf o no --}}
+          @endif
+          @if (isset($hardware->support_label))
+            <p style="font-size: 14px;"><b>Identificativo:</b> {{ $hardware->support_label }}</p>
           @endif
           @if (isset($hardware->ownership_type))
             <p style="font-size: 14px;"><b>Proprietà:</b> {{ config('app.hardware_ownership_types')[$hardware->ownership_type] ?? $hardware->ownership_type }}</p>

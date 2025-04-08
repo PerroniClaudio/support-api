@@ -40,6 +40,8 @@ class TicketsExport implements FromArray {
             "Tipologia",
             "Webform",
             "Chiusura",
+            "Fatturabile",
+            "Tempo di esecuzione (ore)",
             "Tempo in attesa (ore)",
             "Numero di volte in attesa",
             "Modalità di lavoro",
@@ -79,8 +81,17 @@ class TicketsExport implements FromArray {
                 }
             }
 
+            $closingUpdate = $ticket->statusUpdates->where('status', 'closing')->last();
+            $closingDate = $closingUpdate ? $closingUpdate->created_at : null;
+
             $waiting_times = $ticket->waitingTimes();
             $waiting_hours = $ticket->waitingHours();
+
+            $processingTimeHours= $ticket->actual_processing_time ? floor($ticket->actual_processing_time / 60) : 0;
+            $processingTimeMinutes = $ticket->actual_processing_time ? $ticket->actual_processing_time % 60 : 0;
+            $processingTime = (!!$processingTimeHours ? ($processingTimeHours . ($processingTimeHours > 1 ? " ore " : " ora ")) : "") 
+                . ((!$processingTimeHours || !$processingTimeMinutes) ? "" : "e ")
+                . (!!$processingTimeMinutes ? ($processingTimeMinutes . ($processingTimeMinutes > 1 ? " minuti" : " minuto")) : "");
             
             $workModes = config('app.work_modes');
             $this_ticket = [
@@ -90,7 +101,9 @@ class TicketsExport implements FromArray {
                 $ticket->created_at,
                 $ticket->ticketType->name,
                 $webform_text,
-                $ticket->created_at,
+                $closingDate,
+                isset($ticket->is_billable) ? ($ticket->is_billable ? "Si" : "No") : "Non definito",
+                $processingTime,
                 $waiting_hours,
                 $waiting_times,
                 $workModes && $ticket->work_mode ? $workModes[$ticket->work_mode] : $ticket->work_mode,
