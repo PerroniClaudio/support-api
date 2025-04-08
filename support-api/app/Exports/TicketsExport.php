@@ -81,7 +81,7 @@ class TicketsExport implements FromArray {
                 }
             }
 
-            $closingUpdate = $ticket->statusUpdates->where('status', 'closing')->last();
+            $closingUpdate = $ticket->statusUpdates()->where('type', 'closing')->orderBy('created_at', 'desc')->first();
             $closingDate = $closingUpdate ? $closingUpdate->created_at : null;
 
             $waiting_times = $ticket->waitingTimes();
