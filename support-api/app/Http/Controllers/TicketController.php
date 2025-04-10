@@ -1167,6 +1167,32 @@ class TicketController extends Controller {
             $webform_data->referer_it = $referer_it ? $referer_it->name . " " . $referer_it->surname : null;
         }
 
+        $hardwareFields = $ticket->ticketType->typeFormField()->where('field_type', 'hardware')->pluck('field_label')->map(function($field) {
+            return strtolower($field);
+        })->toArray();
+
+        if(isset($webform_data)){
+            foreach ($webform_data as $key => $value) {
+                if (in_array(strtolower($key), $hardwareFields)) {
+                    // value è un array di id
+                    foreach ($value as $index => $hardware_id) {
+                        // Non è detto che l'hardware esista ancora. Se esiste si aggiungono gli altri valori
+                        $hardware = $ticket->hardware()->where('hardware_id', $hardware_id)->first();
+                        if ($hardware) {
+                            $webform_data->$key[$index] = $hardware->id . " (" . $hardware->make . " " 
+                                . $hardware->model . " " . $hardware->serial_number 
+                                . ($hardware->company_asset_number ? " " . $hardware->company_asset_number : "")
+                                . ($hardware->support_label ? " " . $hardware->support_label : "")
+                                . ")";
+                        } else {
+                            $webform_data->$key[$index] = $webform_data->$key[$index] . " (assente)";
+                        }
+                    }
+                }
+            }
+        }
+
+
 
         $ticket->ticketType->category = $ticket->ticketType->category->get();
 
@@ -1253,7 +1279,7 @@ class TicketController extends Controller {
             if ($user["is_admin"] == 1) {
                 $cacheKey = 'admin_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to . '_' . $request->type_filter;
             } else {
-                $cacheKey = 'user_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to . '_' . $request->type_filter;;
+                $cacheKey = 'user_batch_report_' . $request->company_id . '_' . $request->from . '_' . $request->to . '_' . $request->type_filter;
             }
 
 
@@ -1320,6 +1346,31 @@ class TicketController extends Controller {
                 if (isset($webform_data->referer_it)) {
                     $referer_it = User::find($webform_data->referer_it);
                     $webform_data->referer_it = $referer_it ? $referer_it->name . " " . $referer_it->surname : null;
+                }
+
+                $hardwareFields = $ticket->ticketType->typeFormField()->where('field_type', 'hardware')->pluck('field_label')->map(function($field) {
+                    return strtolower($field);
+                })->toArray();
+        
+                if(isset($webform_data)){
+                    foreach ($webform_data as $key => $value) {
+                        if (in_array(strtolower($key), $hardwareFields)) {
+                            // value è un array di id
+                            foreach ($value as $index => $hardware_id) {
+                                // Non è detto che l'hardware esista ancora. Se esiste si aggiungono gli altri valori
+                                $hardware = $ticket->hardware()->where('hardware_id', $hardware_id)->first();
+                                if ($hardware) {
+                                    $webform_data->$key[$index] = $hardware->id . " (" . $hardware->make . " " 
+                                        . $hardware->model . " " . $hardware->serial_number 
+                                        . ($hardware->company_asset_number ? " " . $hardware->company_asset_number : "")
+                                        . ($hardware->support_label ? " " . $hardware->support_label : "")
+                                        . ")";
+                                } else {
+                                    $webform_data->$key[$index] = $webform_data->$key[$index] . " (assente)";
+                                }
+                            }
+                        }
+                    }
                 }
 
                 //? Avanzamento

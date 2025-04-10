@@ -41,6 +41,7 @@ class TicketsExport implements FromArray {
             "Webform",
             "Chiusura",
             "Fatturabile",
+            "Tempo previsto di esecuzione",
             "Tempo di esecuzione",
             "Tempo in attesa",
             "Numero di volte in attesa",
@@ -58,19 +59,58 @@ class TicketsExport implements FromArray {
             $webform_text = "";
             $has_referer = false;
             $referer_name = "";
+
+            // Recupera i campi hardware per poterli intercettare e riempire coi dati dell'hardware selezionato.
+            // Se viene modificato il form (es. un campo hardware viene eliminato) non si può più intercettare il tipo di campo dal nome 
+            // e risulteranno solo gli id al posto degli altri dati dell'hardware selezionato.
+            $hardwareFields = $ticket->ticketType->typeFormField()->where('field_type', 'hardware')->pluck('field_label')->map(function($field) {
+                return strtolower($field);
+            });
+
             
             if(isset($webform)){
                 foreach ($webform as $key => $value) {
+                    if ($key == "description"){
+                        continue;
+                    }
                     if ($key == "referer") {
                         $has_referer = true;
-                    } else if ($key == "referer_it"){
-    
-                    } else if ($key == "office"){
-                        $office = Office::find($value);
-                        $office ? $webform_text .= $key . ": " . $office->name . "\n" : null;
-                    } else {
-                        $webform_text .= $key . ": " . (is_array($value) ? implode(', ', $value) : $value) . "\n";
+                        continue;
                     }
+                    if ($key == "referer_it"){
+                        continue;
+                    }
+                    if ($key == "office"){
+                        $office = Office::find($value);
+                        if($office){
+                            $webform_text .= "Sede: " . $office->name . "\n ";
+                        }
+                        continue;
+                    }
+                    if (in_array(strtolower($key), $hardwareFields->toArray())) {
+                        foreach ($value as $index => $hardware_id) {
+                            // Non è detto che l'hardware esista ancora. Se esiste si aggiungono gli altri valori
+                            $hardware = $ticket->hardware()->where('hardware_id', $hardware_id)->first();
+                            if ($hardware) {
+                                $webform[$key][$index] = $hardware->id . " (" . $hardware->make . " " 
+                                    . $hardware->model . " " . $hardware->serial_number 
+                                    . ($hardware->company_asset_number ? " " . $hardware->company_asset_number : "")
+                                    . ($hardware->support_label ? " " . $hardware->support_label : "")
+                                    . ")";
+                            } else {
+                                $webform[$key][$index] = $webform[$key][$index] . " (assente)";
+                            }
+                        }
+                        $webform_text .= $key . ": " . (is_array($webform[$key]) ? implode(', ', $webform[$key]) : $webform[$key]) . "\n ";
+                        continue;
+                    }
+                    
+                    // Negli altri casi si aggiunge e basta
+                    $webform_text .= $key . ": " . (is_array($value) ? implode(', ', $value) : $value) . "\n ";
+                }
+                // Poi si aggiunge la descrizione. (si può spostare anche all'inizio volendo)
+                if(isset($webform['description'])) {
+                    $webform_text .= "Descrizione: " . $webform['description'] . "\n ";
                 }
             }
 
@@ -84,19 +124,29 @@ class TicketsExport implements FromArray {
             $closingUpdate = $ticket->statusUpdates()->where('type', 'closing')->orderBy('created_at', 'desc')->first();
             $closingDate = $closingUpdate ? $closingUpdate->created_at : null;
 
+            $expectedProcessingTime = $ticket->expected_processing_time 
+                ? str_pad(floor($ticket->expected_processing_time / 60), 2, '0', STR_PAD_LEFT) . ":" . str_pad($ticket->expected_processing_time % 60, 2, '0', STR_PAD_LEFT)
+                : "Non definito";
+
+            // $processingTimeHours= $ticket->actual_processing_time ? floor($ticket->actual_processing_time / 60) : 0;
+            // $processingTimeMinutes = $ticket->actual_processing_time ? $ticket->actual_processing_time % 60 : 0;
+            // $processingTime = (!!$processingTimeHours ? ($processingTimeHours . ($processingTimeHours > 1 ? " ore " : " ora ")) : "") 
+            //     . ((!$processingTimeHours || !$processingTimeMinutes) ? "" : "e ")
+            //     . (!!$processingTimeMinutes ? ($processingTimeMinutes . ($processingTimeMinutes > 1 ? " minuti" : " minuto")) : "");
+            $processingTime = $ticket->actual_processing_time 
+                ? str_pad(floor($ticket->actual_processing_time / 60), 2, '0', STR_PAD_LEFT) . ":" . str_pad($ticket->actual_processing_time % 60, 2, '0', STR_PAD_LEFT) 
+                : "Non definito";
+
             $waiting_times = $ticket->waitingTimes();
             $waiting_hours = $ticket->waitingHours();
-            $waitingTimeHours = $waiting_hours ? floor($waiting_hours) : 0;
-            $waitingTimeMinutes = $waiting_hours ? ($waiting_hours - floor($waiting_hours)) * 60 : 0;
-            $waitingTime = (!!$waitingTimeHours ? ($waitingTimeHours . ($waitingTimeHours > 1 ? " ore " : " ora ")) : "") 
-                . ((!$waitingTimeHours || !$waitingTimeMinutes) ? "" : "e ")
-                . (!!$waitingTimeMinutes ? ($waitingTimeMinutes . ($waitingTimeMinutes > 1 ? " minuti" : " minuto")) : "");
 
-            $processingTimeHours= $ticket->actual_processing_time ? floor($ticket->actual_processing_time / 60) : 0;
-            $processingTimeMinutes = $ticket->actual_processing_time ? $ticket->actual_processing_time % 60 : 0;
-            $processingTime = (!!$processingTimeHours ? ($processingTimeHours . ($processingTimeHours > 1 ? " ore " : " ora ")) : "") 
-                . ((!$processingTimeHours || !$processingTimeMinutes) ? "" : "e ")
-                . (!!$processingTimeMinutes ? ($processingTimeMinutes . ($processingTimeMinutes > 1 ? " minuti" : " minuto")) : "");
+            // $waitingTimeHours = $waiting_hours ? floor($waiting_hours) : 0;
+            // $waitingTimeMinutes = $waiting_hours ? ($waiting_hours - floor($waiting_hours)) * 60 : 0;
+            // $waitingTime = (!!$waitingTimeHours ? ($waitingTimeHours . ($waitingTimeHours > 1 ? " ore " : " ora ")) : "") 
+            //     . ((!$waitingTimeHours || !$waitingTimeMinutes) ? "" : "e ")
+            //     . (!!$waitingTimeMinutes ? ($waitingTimeMinutes . ($waitingTimeMinutes > 1 ? " minuti" : " minuto")) : "");
+            $waitingTime = str_pad(floor($waiting_hours), 2, '0', STR_PAD_LEFT) . ":" . str_pad(($waiting_hours - floor($waiting_hours)) * 60, 2, '0', STR_PAD_LEFT);
+
             
             $workModes = config('app.work_modes');
             $this_ticket = [
@@ -108,6 +158,7 @@ class TicketsExport implements FromArray {
                 $webform_text,
                 $closingDate,
                 isset($ticket->is_billable) ? ($ticket->is_billable ? "Si" : "No") : "Non definito",
+                $expectedProcessingTime,
                 $processingTime,
                 $waitingTime,
                 $waiting_times,
