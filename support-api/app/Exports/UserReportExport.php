@@ -2,6 +2,7 @@
 
 namespace App\Exports;
 
+use App\Models\Office;
 use App\Models\Ticket;
 use App\Models\TicketReportExport;
 use App\Models\User;
@@ -27,6 +28,7 @@ class UserReportExport implements FromArray
             "Problema/Richiesta",
             "Categoria",
             "Tipologia",
+            "Webform",
             "Data di apertura",
             "Data di chiusura",
             "Passaggi di stato",
@@ -58,19 +60,61 @@ class UserReportExport implements FromArray
             $referer_name = "";
             $referer_it_name = "";
 
-            foreach ($webform as $key => $value) {
-                $webform_text .= $key . ": " . (is_array($value) ? implode(', ', $value) : $value) . "\n";
+            // Recupera i campi hardware per poterli intercettare e riempire coi dati dell'hardware selezionato.
+            // Se viene modificato il form (es. un campo hardware viene eliminato) non si può più intercettare il tipo di campo dal nome 
+            // e risulteranno solo gli id al posto degli altri dati dell'hardware selezionato.
+            $hardwareFields = $ticket->ticketType->typeFormField()->where('field_type', 'hardware')->pluck('field_label')->map(function($field) {
+                return strtolower($field);
+            });
 
-                if ($key == "referer") {
-                    if ($value != 0) {
-                        $has_referer = true;
-                    } else {
-                        unset($webform[$key]);
+            if(isset($webform)){
+                foreach ($webform as $key => $value) {
+                    if ($key == "description"){
+                        continue;
                     }
+                    if ($key == "referer") {
+                        if ($value != 0) {
+                            $has_referer = true;
+                        } else {
+                            unset($webform[$key]);
+                        }
+                        continue;
+                    }
+                    if ($key == "referer_it") {
+                        $has_referer_it = true;
+                        continue;
+                    }
+                    if ($key == "office"){
+                        $office = Office::find($value);
+                        if($office) {
+                            $webform_text .= "Sede: " . $office->name . "\n ";
+                        }
+                        continue;
+                    }
+                    if (in_array(strtolower($key), $hardwareFields->toArray())) {
+                        foreach ($value as $index => $hardware_id) {
+                            // Non è detto che l'hardware esista ancora. Se esiste si aggiungono gli altri valori
+                            $hardware = $ticket->hardware()->where('hardware_id', $hardware_id)->first();
+                            if ($hardware) {
+                                $webform[$key][$index] = $hardware->id . " (" . $hardware->make . " " 
+                                    . $hardware->model . " " . $hardware->serial_number 
+                                    . ($hardware->company_asset_number ? " " . $hardware->company_asset_number : "")
+                                    . ($hardware->support_label ? " " . $hardware->support_label : "")
+                                    . ")";
+                            } else {
+                                $webform[$key][$index] = $webform[$key][$index] . " (assente)";
+                            }
+                        }
+                        $webform_text .= $key . ": " . (is_array($webform[$key]) ? implode(', ', $webform[$key]) : $webform[$key]) . "\n ";
+                        continue;
+                    }
+
+                    // Negli altri casi si aggiunge e basta
+                    $webform_text .= $key . ": " . (is_array($value) ? implode(', ', $value) : $value) . "\n ";
                 }
-         
-                if ($key == "referer_it") {
-                    $has_referer_it = true;
+                // Poi si aggiunge la descrizione. (si può spostare anche all'inizio volendo)
+                if(isset($webform['description'])) {
+                    $webform_text .= "Descrizione: " . $webform['description'] . "\n ";
                 }
             }
 
@@ -117,6 +161,7 @@ class UserReportExport implements FromArray
                 $ticket->ticketType->category->is_problem ? "Problema" : "Richiesta",
                 $ticket->ticketType->category->name,
                 $ticket->ticketType->name,
+                $webform_text,
                 $ticket->created_at,
                 $data_chiusura,
                 $cambiamenti_stato,

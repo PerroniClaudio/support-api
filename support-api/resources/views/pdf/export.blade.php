@@ -127,19 +127,16 @@
                 <td style="vertical-align: top; width:50%;" class="box">
                     <p class="box-heading"><b>Tempo di elaborazione previsto<b></p>
                     <p>{{ $ticket->ticketType->expected_processing_time == null
-                        ? 'Non impostato'
-                        : $ticket->ticketType->expected_processing_time / 60 .
-                            ' ore' .
-                            ($ticket->ticketType->expected_processing_time % 60 != 0
-                                ? ' e ' . $ticket->ticketType->expected_processing_time % 60 . ' minuti'
-                                : '') }}
+                            ? 'Non impostato'
+                            : (str_pad($ticket->ticketType->expected_processing_time / 60, 2, '0', STR_PAD_LEFT)) 
+                                . ':' . (str_pad($ticket->ticketType->expected_processing_time % 60, 2, '0', STR_PAD_LEFT)) 
+                        }}
                     </p>
                     <p class="box-heading"><b>Tempo di elaborazione effettivo</b></p>
                     <p>{{ $ticket->actual_processing_time
-                        ? $ticket->actual_processing_time / 60 .
-                            ' ore' .
-                            ($ticket->actual_processing_time % 60 != 0 ? ' e ' . $ticket->actual_processing_time % 60 . ' minuti' : '')
-                        : 'Non impostato' }}
+                        ? str_pad($ticket->actual_processing_time / 60, 2, '0', STR_PAD_LEFT)
+                            . ':' . (str_pad($ticket->actual_processing_time % 60, 2, '0', STR_PAD_LEFT))
+                        }}
                     </p>
                 </td>
             </tr>
