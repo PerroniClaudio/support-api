@@ -61,7 +61,13 @@ class HardwareController extends Controller {
             ], 403);
         }
 
-        $hardwareList = Hardware::where('company_id', $company->id)->with(['hardwareType', 'company'])->get();
+        $hardwareList = Hardware::where('company_id', $company->id)
+            ->with(['hardwareType', 'company'])
+            ->get()
+            ->map(function ($hardware) {
+            $hardware->users = $hardware->users()->pluck('user_id')->toArray();
+            return $hardware;
+            });
         return response([
             'hardwareList' => $hardwareList,
         ], 200);
@@ -505,6 +511,9 @@ class HardwareController extends Controller {
         return HardwareType::all();
     }
 
+    /**
+     * Update the assigned users of the single hardware
+     */
     public function updateHardwareUsers(Request $request, Hardware $hardware) {
         $hardware = Hardware::find($hardware->id);
         if (!$hardware) {
@@ -584,6 +593,89 @@ class HardwareController extends Controller {
 
         return response([
             'message' => 'Hardware users updated successfully',
+        ], 200);
+    }
+
+    /**
+     * Update the assigned hardware of the single user
+     */
+    public function updateUserHardware(Request $request, User $user) {
+        $user = User::find($user->id);
+        if (!$user) {
+            return response([
+                'message' => 'Hardware not found',
+            ], 404);
+        }
+
+        $authUser = $request->user();
+        if (!($authUser->is_company_admin && ($user->company_id == $authUser->company_id)) && !$authUser->is_admin) {
+            return response([
+                'message' => 'You are not allowed to update hardware users',
+            ], 403);
+        }
+
+        $data = $request->validate([
+            'hardware' => 'nullable|array',
+        ]);
+
+        $company = $user->company;
+
+        if (!isEmpty($data['hardware']) && !$company) {
+            return response([
+                'message' => 'User must be associated with a company to add hardware',
+            ], 404);
+        }
+
+        if ($company && !isEmpty($data['hardware'])) {
+            $isFail = Hardware::whereIn('id', $data['hardware'])->where('company_id', '!=', $company->id)->exists();
+            if ($isFail) {
+                return response([
+                    'message' => 'One or more selected hardware do not belong to the user\'s company',
+                ], 400);
+            }
+        }
+
+        $hardware = Hardware::whereIn('id', $data['hardware'])->get();
+        if ($hardware->count() != count($data['hardware'])) {
+            return response([
+                'message' => 'One or more hardware not found',
+            ], 404);
+        }
+
+        $hardwareToRemove = $user->hardware->pluck('id')->diff($data['hardware']);
+        $hardwareToAdd = collect($data['hardware'])->diff($user->hardware->pluck('id'));
+
+        // Solo l'admin può rimuovere associazioni hardware-user
+        if(!$authUser->is_admin && count($hardwareToRemove) > 0){
+            return response([
+                'message' => 'You are not allowed to remove hardware from user',
+            ], 403);
+        }
+
+        if(count($hardwareToAdd) > 0) {
+            foreach ($hardwareToAdd as $hardwareId) {
+                $hwToAdd = Hardware::find($hardwareId);
+                if($hwToAdd->is_exclusive_use && ($hwToAdd->users->count() >= 1)) {
+                    return response([
+                        'message' => 'A selected hardware (' . $hwToAdd->id . ') can only be associated to one user and has already been associated.',
+                    ], 400);
+                }
+            }
+        }
+
+        foreach ($hardwareToAdd as $hardwareId) {
+            $user->hardware()->attach($hardwareId, [
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
+            ]);
+        }
+
+        foreach ($hardwareToRemove as $hardwareId) {
+            $user->hardware()->detach($hardwareId);
+        }
+
+        return response([
+            'message' => 'User assigned hardware updated successfully',
         ], 200);
     }
 

@@ -73,6 +73,32 @@ class UserController extends Controller {
         ], 201);
     }
 
+    /**
+     * Mostra i dati dell'utente.
+     */
+    public function show($id, Request $request) {
+        $authUser = $request->user();
+
+        $user = User::where('id', $id)->with(['company'])->first();
+
+        // Se non è l'utente stesso, un admin o company_admin e della stessa compagnia allora non è autorizzato
+        if (!($authUser["is_admin"] == 1 || ($authUser["id"] == $id) || ($user && ($user["company_id"] == $authUser["company_id"]) && ($authUser["is_company_admin"] == 1)))) {
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
+        if (!$user) {
+            return response([
+                'message' => 'User not found',
+            ], 404);
+        }
+
+        return response([
+            'user' => $user,
+        ], 200);
+    }
+
 
     /**
      * Attiva l'utenza assegnandogli la password scelta.
@@ -478,5 +504,54 @@ class UserController extends Controller {
         return response([
             'success' => true,
         ], 200);
+    }
+
+    public function userTickets($userId, Request $request) {
+        $authUser = $request->user();
+        $user = User::where('id', $userId)->first();
+        if (
+            !$authUser->is_admin
+            && !($authUser->is_company_admin && ($user->company_id == $authUser->company_id))
+            && !($user->id == $authUser)
+        ) {
+            return response([
+                'message' => 'You are not allowed to view this user tickets',
+            ], 403);
+        }
+
+        if(!$user) {
+            return response([
+                'message' => 'User not found',
+            ], 404);
+        }
+
+        if ($authUser->is_admin) {
+            $tickets = $user->ownTicketsMerged();
+            return response([
+                'tickets' => $tickets,
+            ], 200);
+        }
+
+        if ($authUser->is_company_admin) {
+            $tickets = $user->ownTicketsMerged();
+
+            foreach ($tickets as $ticket) {
+                $ticket->referer = $ticket->referer();
+                if ($ticket->referer) {
+                    $ticket->referer->makeHidden(['email_verified_at', 'microsoft_token', 'created_at', 'updated_at', 'phone', 'city', 'zip_code', 'address']);
+                }
+                // Nascondere i dati utente se è stato aperto dal supporto
+                if ($ticket->user->is_admin) {
+                    $ticket->user->id = 1;
+                    $ticket->user->name = "Supporto";
+                    $ticket->user->surname = "";
+                    $ticket->user->email = "Supporto";
+                }
+            }
+            
+            return response([
+                'tickets' => $tickets,
+            ], 200);
+        }
     }
 }

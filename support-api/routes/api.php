@@ -42,6 +42,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user/export-template', [App\Http\Controllers\UserController::class, "exportTemplate"]);
     Route::post('/user/import', [App\Http\Controllers\UserController::class, "importUsers"]);
     Route::get('/user-test', [App\Http\Controllers\UserController::class, "ticketTypes"]);
+    Route::get('/user-tickets/{id}', [App\Http\Controllers\UserController::class, "userTickets"]);
+    Route::get('/user/{id}', [App\Http\Controllers\UserController::class, "show"]);
 });
 
 // Ticket Routes
@@ -252,6 +254,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::patch("/hardware-users/{hardware}", [App\Http\Controllers\HardwareController::class, "updateHardwareUsers"]); //lato utente
     Route::delete("/hardware-user/{hardware}/{user}", [App\Http\Controllers\HardwareController::class, "deleteHardwareUser"]);
     Route::get("/user-hardware/{user}", [App\Http\Controllers\HardwareController::class, "userHardwareList"]); //lato utente
+    Route::patch("/user-hardware/{user}", [App\Http\Controllers\HardwareController::class, "updateUserHardware"]);
     Route::get("/hardware/{hardware}", [App\Http\Controllers\HardwareController::class, "show"]);
     Route::get("/fake-hardware-field", [App\Http\Controllers\HardwareController::class, "fakeHardwareField"]);
     Route::get("/hardware-tickets/{hardware}", [App\Http\Controllers\HardwareController::class, "hardwareTickets"]);

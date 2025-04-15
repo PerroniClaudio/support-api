@@ -78,12 +78,12 @@
         <p class="box-heading"><b>Dettaglio associazione</b></p>
         <div>
           @if (isset($relation))
-            <p style="font-size: 14px;"><b>Assegnato in data:</b> {{ $relation->pivot->created_at->format('d/m/Y H:i') }}</p>
+            <p style="font-size: 14px;"><b>Assegnato in data:</b> {{ isset($relation->pivot->created_at) ? $relation->pivot->created_at->format('d/m/Y H:i') : '' }}</p>
             @php
               $responsibleUser = App\Models\User::find($relation->pivot->responsible_user_id);
             @endphp
             {{-- <p style="font-size: 14px;"><b>ID responsabile assegnazione:</b> {{ $relation->pivot->created_by }}</p> --}}
-            <p style="font-size: 14px;"><b>Responsabile assegnazione:</b> {{ $responsibleUser->name . ($responsibleUser->surname ? ' ' . $responsibleUser->surname : '') }}</p>
+            <p style="font-size: 14px;"><b>Responsabile assegnazione:</b> {{ $responsibleUser ? ($responsibleUser->name . ($responsibleUser->surname ? ' ' . $responsibleUser->surname : '')) : '' }}</p>
             
           @else
             <p>Associazione non trovata</p>
@@ -94,7 +94,7 @@
     <div>
       <br>
       <p style="font-size: 14px;">
-        Data: {{ now()->format('d/m/Y') }}
+        Data: {{ now() ? now()->format('d/m/Y') : '' }}
       </p>
       <br>
       <p style="font-size: 14px;">
@@ -102,7 +102,7 @@
       </p>
       <br>
       <p style="font-size: 14px;">
-        {{ $responsibleUser->name . ($responsibleUser->surname ? ' ' . $responsibleUser->surname : '') }}: ______________________________________ 
+        {{ isset($responsibleUser) ? ($responsibleUser->name . ($responsibleUser->surname ? ' ' . $responsibleUser->surname : '') . ': ') : '' }}______________________________________ 
       </p>
     </div>
 

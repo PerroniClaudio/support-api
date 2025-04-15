@@ -19,7 +19,7 @@ class CompanyController extends Controller {
         $isAdminRequest = $authUser["is_admin"] == 1;
 
         if ($isAdminRequest) {
-            $companies = Company::all();
+            $companies = Company::orderBy('name', 'asc')->get();
             $companies->makeHidden(['sla', 'sla_take_low', 'sla_take_medium', 'sla_take_high', 'sla_take_critical', 'sla_solve_low', 'sla_solve_medium', 'sla_solve_high', 'sla_solve_critical', 'sla_prob_take_low', 'sla_prob_take_medium', 'sla_prob_take_high', 'sla_prob_take_critical', 'sla_prob_solve_low', 'sla_prob_solve_medium', 'sla_prob_solve_high', 'sla_prob_solve_critical']);
 
             if (!$companies) {
