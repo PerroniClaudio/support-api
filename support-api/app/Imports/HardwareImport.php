@@ -79,7 +79,7 @@ class HardwareImport implements ToCollection
                 $isPresent = Hardware::where('serial_number', $row[2])->first();
 
                 if ($isPresent) {
-                    throw new \Exception('Hardware con seriale ' . $row[2] . ' già presente');
+                    throw new \Exception('Hardware con seriale ' . $row[2] . ' già presente. ID: ' . $isPresent->id);
                     // continue;
                 }
 
