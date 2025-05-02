@@ -43,7 +43,7 @@ class StoreDgveryLive implements ShouldQueue {
             'group_id' => $groupId,
             'user_id' => 12,
             'status' => '0',
-            'company_id' => 13,
+            'company_id' => $payload['company_id'], // 13 academ, 21 labor
             'file' => null,
             'duration' => 0,
             'sla_take' => $ticketType['default_sla_take'],
