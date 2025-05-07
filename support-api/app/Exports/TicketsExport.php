@@ -8,10 +8,14 @@ use App\Models\Ticket;
 use App\Models\User;
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 
-class TicketsExport implements FromArray, WithColumnFormatting {
+class TicketsExport implements FromArray, WithColumnFormatting, WithEvents {
+// class TicketsExport implements FromArray, WithColumnFormatting {
 
+// 
     private $company_id;
     private $start_date;
     private $end_date;
@@ -193,7 +197,22 @@ class TicketsExport implements FromArray, WithColumnFormatting {
     public function columnFormats(): array
     {
         return [
-            'J' => NumberFormat::FORMAT_DATE_TIME4, // Colonna "Tempo di esecuzione" (colonna J)
+            // 'J' => NumberFormat::FORMAT_DATE_TIME4, // Colonna "Tempo di esecuzione" (colonna J)
+            // 'J' => NumberFormat::FORMAT_DATE_TIME6, // Colonna "Tempo di esecuzione" (colonna J)
+            'J' => NumberFormat::FORMAT_GENERAL, // Imposta un formato generico per evitare conflitti
+        ];
+    }
+
+    public static function afterSheet(AfterSheet $event)
+    {
+        $sheet = $event->sheet->getDelegate();
+        $sheet->getStyle('J')->getNumberFormat()->setFormatCode('[h]:mm:ss'); // Formato personalizzato
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => [$this, 'afterSheet'],
         ];
     }
 }
