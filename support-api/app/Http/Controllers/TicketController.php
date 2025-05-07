@@ -137,6 +137,7 @@ class TicketController extends Controller {
                 'unread_mess_for_usr' => $user["is_admin"] == 1 ? 1 : 0,
                 'source' => $user["is_admin"] == 1 ? ($request->source ?? null) : 'platform',
                 'is_user_error' => 1, // is_user_error viene usato per la responsabilità del dato e di default è assegnata al cliente.
+                'is_billable' => $ticketType['expected_is_billable'],
             ]);
 
             if ($request->parent_ticket_id) {

@@ -86,6 +86,8 @@ class TicketsImport implements ToCollection
                         'unread_mess_for_adm' => 0,
                         'unread_mess_for_usr' => 1,
                         'source' => $formData->source ?? null,
+                        'is_user_error' => 1, // is_user_error viene usato per la responsabilità del dato e di default è assegnata al cliente.
+                        'is_billable' => $ticketType['expected_is_billable'],
                     ]);
     
                     $generatedTicketsError[] = 'ID ticket: ' . $ticket->id . ' - Identificativo valore file import: ' . $currentValue . " - Tipo di apertura ticket: raggruppato";
@@ -189,6 +191,8 @@ class TicketsImport implements ToCollection
                         'unread_mess_for_adm' => 0,
                         'unread_mess_for_usr' => 1,
                         'source' => $formData->source ?? null,
+                        'is_user_error' => 1, // is_user_error viene usato per la responsabilità del dato e di default è assegnata al cliente.
+                        'is_billable' => $ticketType['expected_is_billable'],
                     ]);
     
                     $generatedTicketsError[] = 'ID ticket: ' . $ticket->id . ' - Identificativo valore file import: ' . $currentValue . " - Tipo di apertura ticket: suddiviso - Indice riga: " . $index;
