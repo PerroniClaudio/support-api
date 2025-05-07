@@ -139,8 +139,12 @@ class TicketsExport implements FromArray, WithColumnFormatting, WithEvents {
             // $processingTime = (!!$processingTimeHours ? ($processingTimeHours . ($processingTimeHours > 1 ? " ore " : " ora ")) : "") 
             //     . ((!$processingTimeHours || !$processingTimeMinutes) ? "" : "e ")
             //     . (!!$processingTimeMinutes ? ($processingTimeMinutes . ($processingTimeMinutes > 1 ? " minuti" : " minuto")) : "");
+            
+            // $processingTime = $ticket->actual_processing_time 
+            //     ? floor($ticket->actual_processing_time / 60) . ":" . str_pad(floor($ticket->actual_processing_time % 60), 2, '0', STR_PAD_LEFT) . ":00"
+            //     : "Non definito";
             $processingTime = $ticket->actual_processing_time 
-                ? floor($ticket->actual_processing_time / 60) . ":" . str_pad(floor($ticket->actual_processing_time % 60), 2, '0', STR_PAD_LEFT) . ":00"
+                ? $ticket->actual_processing_time / 1440 // Converti minuti in giorni (1 giorno = 1440 minuti)
                 : "Non definito";
 
             $waiting_times = $ticket->waitingTimes();
@@ -151,7 +155,9 @@ class TicketsExport implements FromArray, WithColumnFormatting, WithEvents {
             // $waitingTime = (!!$waitingTimeHours ? ($waitingTimeHours . ($waitingTimeHours > 1 ? " ore " : " ora ")) : "") 
             //     . ((!$waitingTimeHours || !$waitingTimeMinutes) ? "" : "e ")
             //     . (!!$waitingTimeMinutes ? ($waitingTimeMinutes . ($waitingTimeMinutes > 1 ? " minuti" : " minuto")) : "");
-            $waitingTime = floor($waiting_hours) . ":" . str_pad((floor($waiting_hours - floor($waiting_hours))) * 60, 2, '0', STR_PAD_LEFT) . ":00";
+            
+            // $waitingTime = floor($waiting_hours) . ":" . str_pad((floor($waiting_hours - floor($waiting_hours))) * 60, 2, '0', STR_PAD_LEFT) . ":00";
+            $waitingTime = $waiting_hours / 24; // Converti ore in giorni (1 giorno = 24 ore)
 
             
             $workModes = config('app.work_modes');
@@ -200,6 +206,7 @@ class TicketsExport implements FromArray, WithColumnFormatting, WithEvents {
             // 'J' => NumberFormat::FORMAT_DATE_TIME4, // Colonna "Tempo di esecuzione" (colonna J)
             // 'J' => NumberFormat::FORMAT_DATE_TIME6, // Colonna "Tempo di esecuzione" (colonna J)
             'J' => NumberFormat::FORMAT_GENERAL, // Imposta un formato generico per evitare conflitti
+            'K' => NumberFormat::FORMAT_GENERAL, // Colonna "Tempo in attesa" (colonna K)
         ];
     }
 
@@ -207,6 +214,7 @@ class TicketsExport implements FromArray, WithColumnFormatting, WithEvents {
     {
         $sheet = $event->sheet->getDelegate();
         $sheet->getStyle('J')->getNumberFormat()->setFormatCode('[h]:mm:ss'); // Formato personalizzato
+        $sheet->getStyle('K')->getNumberFormat()->setFormatCode('[h]:mm:ss'); // Formato personalizzato
     }
 
     public function registerEvents(): array
