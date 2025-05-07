@@ -7,8 +7,10 @@ use App\Models\Office;
 use App\Models\Ticket;
 use App\Models\User;
 use Maatwebsite\Excel\Concerns\FromArray;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 
-class TicketsExport implements FromArray {
+class TicketsExport implements FromArray, WithColumnFormatting {
 
     private $company_id;
     private $start_date;
@@ -125,7 +127,7 @@ class TicketsExport implements FromArray {
             $closingDate = $closingUpdate ? $closingUpdate->created_at : null;
 
             $expectedProcessingTime = $ticket->expected_processing_time 
-                ? floor($ticket->expected_processing_time / 60) . ":" . str_pad($ticket->expected_processing_time % 60, 2, '0', STR_PAD_LEFT) . ":00"
+                ? str_pad(floor($ticket->expected_processing_time / 60), 2, '0', STR_PAD_LEFT) . ":" . str_pad($ticket->expected_processing_time % 60, 2, '0', STR_PAD_LEFT) . ":00"
                 : "Non definito";
 
             // $processingTimeHours= $ticket->actual_processing_time ? floor($ticket->actual_processing_time / 60) : 0;
@@ -134,7 +136,7 @@ class TicketsExport implements FromArray {
             //     . ((!$processingTimeHours || !$processingTimeMinutes) ? "" : "e ")
             //     . (!!$processingTimeMinutes ? ($processingTimeMinutes . ($processingTimeMinutes > 1 ? " minuti" : " minuto")) : "");
             $processingTime = $ticket->actual_processing_time 
-                ? floor($ticket->actual_processing_time / 60) . ":" . str_pad($ticket->actual_processing_time % 60, 2, '0', STR_PAD_LEFT) . ":00"
+                ? str_pad(floor($ticket->actual_processing_time / 60), 2, '0', STR_PAD_LEFT) . ":" . str_pad($ticket->actual_processing_time % 60, 2, '0', STR_PAD_LEFT) . ":00"
                 : "Non definito";
 
             $waiting_times = $ticket->waitingTimes();
@@ -145,7 +147,7 @@ class TicketsExport implements FromArray {
             // $waitingTime = (!!$waitingTimeHours ? ($waitingTimeHours . ($waitingTimeHours > 1 ? " ore " : " ora ")) : "") 
             //     . ((!$waitingTimeHours || !$waitingTimeMinutes) ? "" : "e ")
             //     . (!!$waitingTimeMinutes ? ($waitingTimeMinutes . ($waitingTimeMinutes > 1 ? " minuti" : " minuto")) : "");
-            $waitingTime = floor($waiting_hours) . ":" . str_pad(($waiting_hours - floor($waiting_hours)) * 60, 2, '0', STR_PAD_LEFT) . ":00";
+            $waitingTime = str_pad(floor($waiting_hours), 2, '0', STR_PAD_LEFT) . ":" . str_pad(($waiting_hours - floor($waiting_hours)) * 60, 2, '0', STR_PAD_LEFT) . ":00";
 
             
             $workModes = config('app.work_modes');
@@ -185,6 +187,13 @@ class TicketsExport implements FromArray {
         return [
             $headers,
             $ticket_data
+        ];
+    }
+
+    public function columnFormats(): array
+    {
+        return [
+            'J' => NumberFormat::FORMAT_DATE_TIME4, // Colonna "Tempo di esecuzione" (colonna J)
         ];
     }
 }
