@@ -136,6 +136,7 @@
                     <p>{{ $ticket->actual_processing_time
                         ? str_pad($ticket->actual_processing_time / 60, 2, '0', STR_PAD_LEFT)
                             . ':' . (str_pad($ticket->actual_processing_time % 60, 2, '0', STR_PAD_LEFT))
+                        : "Non impostato"
                         }}
                     </p>
                 </td>
