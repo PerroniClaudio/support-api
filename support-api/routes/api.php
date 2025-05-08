@@ -222,10 +222,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/ticket-report/pdf/batch", [App\Http\Controllers\TicketReportExportController::class, "exportBatch"]);
     Route::get("/ticket-report/pdf/{ticket}", [App\Http\Controllers\TicketReportExportController::class, "exportpdf"]);
     Route::get("/ticket-report/list/{company}", [App\Http\Controllers\TicketReportExportController::class, "company"]);
+    Route::get("/ticket-pdf-report/list/{company}", [App\Http\Controllers\TicketReportExportController::class, "pdfCompany"]);
     Route::post("/ticket-report/export", [App\Http\Controllers\TicketReportExportController::class, "export"]);
+    Route::post("/ticket-pdf-report/export", [App\Http\Controllers\TicketReportExportController::class, "pdfExport"]);
     Route::get("/ticket-report/export/{ticketReportExport}", [App\Http\Controllers\TicketReportExportController::class, "show"]);
     Route::delete("/ticket-report/export/{ticketReportExport}", [App\Http\Controllers\TicketReportExportController::class, "destroy"]);
     Route::get("/ticket-report/download/{ticketReportExport}", [App\Http\Controllers\TicketReportExportController::class, "download"]);
+    Route::get("/ticket-pdf-report/preview/{ticketReportExport}", [App\Http\Controllers\TicketReportExportController::class, "pdfPreview"]);
+    Route::get("/ticket-pdf-report/download/{ticketReportExport}", [App\Http\Controllers\TicketReportExportController::class, "pdfDownload"]);
     Route::get("/generic-ticket-report/list", [App\Http\Controllers\TicketReportExportController::class, "generic"]);
     Route::post("/generic-ticket-report/export", [App\Http\Controllers\TicketReportExportController::class, "genericExport"]);
     Route::get("/user-ticket-report/list", [App\Http\Controllers\TicketReportExportController::class, "user"]);
