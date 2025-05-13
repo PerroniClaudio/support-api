@@ -10,7 +10,6 @@ use App\Jobs\GenerateReport;
 use App\Jobs\GenerateUserReport;
 use App\Models\Company;
 use App\Models\Ticket;
-use App\Models\TicketReportPdfExport;
 use App\Models\TicketStatusUpdate;
 use App\Models\TicketType;
 use App\Models\User;
@@ -35,17 +34,6 @@ class TicketReportExportController extends Controller {
             'is_generated',
             true
         )
-            ->orderBy('created_at', 'DESC')
-            ->get();
-
-        return response([
-            'reports' => $reports,
-        ], 200);
-    }
-    
-    public function pdfCompany(Company $company) {
-        $reports = TicketReportPdfExport::where('company_id', $company->id)
-            // ->where('is_generated', true)
             ->orderBy('created_at', 'DESC')
             ->get();
 
@@ -95,41 +83,26 @@ class TicketReportExportController extends Controller {
         ], 200);
     }
 
-    public function download(TicketReportExport $ticketReportExport) {
+    public function download(TicketReportExport $ticketReportExport, Request $request) {
 
-        $url = $this->generatedSignedUrlForFile($ticketReportExport->file_path);
-
-
-        return response([
-            'url' => $url,
-            'filename' => $ticketReportExport->file_name
-        ], 200);
-    }
-    
-    public function pdfPreview(TicketReportPdfExport $ticketReportExport) {
-
-        $url = $this->generatedSignedUrlForFile($ticketReportExport->file_path);
-
-        return response([
-            'url' => $url,
-            'filename' => $ticketReportExport->file_name
-        ], 200);
-    }
-
-    public function pdfDownload(TicketReportPdfExport $ticketReportExport) {
-
-        $filePath = $ticketReportExport->file_path;
-
-        if (!Storage::disk('gcs')->exists($filePath)) {
-            return response()->json(['message' => 'File not found.'], 404);
+        $user = $request->user();
+        if ($user["is_admin"] != 1 && $user["is_company_admin"] != 1) {
+            return response([
+                'message' => 'The user must be at least company admin.',
+            ], 401);
+        }
+        if($user["is_company_admin"] == 1 && $user["company_id"] != $ticketReportExport->company_id) {
+            return response([
+                'message' => 'You can\'t download this report.',
+            ], 401);
         }
 
-        $fileContent = Storage::disk('gcs')->get($filePath);
-        $fileName = $ticketReportExport->file_name;
+        $url = $this->generatedSignedUrlForFile($ticketReportExport->file_path);
 
-        return response($fileContent, 200)
-            ->header('Content-Type', Storage::disk('gcs')->mimeType($filePath))
-            ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+        return response([
+            'url' => $url,
+            'filename' => $ticketReportExport->file_name
+        ], 200);
     }
 
     private function generatedSignedUrlForFile($path) {
@@ -200,49 +173,6 @@ class TicketReportExportController extends Controller {
 
 
         return response()->json(['file' => $name]);
-    }
-    
-
-    public function pdfExport(Request $request) {
-
-        try {
-            $user = $request->user();
-            if ($user["is_admin"] != 1 && $user["is_company_admin"] != 1) {
-                return response([
-                    'message' => 'The user must be at least company admin.',
-                ], 401);
-            }
-            
-            $company = Company::find($request->company_id);
-
-            // $name = preg_replace('/[^a-zA-Z0-9_-]/', '', strtolower($company->name)) . '_' . time() . '_' . $request->company_id . '_tickets.pdf';
-            $name = time() . '_' . $request->company_id . '_tickets.pdf';
-
-            // $file =  Excel::store(new TicketsExport($company, $request->start_date, $request->end_date), 'exports/' . $request->company_id . '/' . $name, 'gcs');
-
-            $report = TicketReportPdfExport::create([
-                'company_id' => $company->id,
-                'file_name' => $name,
-                'file_path' => 'pdf_exports/' . $request->company_id . '/' . $name,
-                'start_date' => $request->start_date,
-                'end_date' => $request->end_date,
-                'optional_parameters' => json_encode($request->optional_parameters),
-                'user_id' => $user->id,
-            ]);
-
-            dispatch(new GeneratePdfReport($report));
-            
-            return response ([
-                'message' => 'Report created successfully',
-                'report' => $report
-            ], 200);
-        } catch (\Exception $e) {
-            return response([
-                'message' => 'Error generating the report',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-        
     }
 
 
@@ -741,7 +671,10 @@ class TicketReportExportController extends Controller {
         }
 
 
-
+        // Ordina i ticket per categoria e per data di creazione
+        usort($reduced_tickets, function ($a, $b) {
+            return strcmp($a['category'], $b['category']) ?: strcmp($a['opened_at'], $b['opened_at']);
+        });
 
 
         for ($date = \Carbon\Carbon::createFromFormat('Y-m-d', $request->from); $date <= \Carbon\Carbon::createFromFormat('Y-m-d', $request->to); $date->addDay()) {

@@ -45,6 +45,11 @@
         font-size: 0.55rem;
         line-height: 1rem;
     }
+    
+    .text-small-plus {
+        font-size: 0.7rem;
+        line-height: 1rem;
+    }
 
     .ticket-pill {
         text-align: center;

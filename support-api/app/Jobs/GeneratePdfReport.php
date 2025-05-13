@@ -15,6 +15,7 @@ use App\Models\TicketStatusUpdate;
 use App\Models\User;
 use Barryvdh\DomPDF\Facade\Pdf;
 use \Exception as Exception;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class GeneratePdfReport implements ShouldQueue {
@@ -61,11 +62,30 @@ class GeneratePdfReport implements ShouldQueue {
                     }
                 })
                 ->get();
+            
+            $tickets->load('ticketType');
+            
 
             // Questa parte va provata, perchè nella request dovrebbe esserci l'indicazione, ma verrà inserita negli optional parameters.
             // $filter = $report->type_filter;
             $optional_parameters = json_decode($report->optional_parameters);
             $filter = $optional_parameters->type || 'all';
+
+            // Aperti nel periodo selezionato
+            $opened_tickets_count = 0;
+
+            // ticket ancora aperti a fine periodo selezionato
+            $still_open_tickets_count = 0;
+
+            // Conteggio ticket nonfatturabili
+            $unbillable_tickets_count = 0;
+            // Tempo di lavoro per gestire i ticket non fatturabili (in minuti)
+            $unbillable_work_time = 0;
+
+            // Conteggio ticket fatturabili
+            $billable_tickets_count = 0;
+            // Tempo di lavoro per gestire i ticket fatturabili (in minuti)
+            $billable_work_time = 0;
 
             $tickets_data = [];
 
@@ -78,6 +98,35 @@ class GeneratePdfReport implements ShouldQueue {
                     ($filter == 'request' && $ticket['category']['is_request'] == 1) ||
                     ($filter == 'incident' && $ticket['category']['is_problem'] == 1)
                 ) {
+
+                    if (\Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $ticket->created_at)->gte(\Carbon\Carbon::createFromFormat('Y-m-d', $report->start_date))) {
+                        $opened_tickets_count++;
+                    }
+
+                    // Se il ticket è ancora aperto bisogna scartarlo e mantenere solo il conteggio. (la query controlla se c'è una chiusura prima della fine del periodo selezionato. se non esiste salta un ciclo)
+                    if (!TicketStatusUpdate::where('ticket_id', $ticket->id)
+                        ->where('type', 'closing')
+                        ->where('created_at', '<=', $queryTo)
+                        ->exists()) {
+                        $still_open_tickets_count++;
+                        continue;
+                    }
+
+                    if(!$ticket->actual_processing_time) {
+                        throw new Exception("Ticket " . $ticket->id . " non ha il tempo di lavoro. Esportazione non riuscita.");
+                    }
+                    if($ticket->is_billable === null){
+                        throw new Exception("Ticket " . $ticket->id . " non ha il flag di fatturabilità. Esportazione non riuscita.");
+                    }
+
+                    // Dei ticket da includere bisogna contare separatamente quanti sono quelli fatturabili e quelli no, oltre ai tempi di gestione.
+                    if($ticket->is_billable == 0) {
+                        $unbillable_tickets_count++;
+                        $unbillable_work_time += $ticket->actual_processing_time;
+                    } else if($ticket->is_billable == 1) {
+                        $billable_tickets_count++;
+                        $billable_work_time += $ticket->actual_processing_time;
+                    }
 
                     if (!$ticket->messages()->first()) {
                         continue;
@@ -183,7 +232,7 @@ class GeneratePdfReport implements ShouldQueue {
                     } else {
                         $ticket['opened_by'] = $author->name . " " . $author->surname;
                     }
-
+                    
                     $tickets_data[] = [
                         'data' => $ticket,
                         'webform_data' => $webform_data,
@@ -256,6 +305,11 @@ class GeneratePdfReport implements ShouldQueue {
                 "request" => 0
             ];
 
+            $tickets_by_billable_time = [
+                'billable' => [],
+                'unbillable' => [],
+            ];
+
             foreach ($tickets_data as $ticket) {
                 $date = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $ticket['data']['created_at'])->format('Y-m-d');
                 if (!isset($tickets_by_day[$date])) {
@@ -311,7 +365,7 @@ class GeneratePdfReport implements ShouldQueue {
 
                 $ticket_by_weekday[$weekday]++;
 
-                // Se chiuso o meno
+                // Se chiuso o meno (con le modifiche di maggio 2025 qui dovrebbero essere tutti già chiusi, se non cambia niente)
 
                 if ($ticket['data']['status'] == 5) {
                     $closed_tickets_count++;
@@ -438,6 +492,21 @@ class GeneratePdfReport implements ShouldQueue {
                     $closed_at = \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $ticket['data']['updated_at'])->format('d/m/Y H:i');
                 }
 
+                // Fatturabilità e categoria
+                if ($ticket['data']['is_billable'] == 1) {
+                    // Se non esiste ancora la categoria, la creo
+                    if (!isset($tickets_by_billable_time['billable'][$ticket['data']['ticketType']['category']['name']])) {
+                        $tickets_by_billable_time['billable'][$ticket['data']['ticketType']['category']['name']] = 0;
+                    }
+                    // Incrementa il conteggio per la categoria
+                    $tickets_by_billable_time['billable'][$ticket['data']['ticketType']['category']['name']]+= $ticket['data']['actual_processing_time'];
+                } else {
+                    if(!isset($tickets_by_billable_time['unbillable'][$ticket['data']['ticketType']['category']['name']])) {
+                        $tickets_by_billable_time['unbillable'][$ticket['data']['ticketType']['category']['name']] = 0;
+                    }
+                    $tickets_by_billable_time['unbillable'][$ticket['data']['ticketType']['category']['name']]+= $ticket['data']['actual_processing_time'];
+                }
+
 
 
                 // Ticket ridotto
@@ -447,6 +516,7 @@ class GeneratePdfReport implements ShouldQueue {
                     "incident_request" => $ticket['data']['ticketType']['category']['is_problem'] == 1 ? "Incident" : "Request",
                     "category" => $ticket['data']['ticketType']['category']['name'],
                     "type" => $ticket['data']['ticketType']['name'],
+                    "opened_by_initials" => $ticket['data']['user']['is_admin'] == 1 ? "SUP" : (strtoupper($ticket['data']['user']['name'][0]) . ". " . $ticket['data']['user']['surname'] ? (strtoupper($ticket['data']['user']['surname'][0]) . ".") : ""),
                     "opened_by" => $ticket['data']['user']['is_admin'] == 1 ? "Supporto" : $ticket['data']['user']['name'] . " " . $ticket['data']['user']['surname'],
                     "opened_at" => \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $ticket['data']['created_at'])->format('d/m/Y H:i'),
                     "webform_data" => $ticket['webform_data'],
@@ -457,6 +527,8 @@ class GeneratePdfReport implements ShouldQueue {
                     'should_show_more' => false,
                     'ticket_frontend_url' => env('FRONTEND_URL') . '/support/user/ticket/' . $ticket['data']['id'],
                     'current_status' => $current_status,
+                    'is_billable' => $ticket['data']['is_billable'],
+                    'actual_processing_time' => $ticket['data']['actual_processing_time'],
                 ];
 
                 if (count($ticket['data']['messages']) > 3) {
@@ -488,7 +560,13 @@ class GeneratePdfReport implements ShouldQueue {
                 $reduced_tickets[] = $reduced_ticket;
             }
 
-
+            usort($reduced_tickets, function ($a, $b) {
+                $categoryComparison = strcmp($a['category'], $b['category']);
+                if ($categoryComparison === 0) {
+                    return strtotime($a['opened_at']) - strtotime($b['opened_at']);
+                }
+                return $categoryComparison;
+            });
 
 
 
@@ -539,7 +617,8 @@ class GeneratePdfReport implements ShouldQueue {
                             $total_requests,
                             $total_incidents
                         ],
-                        "backgroundColor" => [$base_request_color, $base_incident_color]
+                        "backgroundColor" => [$base_request_color, $base_incident_color],
+                        "maxBarThickness" => 40
                     ]]
                 ],
                 "options" => [
@@ -638,7 +717,8 @@ class GeneratePdfReport implements ShouldQueue {
                         "data" => [
                             ...array_values($different_categories_with_count['incident']),
                         ],
-                        "backgroundColor" => $this->getColorShades(count(array_keys($different_categories_with_count['incident'])), true)
+                        "backgroundColor" => $this->getColorShades(count(array_keys($different_categories_with_count['incident'])), true),
+                        "maxBarThickness" => 40
                     ]]
                 ],
                 "options" => [
@@ -676,7 +756,8 @@ class GeneratePdfReport implements ShouldQueue {
                         "data" => [
                             ...array_values($different_categories_with_count['request']),
                         ],
-                        "backgroundColor" => $this->getColorShades(count(array_keys($different_categories_with_count['request'])), true, true, false, "blue")
+                        "backgroundColor" => $this->getColorShades(count(array_keys($different_categories_with_count['request'])), true, true, false, "blue"),
+                        "maxBarThickness" => 40
                     ]]
                 ],
                 "options" => [
@@ -734,7 +815,8 @@ class GeneratePdfReport implements ShouldQueue {
                         "data" => [
                             ...array_values($different_type_with_count['incident']),
                         ],
-                        "backgroundColor" => $this->getColorShades(count(array_keys($different_type_with_count['incident'])), true)
+                        "backgroundColor" => $this->getColorShades(count(array_keys($different_type_with_count['incident'])), true),
+                        "maxBarThickness" => 40
                     ]]
                 ],
                 "options" => [
@@ -773,7 +855,8 @@ class GeneratePdfReport implements ShouldQueue {
                         "data" => [
                             ...array_values($different_type_with_count['request']),
                         ],
-                        "backgroundColor" => $this->getColorShades(count(array_keys($different_type_with_count['request'])), true, true, false, "blue")
+                        "backgroundColor" => $this->getColorShades(count(array_keys($different_type_with_count['request'])), true, true, false, "blue"),
+                        "maxBarThickness" => 40
                     ]]
                 ],
                 "options" => [
@@ -860,7 +943,8 @@ class GeneratePdfReport implements ShouldQueue {
                     "datasets" => [[
                         "label" => "Numero di Ticket",
                         "data" => array_values($ticket_by_weekday),
-                        "backgroundColor" => $this->getColorShades(7, false, false, true)
+                        "backgroundColor" => $this->getColorShades(7, false, false, true),
+                        "maxBarThickness" => 40
                     ]]
                 ],
                 "options" => [
@@ -1042,7 +1126,8 @@ class GeneratePdfReport implements ShouldQueue {
                     "datasets" => [[
                         "label" => "Numero di Ticket",
                         "data" => array_values($tickets_by_user),
-                        "backgroundColor" => $this->getColorShadesForUsers(count(array_keys($tickets_by_user)), true)
+                        "backgroundColor" => $this->getColorShadesForUsers(count(array_keys($tickets_by_user)), true),
+                        "maxBarThickness" => 40
                     ]]
                 ],
                 "options" => [
@@ -1055,6 +1140,11 @@ class GeneratePdfReport implements ShouldQueue {
             $maxValue = count($tickets_by_user_data['data']['datasets'][0]['data']) > 0 
                 ? max(array_values($tickets_by_user_data['data']['datasets'][0]['data'])) 
                 : 0;
+
+            $tickets_by_user_data['options']['scales']['yAxes'][0]['ticks']['beginAtZero'] = true;
+            $tickets_by_user_data['options']['scales']['yAxes'][0]['ticks']['stepSize'] = $maxValue <= 10 
+                ? 1
+                : ceil($maxValue / 10 / 5) * 5;
             if ($maxValue < 5) {
                 $tickets_by_user_data['options']['scales']['yAxes'][0]['ticks']['beginAtZero'] = true;
                 $tickets_by_user_data['options']['scales']['yAxes'][0]['ticks']['stepSize'] = 1;
@@ -1092,7 +1182,8 @@ class GeneratePdfReport implements ShouldQueue {
                             $sla_data['less_than_2_hours'],
                             $sla_data['more_than_2_hours']
                         ],
-                        "backgroundColor" => $this->getColorShades(4, true, true, false)
+                        "backgroundColor" => $this->getColorShades(4, true, true, false),
+                        "maxBarThickness" => 40
                     ]]
                 ],
                 "options" => [
@@ -1134,7 +1225,8 @@ class GeneratePdfReport implements ShouldQueue {
                             $wrong_type['request'],
                             $wrong_type['incident']
                         ],
-                        "backgroundColor" => [$base_request_color, $base_incident_color]
+                        "backgroundColor" => [$base_request_color, $base_incident_color],
+                        "maxBarThickness" => 40
                     ]]
                 ],
                 "options" => [
@@ -1163,6 +1255,116 @@ class GeneratePdfReport implements ShouldQueue {
 
             $wrong_type_url = $charts_base_url . urlencode(json_encode($wrong_type_data));
 
+            // 12 - Fatturabili
+
+            $billable_tickets = collect($tickets_by_billable_time['billable'] ?? [])
+                ->sortByDesc(function ($value) {
+                    return $value;
+                })
+                ->toArray();
+
+            $billable_tickets_time_data = [
+                "type" => "horizontalBar",
+                "data" => [
+                    "labels" => array_slice(array_keys($billable_tickets), 0, 5),
+                    "datasets" => [[
+                        "label" => "Numero di Ticket",
+                        "data" => [
+                            ...array_map(function ($el) {
+                                    return is_numeric($el) ? round(((int) $el / 60), 2) : 0;
+                                }, 
+                                array_slice(array_values($billable_tickets), 0, 5)
+                            ),
+                        ],
+                        "backgroundColor" => $this->getColorShades(5, true),
+                        "maxBarThickness" => 40
+                    ]]
+                ],
+                "options" => [
+                    "title" => ["display" => true, "text" => "Top tempi ticket fatturabili per Categoria"],
+                    "legend" => ["display" => false],
+                ]
+            ];
+
+            $maxValue = max(array_values($billable_tickets_time_data['data']['datasets'][0]['data']));
+
+            $billable_tickets_time_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
+            $billable_tickets_time_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = $maxValue < 20 
+                ? 1
+                : ceil($maxValue / 10 / 5) * 5; // Calcola il passo in base a $maxValue con incrementi di 5. massimo 10 step.
+            $billable_tickets_time_data['options']['scales']['xAxes'][0]['ticks']['max'] = ceil($maxValue / 5) * 5; // Max value in hours
+            $billable_tickets_time_data['options']["plugins"]["datalabels"] = [
+                "display" => true,
+                "color" => "white",
+                "align" => "center",
+                "anchor" => "center",
+                "font" => [
+                    "weight" => "bold"
+                ]
+            ];
+            
+            $billable_tickets_time_data['options']["scales"]["xAxes"][0]["scaleLabel"] = [
+                "display" => true,
+                "labelString" => "Ore"
+            ];
+
+            $ticket_by_billable_time_url = $charts_base_url . urlencode(json_encode($billable_tickets_time_data));
+
+            // 13 - Non fatturabili
+
+            $unbillable_tickets = collect($tickets_by_billable_time['unbillable'] ?? [])
+                ->sortByDesc(function ($value) {
+                    return $value;
+                })
+                ->toArray();
+
+            $unbillable_tickets_time_data = [
+                "type" => "horizontalBar",
+                "data" => [
+                    "labels" => array_slice(array_keys($unbillable_tickets), 0, 5),
+                    "datasets" => [[
+                        "label" => "Numero di Ticket",
+                        "data" => [
+                            ...array_map(function ($el) {
+                                    return is_numeric($el) ? round(((int) $el / 60), 2) : 0;
+                                }, 
+                                array_slice(array_values($unbillable_tickets), 0, 5)
+                            ),
+                        ],
+                        "backgroundColor" => $this->getColorShades(5, true),
+                        "maxBarThickness" => 40
+                    ]]
+                ],
+                "options" => [
+                    "title" => ["display" => true, "text" => "Top tempi ticket non fatturabili per Categoria"],
+                    "legend" => ["display" => false],
+                ]
+            ];
+
+            $maxValue = max(array_values($unbillable_tickets_time_data['data']['datasets'][0]['data']));
+
+            $unbillable_tickets_time_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
+            $unbillable_tickets_time_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = $maxValue < 20 
+                ? 1
+                : ceil($maxValue / 10 / 5) * 5; // Calcola il passo in base a $maxValue con incrementi di 5. massimo 10 step.
+            $unbillable_tickets_time_data['options']['scales']['xAxes'][0]['ticks']['max'] = ceil($maxValue / 5) * 5; // Max value in hours
+            $unbillable_tickets_time_data['options']["plugins"]["datalabels"] = [
+                "display" => true,
+                "color" => "white",
+                "align" => "center",
+                "anchor" => "center",
+                "font" => [
+                    "weight" => "bold"
+                ]
+            ];
+            
+            $unbillable_tickets_time_data['options']["scales"]["xAxes"][0]["scaleLabel"] = [
+                "display" => true,
+                "labelString" => "Ore"
+            ];
+
+            $ticket_by_unbillable_time_url = $charts_base_url . urlencode(json_encode($unbillable_tickets_time_data));
+
 
             // Logo da usare
 
@@ -1177,8 +1379,14 @@ class GeneratePdfReport implements ShouldQueue {
                 'company' => $company,
                 'request_number' => $total_requests,
                 'incident_number' => $total_incidents,
+                'opened_tickets_count' => $opened_tickets_count,
                 'closed_tickets_count' => $closed_tickets_count,
+                'still_open_tickets_count' => $still_open_tickets_count,
                 'other_tickets_count' => $other_tickets_count,
+                'unbillable_tickets_count' => $unbillable_tickets_count,
+                'unbillable_work_time' => $unbillable_work_time,
+                'billable_tickets_count' => $billable_tickets_count,
+                'billable_work_time' => $billable_work_time,
                 'ticket_graph_data' => $ticket_graph_data,
                 'ticket_by_category_url' => $ticket_by_category_url,
                 'ticket_closed_time_url' => $ticket_closed_time_url,
@@ -1194,8 +1402,9 @@ class GeneratePdfReport implements ShouldQueue {
                 'tickets_by_user_url' => $tickets_by_user_url,
                 'tickets_sla_url' => $tickets_sla_url,
                 'logo_url' => $google_url,
-                'wrong_type_url' => $wrong_type_url
-
+                'wrong_type_url' => $wrong_type_url,
+                'ticket_by_billable_time_url' => $ticket_by_billable_time_url,
+                'ticket_by_unbillable_time_url' => $ticket_by_unbillable_time_url,
             ];
 
 
@@ -1205,7 +1414,11 @@ class GeneratePdfReport implements ShouldQueue {
                 'isHtml5ParserEnabled' => true,
                 'isRemoteEnabled' => true
             ]);
-            $pdf = Pdf::loadView('pdf.exportbatch', $data);
+            $pdf = Pdf::loadView('pdf.exportpdf', $data);
+
+            if(!$pdf) {
+                throw new Exception("PDF generation failed");
+            }
 
             Storage::disk('gcs')->put($report->file_path, $pdf->output());
 
@@ -1215,7 +1428,9 @@ class GeneratePdfReport implements ShouldQueue {
         } catch (Exception $e) {
             if ($this->attempts() >= $this->tries) {
                 $this->report->is_failed = true;
-                $this->report->error_message = "Attempts: " . $this->attempts() . " - Error: " . $e->getMessage() ?: 'An error occurred while generating the report';
+                // Garantisce che il messaggio finale non superi i 255 caratteri
+                $this->report->error_message = 'Error generating the report at ' . now() . '.';
+
                 $this->report->save();
             } else {
                 throw $e;
