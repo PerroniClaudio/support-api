@@ -63,13 +63,15 @@ class GeneratePdfReport implements ShouldQueue {
                 })
                 ->get();
             
-            $tickets->load('ticketType');
+            if (!$tickets->isEmpty()) {
+                $tickets->load('ticketType');
+            }
             
 
             // Questa parte va provata, perchè nella request dovrebbe esserci l'indicazione, ma verrà inserita negli optional parameters.
             // $filter = $report->type_filter;
             $optional_parameters = json_decode($report->optional_parameters);
-            $filter = $optional_parameters->type || 'all';
+            $filter = $optional_parameters->type ?? 'all';
 
             // Aperti nel periodo selezionato
             $opened_tickets_count = 0;
@@ -90,13 +92,12 @@ class GeneratePdfReport implements ShouldQueue {
             $tickets_data = [];
 
             foreach ($tickets as $ticket) {
-
                 $ticket['category'] = $ticket->ticketType->category()->first();
 
                 if (
                     $filter == 'all' ||
-                    ($filter == 'request' && $ticket['category']['is_request'] == 1) ||
-                    ($filter == 'incident' && $ticket['category']['is_problem'] == 1)
+                    ($filter == 'request' && ($ticket['category']['is_request'] == 1)) ||
+                    ($filter == 'incident' && ($ticket['category']['is_problem'] == 1))
                 ) {
 
                     if (\Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $ticket->created_at)->gte(\Carbon\Carbon::createFromFormat('Y-m-d', $report->start_date))) {
@@ -113,10 +114,10 @@ class GeneratePdfReport implements ShouldQueue {
                     }
 
                     if(!$ticket->actual_processing_time) {
-                        throw new Exception("Ticket " . $ticket->id . " non ha il tempo di lavoro. Esportazione non riuscita.");
+                        throw new Exception("Il ticket " . $ticket->id . " non ha il tempo di lavoro.");
                     }
                     if($ticket->is_billable === null){
-                        throw new Exception("Ticket " . $ticket->id . " non ha il flag di fatturabilità. Esportazione non riuscita.");
+                        throw new Exception("Il ticket " . $ticket->id . " non ha il flag di fatturabilità.");
                     }
 
                     // Dei ticket da includere bisogna contare separatamente quanti sono quelli fatturabili e quelli no, oltre ai tempi di gestione.
@@ -768,7 +769,7 @@ class GeneratePdfReport implements ShouldQueue {
             ];
 
             $maxValue = count($ticket_by_category_request_bar_data['data']['datasets'][0]['data']) > 0 
-                ? max(array_values($ticket_by_category_request_bar_data['data']['datasets'][0]['data'])) 
+                ? max([0, ...array_values($ticket_by_category_request_bar_data['data']['datasets'][0]['data'])]) 
                 : 0;
             if ($maxValue < 5) {
                 $ticket_by_category_request_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
@@ -866,7 +867,7 @@ class GeneratePdfReport implements ShouldQueue {
             ];
 
             $maxValue = count($ticket_by_type_request_bar_data['data']['datasets'][0]['data']) > 0 
-                ? max(array_values($ticket_by_type_request_bar_data['data']['datasets'][0]['data'])) 
+                ? max([0, ...array_values($ticket_by_type_request_bar_data['data']['datasets'][0]['data'])]) 
                 : 0;
             if ($maxValue < 5) {
                 $ticket_by_type_request_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
@@ -912,7 +913,7 @@ class GeneratePdfReport implements ShouldQueue {
                 ]
             ];
 
-            $maxValue = max(array_values($ticket_by_source_data['data']['datasets'][0]['data']));
+            $maxValue = max([0, ...array_values($ticket_by_source_data['data']['datasets'][0]['data'])]);
             if ($maxValue < 5) {
                 $ticket_by_source_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
                 $ticket_by_source_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = 1;
@@ -954,7 +955,7 @@ class GeneratePdfReport implements ShouldQueue {
                 ]
             ];
 
-            $maxValue = max(array_values($ticket_by_weekday_data['data']['datasets'][0]['data']));
+            $maxValue = max([0, ...array_values($ticket_by_weekday_data['data']['datasets'][0]['data'])]);
             if ($maxValue < 5) {
                 $ticket_by_weekday_data['options']['scales']['yAxes'][0]['ticks']['beginAtZero'] = true;
                 $ticket_by_weekday_data['options']['scales']['yAxes'][0]['ticks']['stepSize'] = 1;
@@ -1089,7 +1090,7 @@ class GeneratePdfReport implements ShouldQueue {
                 ]
             ];
 
-            $maxValue = max(array_values($ticket_by_priority_bar_data['data']['datasets'][0]['data']));
+            $maxValue = max([0, ...array_values($ticket_by_priority_bar_data['data']['datasets'][0]['data'])]);
             if ($maxValue < 5) {
                 $ticket_by_priority_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
                 $ticket_by_priority_bar_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = 1;
@@ -1137,9 +1138,7 @@ class GeneratePdfReport implements ShouldQueue {
                 ]
             ];
 
-            $maxValue = count($tickets_by_user_data['data']['datasets'][0]['data']) > 0 
-                ? max(array_values($tickets_by_user_data['data']['datasets'][0]['data'])) 
-                : 0;
+            $maxValue = max([0, ...array_values($tickets_by_user_data['data']['datasets'][0]['data'])]);
 
             $tickets_by_user_data['options']['scales']['yAxes'][0]['ticks']['beginAtZero'] = true;
             $tickets_by_user_data['options']['scales']['yAxes'][0]['ticks']['stepSize'] = $maxValue <= 10 
@@ -1236,7 +1235,7 @@ class GeneratePdfReport implements ShouldQueue {
                 ]
             ];
 
-            $maxValue = max(array_values($wrong_type_data['data']['datasets'][0]['data']));
+            $maxValue = max([0, ...array_values($wrong_type_data['data']['datasets'][0]['data'])]);
             if ($maxValue < 5) {
                 $wrong_type_data['options']['scales']['yAxes'][0]['ticks']['beginAtZero'] = true;
                 $wrong_type_data['options']['scales']['yAxes'][0]['ticks']['stepSize'] = 1;
@@ -1286,7 +1285,7 @@ class GeneratePdfReport implements ShouldQueue {
                 ]
             ];
 
-            $maxValue = max(array_values($billable_tickets_time_data['data']['datasets'][0]['data']));
+            $maxValue = max([0, ...array_values($billable_tickets_time_data['data']['datasets'][0]['data'])]);
 
             $billable_tickets_time_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
             $billable_tickets_time_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = $maxValue < 20 
@@ -1341,7 +1340,7 @@ class GeneratePdfReport implements ShouldQueue {
                 ]
             ];
 
-            $maxValue = max(array_values($unbillable_tickets_time_data['data']['datasets'][0]['data']));
+            $maxValue = max([0, ...array_values($unbillable_tickets_time_data['data']['datasets'][0]['data'])]);
 
             $unbillable_tickets_time_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
             $unbillable_tickets_time_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = $maxValue < 20 
@@ -1426,10 +1425,15 @@ class GeneratePdfReport implements ShouldQueue {
             
             $report->update(['is_generated' => true]);
         } catch (Exception $e) {
+            $shortenedMessage = $e->getMessage();
+            if (strlen($shortenedMessage) > 500) {
+                $shortenedMessage = substr($shortenedMessage, 0, 500) . '...';
+            }
+
             if ($this->attempts() >= $this->tries) {
                 $this->report->is_failed = true;
-                // Garantisce che il messaggio finale non superi i 255 caratteri
-                $this->report->error_message = 'Error generating the report at ' . now() . '.';
+                
+                $this->report->error_message = 'Error generating the report at ' . now() . '. ' . $shortenedMessage;
 
                 $this->report->save();
             } else {

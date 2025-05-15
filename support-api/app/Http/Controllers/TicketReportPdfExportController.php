@@ -243,15 +243,95 @@ class TicketReportPdfExportController extends Controller {
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, TicketReportPdfExport $ticketReportPdfExport) {
-        //
+    public function update(Request $request) {
+        try {
+            $authUser = $request->user();
+            if ($authUser["is_admin"] != 1) {
+                return response([
+                    'message' => 'Unauthorized.',
+                ], 401);
+            }
+            $validatedData = $request->validate([
+                'id' => 'required|exists:ticket_report_pdf_exports,id',
+                'is_approved_billing' => 'boolean',
+                // 'approved_billing_identification' => 'nullable|string|unique:ticket_report_pdf_exports,approved_billing_identification',
+            ]);
+            
+            $ticketReportPdfExport = TicketReportPdfExport::find($request->id);
+            if (!$ticketReportPdfExport) {
+                return response([
+                    'message' => 'Report not found',
+                ], 404);
+            }
+
+            // Verifico se il report è stato approvato (quindi collegabile alle fatture tramite il suo identificativo)
+            if($ticketReportPdfExport->is_approved_billing == 1 && $validatedData['is_approved_billing'] == 0) {
+                return response([
+                    'message' => 'You can\'t unapprove a report that has been approved for billing.',
+                ], 401);
+            }
+    
+            // Genero l'identificativo da utilizzare per la fatturazione
+            if($validatedData['is_approved_billing'] == 1 && !$ticketReportPdfExport->approved_billing_identification) {
+                $validatedData['approved_billing_identification'] = $ticketReportPdfExport->generatePdfIdentificationString();
+            }
+    
+            $ticketReportPdfExport->update($validatedData);
+    
+            return response([
+                'message' => 'Report updated successfully',
+                'report' => $ticketReportPdfExport
+            ], 200);
+        } catch (\Exception $e) {
+            return response([
+                'message' => 'Error updating the report',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
      * Remove the specified resource from storage.
      */
     public function destroy(TicketReportPdfExport $ticketReportPdfExport) {
-        //
+        try {
+            $authUser = request()->user();
+            if ($authUser["is_admin"] != 1) {
+                return response([
+                    'message' => 'Unauthorized.',
+                ], 401);
+            }
+            // Verifico se il report esiste
+            if (!$ticketReportPdfExport) {
+                return response([
+                    'message' => 'Report not found',
+                ], 404);
+            }
+            // Verifico se il report è stato approvato (quindi collegabile alle fatture tramite il suo identificativo)
+            if($ticketReportPdfExport->is_approved_billing == 1) {
+                return response([
+                    'message' => 'You can\'t delete a report that has been approved for billing.',
+                ], 401);
+            }
+            // Cancello il file dal bucket
+            if ($ticketReportPdfExport->is_generated) {
+                $filePath = $ticketReportPdfExport->file_path;
+                if (Storage::disk('gcs')->exists($filePath)) {
+                    Storage::disk('gcs')->delete($filePath);
+                }
+            }
+            // Cancello il report dal db
+            $ticketReportPdfExport->delete();
+    
+            return response([
+                'message' => 'Report deleted successfully',
+            ], 200);
+        } catch (\Exception $e) {
+            return response([
+                'message' => 'Error deleting the report',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
 }
