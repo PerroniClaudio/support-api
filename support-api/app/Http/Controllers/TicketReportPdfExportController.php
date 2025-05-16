@@ -48,19 +48,17 @@ class TicketReportPdfExportController extends Controller {
      * Lista per utente singolo
      */
 
-    public function pdfUser(Request $request, User $user) {
-        if ($user["is_admin"] != 1 && $user["is_company_admin"] != 1) {
-            return response([
-                'message' => 'The user must be at least company admin.',
-            ], 401);
-        }
-        if($user["is_company_admin"] == 1 && $user["company_id"] != $user->company_id) {
-            return response([
-                'message' => 'You can\'t see company reports.',
-            ], 401);
-        }
-
+    public function pdfUser(Request $request) {
         $user = $request->user();
+        if($user["is_admin"] != 1){
+            // non è admin
+            if ($user["is_company_admin"] != 1) {
+                // non è company admin
+                return response([
+                    'message' => 'The user must be at least company admin.',
+                ], 401);
+            }
+        }
 
         // Per ora non vengono ancora generati dall'utente, quindi qui si deve ancora decidere come prenderli.
         // penso tutti quelli dell'azienda dell'utente, generati da loro.
@@ -80,15 +78,14 @@ class TicketReportPdfExportController extends Controller {
 
     public function pdfBilling(Request $request) {
         $user = $request()->user();
-        if ($user["is_admin"] != 1 && $user["is_company_admin"] != 1) {
-            return response([
-                'message' => 'The user must be at least company admin.',
-            ], 401);
-        }
-        if($user["is_company_admin"] == 1 && $user["company_id"] != $user->company_id) {
-            return response([
-                'message' => 'You can\'t see company reports.',
-            ], 401);
+        if($user["is_admin"] != 1){
+            // non è admin
+            if ($user["is_company_admin"] != 1) {
+                // non è company admin
+                return response([
+                    'message' => 'The user must be at least company admin.',
+                ], 401);
+            }
         }
 
         $reports = TicketReportPdfExport::where('company_id', $user->company_id)
@@ -109,10 +106,20 @@ class TicketReportPdfExportController extends Controller {
 
         try {
             $user = $request->user();
-            if ($user["is_admin"] != 1 && $user["is_company_admin"] != 1) {
-                return response([
-                    'message' => 'The user must be at least company admin.',
-                ], 401);
+            if($user["is_admin"] != 1){
+                // non è admin
+                if ($user["is_company_admin"] != 1) {
+                    // non è company admin
+                    return response([
+                        'message' => 'The user must be at least company admin.',
+                    ], 401);
+                }
+                // è company admin
+                if($user["company_id"] != $request->company_id) {
+                    return response([
+                        'message' => 'You can only request reports for your company.',
+                    ], 401);
+                }
             }
             
             $company = Company::find($request->company_id);
@@ -154,15 +161,20 @@ class TicketReportPdfExportController extends Controller {
     public function pdfPreview(TicketReportPdfExport $ticketReportPdfExport, Request $request) {
 
         $user = $request->user();
-        if ($user["is_admin"] != 1 && $user["is_company_admin"] != 1) {
-            return response([
-                'message' => 'The user must be at least company admin.',
-            ], 401);
-        }
-        if($user["is_company_admin"] == 1 && $user["company_id"] != $ticketReportPdfExport->company_id) {
-            return response([
-                'message' => 'You can\'t download this report.',
-            ], 401);
+        if($user["is_admin"] != 1){
+            // non è admin
+            if ($user["is_company_admin"] != 1) {
+                // non è company admin
+                return response([
+                    'message' => 'The user must be at least company admin.',
+                ], 401);
+            }
+            // è company admin
+            if($user["company_id"] != $ticketReportPdfExport->company_id) {
+                return response([
+                    'message' => 'You can\'t download this report.',
+                ], 401);
+            }
         }
 
         $url = $this->generatedSignedUrlForFile($ticketReportPdfExport->file_path);
@@ -180,15 +192,22 @@ class TicketReportPdfExportController extends Controller {
     public function pdfDownload(TicketReportPdfExport $ticketReportPdfExport, Request $request) {
 
         $user = $request->user();
-        if ($user["is_admin"] != 1 && $user["is_company_admin"] != 1) {
-            return response([
-                'message' => 'The user must be at least company admin.',
-            ], 401);
-        }
-        if($user["is_company_admin"] == 1 && $user["company_id"] != $ticketReportPdfExport->company_id) {
-            return response([
-                'message' => 'You can\'t download this report.',
-            ], 401);
+        // il controllo è così perchè altrimenti stefano che è sia admin che company admin non può scaricare i report 
+        // perchè se è company admin controllava sempre il company_id, che nel suo caso può essere diverso essendo comunque admin.
+        if($user["is_admin"] != 1){
+            // non è admin
+            if ($user["is_company_admin"] != 1) {
+                // non è company admin
+                return response([
+                    'message' => 'The user must be at least company admin.',
+                ], 401);
+            }
+            // è company admin
+            if($user["company_id"] != $ticketReportPdfExport->company_id) {
+                return response([
+                    'message' => 'You can\'t download this report.',
+                ], 401);
+            }
         }
 
         $filePath = $ticketReportPdfExport->file_path;
