@@ -80,6 +80,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/ticket/{ticket}/report", [App\Http\Controllers\TicketController::class, "report"]);
     Route::get("/ticket-report/batch", [App\Http\Controllers\TicketController::class, "batchReport"]);
     Route::get("/ticket-types", [App\Http\Controllers\UserController::class, "ticketTypes"]);
+    Route::get("/ticket/{ticket}/slave-tickets", [App\Http\Controllers\TicketController::class, "getSlaveTickets"]);
 });
 
 // Company Routes
@@ -97,6 +98,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/companies/{company}/frontend-logo", [CompanyController::class, "getFrontendLogoUrl"]);
     Route::get("/companies/{company}/tickets", [CompanyController::class, "tickets"]);
     Route::get("/companies/{company}/weekly-times", [CompanyController::class, "getWeeklyTimes"]);
+    Route::get("/companies/{company}/master-tickets", [CompanyController::class, "getMasterTickets"]);
     Route::post("/companies/{company}/weekly-times", [CompanyController::class, "editWeeklyTime"]);
     Route::post("/companies/{company}/logo", [CompanyController::class, "uploadLogo"]);
 

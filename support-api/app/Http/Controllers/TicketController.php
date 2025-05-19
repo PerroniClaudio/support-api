@@ -655,18 +655,38 @@ class TicketController extends Controller {
     }
 
     public function closeTicket(Ticket $ticket, Request $request) {
-
         $fields = $request->validate([
             'message' => 'required|string',
             'actualProcessingTime' => 'required|int',
             'workMode' => 'required|string',
             'isRejected' => 'required|boolean',
+            'masterTicketId' => 'int|nullable',
         ]);
 
         if (!$request->user()->is_admin) {
             return response([
                 'message' => 'Only admins can close tickets.',
             ], 401);
+        }
+
+
+        if($request->masterTicketId){
+            $masterTicket = Ticket::where('id', $request->masterTicketId)
+                ->whereHas('ticketType', function ($query) {
+                    $query->where('is_master', true);
+                })
+                ->first();
+
+            if (!$masterTicket) {
+                return response([
+                    'message' => 'Master ticket not found or not of master type.',
+                ], 400);
+            }
+            if($request->masterTicketId == $ticket->id){
+                return response([
+                    'message' => 'Master ticket cannot be the same as the current ticket.',
+                ], 400);
+            }
         }
 
         $requestUser = $request->user();
@@ -691,6 +711,7 @@ class TicketController extends Controller {
             'actual_processing_time' => $request->actualProcessingTime,
             'work_mode' => $request->workMode,
             'is_rejected' => $request->isRejected,
+            'master_id' => $request->masterTicketId,
         ]);
 
         $update = TicketStatusUpdate::create([
@@ -1139,6 +1160,27 @@ class TicketController extends Controller {
             'closing_messages' => $closingUpdates,
         ], 200);
     }
+
+    /**
+     * Get all slave tickets of a master ticket
+     */
+    public function getSlaveTickets(Ticket $ticket, Request $request) {
+
+        $user = $request->user();
+
+        if ($user["is_admin"] != 1 && !($user["is_company_admin"] == 1 && $ticket->company_id == $user->company_id)) {
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
+        $slaveTickets = $ticket->slaves;
+
+        return response([
+            'slave_tickets' => $slaveTickets,
+        ], 200);
+    }
+
 
     public function report(Ticket $ticket, Request $request) {
         $user = $request->user();

@@ -1404,6 +1404,7 @@ class GeneratePdfReport implements ShouldQueue {
                 'wrong_type_url' => $wrong_type_url,
                 'ticket_by_billable_time_url' => $ticket_by_billable_time_url,
                 'ticket_by_unbillable_time_url' => $ticket_by_unbillable_time_url,
+                'filter' => $filter,
             ];
 
 

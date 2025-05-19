@@ -36,6 +36,26 @@ class CompanyController extends Controller {
         ], 200);
     }
 
+    public function getMasterTickets(Company $company) {
+        $authUser = auth()->user();
+        if(!$authUser->is_admin && !($authUser->is_company_admin && ($authUser->company_id == $company->id))) {
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+        $tickets = $company->tickets()
+            ->whereHas('ticketType', function ($query) {
+            $query->where('is_master', true);
+            })
+            ->with(['ticketType'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response([
+            'master_tickets' => $tickets,
+        ], 200);
+    }
+
     /**
      * Show the form for creating a new resource.
      */

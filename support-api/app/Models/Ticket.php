@@ -37,7 +37,8 @@ class Ticket extends Model {
         'source',
         'is_rejected',
         'parent_ticket_id',
-        'is_billable'
+        'is_billable',
+        'master_id'
     ];
 
     public function toSearchableArray() {
@@ -255,4 +256,19 @@ class Ticket extends Model {
     public function parent() {
         return $this->belongsTo(Ticket::class, 'parent_ticket_id');
     }
+
+    // public function children() {
+    //     return $this->hasMany(Ticket::class, 'parent_ticket_id');
+    // }
+
+    // Dato che c'è già parent (e child/children non c'è ma sarebbe il suo corrispettivo), 
+    // per il collegamento tra ticket on site e ticket normali uso master e slave (un ticket on site può avere da 0 a n ticket normali a lui collegati e questi due vengono trattati diversamente nel report).
+    public function master() {
+        return $this->belongsTo(Ticket::class, 'master_id');
+    }
+
+    public function slaves() {
+        return $this->hasMany(Ticket::class, 'master_id');
+    }
+
 }

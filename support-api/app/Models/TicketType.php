@@ -24,6 +24,7 @@ class TicketType extends Model {
         'expected_processing_time',
         'expected_is_billable',
         'is_custom_group_exclusive',
+        'is_master',
     ];
 
     public function tickets() {
