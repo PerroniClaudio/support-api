@@ -378,9 +378,6 @@ class TicketController extends Controller {
             ], 401);
         }
 
-        $childTicket = Ticket::where('parent_ticket_id', $ticket->id)->first();
-        $ticket->child_ticket_id = $childTicket->id ?? null;
-
         // Se l'utente è admin si devono impostare i messaggi degli utenti come letti, altrimenti si devono impostare i messaggi degli admin come letti.
         // Se si vuole mostrare quanti messaggi erano da leggere si potrebbe usare un async che posticipi l'azzeramento dei messaggi non letti, in modo da inviare le risposta prima della modifica.
         if ($user["is_admin"] == 1) {
@@ -397,6 +394,11 @@ class TicketController extends Controller {
             cache()->forget('user_' . $user->id . '_tickets');
             cache()->forget('user_' . $user->id . '_tickets_with_closed');
         }
+
+        // Messo qui perchè altrimenti va in conflitto con gli update 
+        // (il campo child_ticket_id non esiste. viene usato solo per la navigazione nel frontend)
+        $childTicket = Ticket::where('parent_ticket_id', $ticket->id)->first();
+        $ticket->child_ticket_id = $childTicket->id ?? null;
 
         return response([
             'ticket' => $ticket,
@@ -691,21 +693,22 @@ class TicketController extends Controller {
         }
 
 
+        // Se viene indicato un master_id si controlla che questo ticket non sia master 
+        // e che il ticket con l'id indicato esista e sia master. quindi non può essere nemmeno l'id del ticket stesso.
         if($request->masterTicketId){
+            if($ticket->ticketType->is_master){
+                return response([
+                    'message' => 'This is a master ticket. Master ticket cannot be slave.',
+                ], 400);
+            }
             $masterTicket = Ticket::where('id', $request->masterTicketId)
                 ->whereHas('ticketType', function ($query) {
                     $query->where('is_master', true);
                 })
                 ->first();
-
             if (!$masterTicket) {
                 return response([
                     'message' => 'Master ticket not found or not of master type.',
-                ], 400);
-            }
-            if($request->masterTicketId == $ticket->id){
-                return response([
-                    'message' => 'Master ticket cannot be the same as the current ticket.',
                 ], 400);
             }
         }
