@@ -30,7 +30,7 @@ class TicketController extends Controller {
      * Display a listing of the resource.
      */
     public function index(Request $request) {
-        // Show only the tickets belonging to the authenticated user
+        // Show only the tickets belonging to the authenticated user (for company users and company_admin. support admin use adminGroupsTickets)
 
         $user = $request->user();
         // Deve comprendere i ticket chiusi?
@@ -154,6 +154,13 @@ class TicketController extends Controller {
             if ($request->parent_ticket_id) {
                 $parentTicket = Ticket::find($request->parent_ticket_id);
                 if ($parentTicket) {
+                    // Se il padre ha già un figlio non può averne un altro.
+                    if(Ticket::where('parent_ticket_id', $parentTicket->id)->exists()){
+                        return response([
+                            'message' => 'Il ticket padre ha già un figlio. Impossibile associarne altri.',
+                        ], 400);
+                    }
+                    
                     $ticket->parent_ticket_id = $parentTicket->id;
                     $ticket->save();
 
@@ -370,6 +377,9 @@ class TicketController extends Controller {
                 'message' => 'Unauthorized',
             ], 401);
         }
+
+        $childTicket = Ticket::where('parent_ticket_id', $ticket->id)->first();
+        $ticket->child_ticket_id = $childTicket->id ?? null;
 
         // Se l'utente è admin si devono impostare i messaggi degli utenti come letti, altrimenti si devono impostare i messaggi degli admin come letti.
         // Se si vuole mostrare quanti messaggi erano da leggere si potrebbe usare un async che posticipi l'azzeramento dei messaggi non letti, in modo da inviare le risposta prima della modifica.
