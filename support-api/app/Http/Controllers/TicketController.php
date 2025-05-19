@@ -121,6 +121,17 @@ class TicketController extends Controller {
             $group = $ticketType->groups->first();
             $groupId = $group ? $group->id : null;
 
+            if(!$ticketType){
+                return response([
+                    'message' => 'Ticket type not found',
+                ], 404);
+            }
+            if($ticketType->is_master && ($user->is_admin != 1)){
+                return response([
+                    'message' => 'Only support admins can create master tickets.',
+                ], 401);
+            }
+
             $ticket = Ticket::create([
                 'description' => $fields['description'],
                 'type_id' => $fields['type_id'],
