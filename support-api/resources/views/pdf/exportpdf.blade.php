@@ -13,50 +13,38 @@
 
     <div style="text-align:center; height:100%">
 
-        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logo_url)) }}" alt="iftlogo"
-            style="width: 192px; height: 38px;">
+        <div>
+            <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logo_url)) }}" alt="iftlogo"
+                style="width: 192px; height: 38px; position: absolute; top: 0; left: 0;">
+        </div>
 
 
-        <h1 class="main-header" style="font-size:3rem;line-height: 1;margin-top: 4rem;margin-bottom: 4rem;">
+        <h1 class="main-header" style="font-size:2rem;line-height: 1;margin-top: 3rem; margin-bottom: 1rem;">
             Report attività eseguite 
         </h1>
 
         <div class="card">
-            <h2 class="main-header" style="font-size:2rem;line-height: 1;margin-bottom: 4rem;">
+            <h2 class="main-header" style="font-size:1.5rem;line-height: 1;margin-bottom: 0.5rem;">
                 {{ $company['name'] }}</h2>
-    
-            {{-- @php
-                $logoUrl = $company->temporaryLogoUrl();
-            @endphp
-            @if ($logoUrl)
-                <img src="data:image;base64, {{ base64_encode(file_get_contents($logoUrl)) }}" alt="Company Logo"
-                    style="max-height: 100px; max-width: 200px;">
-            @endif --}}
-    
-            <h3>Periodo</h3>
-            <p>{{ $date_from->format('d/m/Y') }} - {{ $date_to->format('d/m/Y') }}</p>
+            
+            <table style="margin: auto; font-size: 0.75rem; width: fit-content;">
+                <tr style="width: fit-content;">
+                    <td style="width: 50%; text-align: right;">
+                        <span><b>Filtro:</b></span>
+                        <span style="margin-left: 0.5rem; margin-right:2rem;">{{ $filter == 'all' ? 'Tutti' : ($filter == 'request' ? 'Richieste' : ($filter == 'incident' ? 'Problemi' : 'Non specificato')) }}</span>
+                    </td>
+                    <td style="width: 50%">
+                        <span><b>Periodo:</b></span>
+                        <span style="margin-left: 0.5rem">{{ $date_from->format('d/m/Y') }} - {{ $date_to->format('d/m/Y') }}</span>
+                    </td>
+                </tr>
+            </table>
         </div>
 
-    </div>
-
-
-    <div class="page-break"></div>
-
-    <div>
-
-        <div style="text-align:center;margin-top: 1rem;margin-bottom: 1rem;">
-            <p>Periodo: {{ $date_from->format('d/m/Y') }} - {{ $date_to->format('d/m/Y') }}</p>
-        </div>
+        <div style="height: 1rem;"></div>
 
         <div class="card">
             <p style="margin-bottom: 0.5rem;"><b>Conteggio e fatturabilità ticket</b></p>
-            {{-- <table style="width:100%">
-                <tr style="border: 1px solid #201e1e;">
-                    <td style="border: 1px solid #201e1e;">
-                        <b>Conteggio e fatturabilità ticket</b>
-                    </td>
-                </tr>
-            </table> --}}
             
             <table style="width:100%; border: 1px solid #353131; border-collapse: collapse;">
 
@@ -542,6 +530,10 @@
                         <p>
                             <span class="ticket-section-title">Fatturabile:</span>
                             <span>{{ $ticket['is_billable'] ? 'Si' : 'No' }}</span>
+                        </p>
+                        <p>
+                            <span class="ticket-section-title">Tempo:</span>
+                            <span>{{ sprintf('%02d:%02d', intdiv($ticket['actual_processing_time'], 60), $ticket['actual_processing_time'] % 60) }}</span>
                         </p>
                     </div>
 

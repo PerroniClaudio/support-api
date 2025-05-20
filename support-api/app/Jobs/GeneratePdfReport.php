@@ -1330,7 +1330,9 @@ class GeneratePdfReport implements ShouldQueue {
                                 array_slice(array_values($unbillable_tickets), 0, 5)
                             ),
                         ],
-                        "backgroundColor" => $this->getColorShades(5, true),
+                        // private function getColorShades($number = 1, $random = false, $fromDarker = true, $fromLighter = false, $shadeColor = "red")
+                        // $this->getColorShades(count(array_keys($different_type_with_count['request'])), true, true, false, "blue"),
+                        "backgroundColor" => $this->getColorShades(5, false, true, false, "green"),
                         "maxBarThickness" => 40
                     ]]
                 ],
@@ -1463,6 +1465,25 @@ class GeneratePdfReport implements ShouldQueue {
                 '#f8c1bf',
                 '#fad6d4',
                 '#fad6d4',
+            ];
+        } else if ($shadeColor == "green") {
+            $colorShadesBank = [
+                '#0d3b1e',
+                '#145c2a',
+                '#1b7d36',
+                '#22a042',
+                '#29c24e',
+                '#30e45a',
+                '#45e96e',
+                '#59ee82',
+                '#6ef396',
+                '#83f8aa',
+                '#98fdbe',
+                '#acf3c1',
+                '#c1fad6',
+                '#d6fae6',
+                '#e6faef',
+                '#e6faef'
             ];
         } else {
             $colorShadesBank = [
