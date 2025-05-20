@@ -1200,6 +1200,29 @@ class TicketController extends Controller {
 
         $slaveTickets = $ticket->slaves;
 
+        foreach ($slaveTickets as $slaveTicket) {
+            $slaveTicket->setVisible([
+                "id", "company_id", "status", "description", "group_id", "created_at", "type_id", "source", "parent_ticket_id", "master_id"
+            ]);
+            $slaveTicket->user_full_name = 
+                $slaveTicket->user->is_admin == 1
+                    ? ("Supporto" . ($user["is_admin"] != 1 ? " - " . $slaveTicket->user->id : ""))
+                    : ($slaveTicket->user->surname 
+                        ? $slaveTicket->user->surname . " " . strtoupper(substr($slaveTicket->user->name, 0, 1)) . "."
+                        : $slaveTicket->user->name
+                    );
+            $slaveTicket->makeVisible(['user_full_name']);
+
+            $referer = $slaveTicket->referer();
+            if ($referer){
+                $slaveTicket->referer_full_name = 
+                    $slaveTicket->referer->surname 
+                        ? $slaveTicket->referer->surname . " " . strtoupper(substr($slaveTicket->referer->name, 0, 1)) . "."
+                        : $slaveTicket->referer->name;
+                $slaveTicket->makeVisible(['referer_full_name']);
+            }
+        }
+
         return response([
             'slave_tickets' => $slaveTickets,
         ], 200);
