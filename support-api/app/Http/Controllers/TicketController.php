@@ -1216,9 +1216,9 @@ class TicketController extends Controller {
             $referer = $slaveTicket->referer();
             if ($referer){
                 $slaveTicket->referer_full_name = 
-                    $slaveTicket->referer->surname 
-                        ? $slaveTicket->referer->surname . " " . strtoupper(substr($slaveTicket->referer->name, 0, 1)) . "."
-                        : $slaveTicket->referer->name;
+                    $referer->surname 
+                        ? $referer->surname . " " . strtoupper(substr($referer->name, 0, 1)) . "."
+                        : $referer->name;
                 $slaveTicket->makeVisible(['referer_full_name']);
             }
         }
