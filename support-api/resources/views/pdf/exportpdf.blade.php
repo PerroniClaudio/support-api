@@ -14,8 +14,15 @@
     <div style="text-align:center; height:100%">
 
         <div>
-            <img src="data:image/png;base64,{{ base64_encode(file_get_contents($logo_url)) }}" alt="iftlogo"
-                style="width: 192px; height: 38px; position: absolute; top: 0; left: 0;">
+            @php
+                $imgData = @file_get_contents($logo_url);
+            @endphp
+            @if ($imgData !== false)
+                <img src="data:image/png;base64,{{ base64_encode($imgData) }}" alt="iftlogo"
+                    style="width: 192px; height: 38px; position: absolute; top: 0; left: 0;">
+            @else
+                <span>Immagine non disponibile</span>
+            @endif
         </div>
 
 
@@ -31,11 +38,11 @@
                 <tr style="width: fit-content;">
                     <td style="width: 50%; text-align: right;">
                         <span><b>Filtro:</b></span>
-                        <span style="margin-left: 0.5rem; margin-right:2rem;">{{ $filter == 'all' ? 'Tutti' : ($filter == 'request' ? 'Richieste' : ($filter == 'incident' ? 'Problemi' : 'Non specificato')) }}</span>
+                        <span style="margin-left: 0; margin-right:2rem;">{{ $filter == 'all' ? 'Tutti' : ($filter == 'request' ? 'Richieste' : ($filter == 'incident' ? 'Problemi' : 'Non specificato')) }}</span>
                     </td>
                     <td style="width: 50%">
                         <span><b>Periodo:</b></span>
-                        <span style="margin-left: 0.5rem">{{ $date_from->format('d/m/Y') }} - {{ $date_to->format('d/m/Y') }}</span>
+                        <span style="margin-left: 0">{{ $date_from->format('d/m/Y') }} - {{ $date_to->format('d/m/Y') }}</span>
                     </td>
                 </tr>
             </table>
@@ -45,6 +52,9 @@
 
         <div class="card">
             <p style="margin-bottom: 0.5rem;"><b>Conteggio e fatturabilità ticket</b></p>
+            <p style="font-size: 0.75rem; margin-top: 0; margin-bottom: 0.5rem;">
+                In caso di ticket Master e collegati, viene conteggiato solo il tempo del ticket Master.
+            </p>
             
             <table style="width:100%; border: 1px solid #353131; border-collapse: collapse;">
 
@@ -65,17 +75,34 @@
                     <tr style="border: 1px solid #353131;">
                         <td style="border: 1px solid #353131;">
                             <p class="text-small-plus">
-                                Ticket chiusi fatturabili
+                                Ticket chiusi fatturabili (on site)
                             </p>
                         </td>
                         <td style="border: 1px solid #353131; text-align: center;">
                             <p class="text-small-plus " style="font-weight: 600">
-                                {{ $billable_tickets_count }}
+                               {{ $on_site_billable_tickets_count }}
                             </p>
                         </td>
                         <td style="border: 1px solid #353131; text-align: center;">
                             <p class="text-small-plus " style="font-weight: 600">
-                                {{ sprintf('%02d:%02d', intdiv($billable_work_time, 60), $billable_work_time % 60) }}
+                                {{ sprintf('%02d:%02d', intdiv($on_site_billable_work_time, 60), $on_site_billable_work_time % 60) }}
+                            </p>
+                        </td>
+                    </tr>
+                    <tr style="border: 1px solid #353131;">
+                        <td style="border: 1px solid #353131;">
+                            <p class="text-small-plus">
+                                Ticket chiusi fatturabili (remoto)
+                            </p>
+                        </td>
+                        <td style="border: 1px solid #353131; text-align: center;">
+                            <p class="text-small-plus " style="font-weight: 600">
+                                {{ $remote_billable_tickets_count }}
+                            </p>
+                        </td>
+                        <td style="border: 1px solid #353131; text-align: center;">
+                            <p class="text-small-plus " style="font-weight: 600">
+                                {{ sprintf('%02d:%02d', intdiv($remote_billable_work_time, 60), $remote_billable_work_time % 60) }}
                             </p>
                         </td>
                     </tr>
@@ -123,13 +150,28 @@
             <table width="100%" style="margin-top: 1rem;">
                 <tr>
                     <td>
-                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($ticket_by_billable_time_url)) }}"
-                        style="width: 100%; height: auto;">
+                        @php
+                            $imgData = @file_get_contents($ticket_by_billable_time_url);
+                        @endphp
+                        @if ($imgData !== false)
+                            <img src="data:image/png;base64,{{ base64_encode($imgData) }}"
+                                style="width: 100%; height: auto;">
+                        @else
+                            <span>Immagine non disponibile</span>
+                        @endif
                     </td>
                     
                     <td>
-                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($ticket_by_unbillable_time_url)) }}"
-                        style=" width:100%;height: auto;">
+                        @php
+                            $imgData = @file_get_contents($ticket_by_unbillable_time_url);
+                        @endphp
+                        @if ($imgData !== false)
+                            <img src="data:image/png;base64,{{ base64_encode($imgData) }}"
+                                style="width: 100%;height: auto;">
+                        @else
+                            <span>Immagine non disponibile</span>
+                        @endif
+                        
                     </td>
                 </tr>
             </table>
@@ -158,7 +200,7 @@
                     @php
                         $billableTicketsByCategory = collect($tickets)
                             ->filter(function ($ticket) {
-                                return $ticket['is_billable'];
+                                return $ticket['is_billable'] && ($ticket['master_id'] == null);
                             })
                             ->groupBy('category')
                             ->sortByDesc(function ($groupedTickets) {
@@ -192,14 +234,18 @@
                                 Totale
                             </p>
                         </td>
+                        @php
+                            $total_billable_tickets_count = $on_site_billable_tickets_count + $remote_billable_tickets_count;
+                            $total_billable_work_time = $on_site_billable_work_time + $remote_billable_work_time;
+                        @endphp
                         <td style="border: 1px solid #353131; text-align: center;">
                             <p  style="font-weight: 600">
-                                {{ $billable_tickets_count }}
+                                {{ $total_billable_tickets_count }}
                             </p>
                         </td>
                         <td style="border: 1px solid #353131; text-align: center;">
                             <p  style="font-weight: 600">
-                                {{ sprintf('%02d:%02d', intdiv($billable_work_time, 60), $billable_work_time % 60) }}
+                                {{ sprintf('%02d:%02d', intdiv($total_billable_work_time, 60), $total_billable_work_time % 60) }}
                             </p>
                         </td>
                     </tr>
@@ -269,25 +315,53 @@
             <table width="100%">
                 <tr>
                     <td style="background-color: #fff;border-radius: 8px; padding: 4px">
-                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($ticket_by_category_url)) }}"
-                            style="width: 100%; height: auto;">
+                        @php
+                            $imgData = @file_get_contents($ticket_by_category_url);
+                        @endphp
+                        @if ($imgData !== false)
+                            <img src="data:image/png;base64,{{ base64_encode($imgData) }}"
+                                style="width: 100%; height: auto;">
+                        @else
+                            <span>Immagine non disponibile</span>
+                        @endif
                     </td>
                     <td style="background-color: #fff;border-radius: 8px; padding: 4px">
-                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($ticket_by_source_url)) }}"
-                            style="width: 100%; height: auto;">
+                        @php
+                            $imgData = @file_get_contents($ticket_by_source_url);
+                        @endphp
+                        @if ($imgData !== false)
+                            <img src="data:image/png;base64,{{ base64_encode($imgData) }}"
+                                style="width: 100%; height: auto;">
+                        @else
+                            <span>Immagine non disponibile</span>
+                        @endif
                     </td>
                 </tr>
 
                 <tr>
                     <td style="background-color: #fff;border-radius: 8px; padding: 4px">
-                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($ticket_by_weekday_url)) }}"
-                            style="width: 100%; height: auto;">
+                        @php
+                            $imgData = @file_get_contents($ticket_by_weekday_url);
+                        @endphp
+                        @if ($imgData !== false)
+                            <img src="data:image/png;base64,{{ base64_encode($imgData) }}"
+                                style="width: 100%; height: auto;">
+                        @else
+                            <span>Immagine non disponibile</span>
+                        @endif
                     </td>
 
                     @if ($dates_are_more_than_one_month_apart)
                         <td style="background-color: #fff;border-radius: 8px; padding: 4px">
-                            <img src="data:image/png;base64,{{ base64_encode(file_get_contents($ticket_per_month_url)) }}"
-                                style="width: 100%; height: auto;">
+                            @php
+                                $imgData = @file_get_contents($ticket_per_month_url);
+                            @endphp
+                            @if ($imgData !== false)
+                                <img src="data:image/png;base64,{{ base64_encode($imgData) }}"
+                                    style="width: 100%; height: auto;">
+                            @else
+                                <span>Immagine non disponibile</span>
+                            @endif
                         </td>
                     @endif
                 </tr>
@@ -303,22 +377,43 @@
                         <table width="100%">
                             <tr>
                                 <td>
-                                    <img src="data:image/png;base64,{{ base64_encode(file_get_contents($ticket_by_priority_url)) }}"
-                                        style="width: 100%; height: auto;">
+                                    @php
+                                        $imgData = @file_get_contents($ticket_by_priority_url);
+                                    @endphp
+                                    @if ($imgData !== false)
+                                        <img src="data:image/png;base64,{{ base64_encode($imgData) }}"
+                                            style="width: 100%; height: auto;">
+                                    @else
+                                        <span>Immagine non disponibile</span>
+                                    @endif
                                 <td>
                             </tr>
                             <tr>
                                 <td>
-                                    <img src="data:image/png;base64,{{ base64_encode(file_get_contents($tickets_by_user_url)) }}"
-                                        style="width: 100%; height: auto;">
+                                    @php
+                                        $imgData = @file_get_contents($tickets_by_user_url);
+                                    @endphp
+                                    @if ($imgData !== false)
+                                        <img src="data:image/png;base64,{{ base64_encode($imgData) }}"
+                                            style="width: 100%; height: auto;">
+                                    @else
+                                        <span>Immagine non disponibile</span>
+                                    @endif
                                 <td>
                             </tr>
                         </table>
                     </td>
     
                     <td>
-                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($tickets_sla_url)) }}"
-                            style=" width:100%;height: auto;">
+                        @php
+                            $imgData = @file_get_contents($tickets_sla_url);
+                        @endphp
+                        @if ($imgData !== false)
+                            <img src="data:image/png;base64,{{ base64_encode($imgData) }}"
+                                style="width: 100%; height: auto;">
+                        @else
+                            <span>Immagine non disponibile</span>
+                        @endif
                     </td>
                 </tr>
             </table>
@@ -362,38 +457,72 @@
             <table width="100%">
                 <tr>
                     <td style="background-color: #fff;border-radius: 8px; padding: 4px">
-                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($ticket_by_category_incident_bar_url)) }}"
-                            style="width: 100%; height: auto;">
+                        @php
+                            $imgData = @file_get_contents($ticket_by_category_incident_bar_url);
+                        @endphp
+                        @if ($imgData !== false)
+                            <img src="data:image/png;base64,{{ base64_encode($imgData) }}"
+                                style="width: 100%; height: auto;">
+                        @else
+                            <span>Immagine non disponibile</span>
+                        @endif
                     </td>
                     <td style="background-color: #fff;border-radius: 8px; padding: 4px">
-                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($ticket_by_category_request_bar_url)) }}"
-                            style="width: 100%; height: auto;">
+                        @php
+                            $imgData = @file_get_contents($ticket_by_category_request_bar_url);
+                        @endphp
+                        @if ($imgData !== false)
+                            <img src="data:image/png;base64,{{ base64_encode($imgData) }}"
+                                style="width: 100%; height: auto;">
+                        @else
+                            <span>Immagine non disponibile</span>
+                        @endif
                     </td>
                 </tr>
 
                 <tr>
                     <td style="background-color: #fff;border-radius: 8px; padding: 4px">
-                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($ticket_by_type_incident_bar_url)) }}"
-                            style="width: 100%; height: auto;">
+                        @php
+                            $imgData = @file_get_contents($ticket_by_type_incident_bar_url);
+                        @endphp
+                        @if ($imgData !== false)
+                            <img src="data:image/png;base64,{{ base64_encode($imgData) }}"
+                                style="width: 100%; height: auto;">
+                        @else
+                            <span>Immagine non disponibile</span>
+                        @endif
                     </td>
 
 
                     <td style="background-color: #fff;border-radius: 8px; padding: 4px">
-                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($ticket_by_type_request_bar_url)) }}"
-                            style="width: 100%; height: auto;">
+                        @php
+                            $imgData = @file_get_contents($ticket_by_type_request_bar_url);
+                        @endphp
+                        @if ($imgData !== false)
+                            <img src="data:image/png;base64,{{ base64_encode($imgData) }}"
+                                style="width: 100%; height: auto;">
+                        @else
+                            <span>Immagine non disponibile</span>
+                        @endif
+                            
                     </td>
 
                 </tr>
 
                 <tr>
                     <td style="background-color: #fff;border-radius: 8px; padding: 4px">
-                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($wrong_type_url)) }}"
-                            style="width: 100%; height: auto;">
+                        @php
+                            $imgData = @file_get_contents($wrong_type_url);
+                        @endphp
+                        @if ($imgData !== false)
+                            <img src="data:image/png;base64,{{ base64_encode($imgData) }}"
+                                style="width: 100%; height: auto;">
+                        @else
+                            <span>Immagine non disponibile</span>
+                        @endif
                     </td>
-
-
-
                 </tr>
+
             </table>
         </div>
 
@@ -405,6 +534,8 @@
         <h1>Indice</h1>
         <p style="font-size:9">
             <span>R/I indica Request/Incident ovvero Richiesta/Problema.</span>
+            <br>
+            <span>M/C/N indica se è un Master, se Collegato a un master o se è Normale.</span>
             <br>
             <span>SUP indica il Supporto.</span>
             <br>
@@ -453,6 +584,9 @@
                         Aperto da
                     </th>
                     <th style="width:8%; border: 1px solid #353131;">
+                        M/C/N
+                    </th>
+                    <th style="width:8%; border: 1px solid #353131;">
                         Stato attuale
                     </th>
                 </tr>
@@ -463,7 +597,7 @@
                                 #{{ $ticket['id'] }}
                             </a>
                         </td>
-                        <td style="width:44%; border: 1px solid #353131;">
+                        <td style="width:36%; border: 1px solid #353131;">
                             {{ $ticket['category'] }}
                         </td>
                         <td style="width:16%; border: 1px solid #353131; text-align: center;" class="text-small">
@@ -477,6 +611,15 @@
                         </td>
                         <td style="width:8%; border: 1px solid #353131; text-align: center;">
                             {{ $ticket['opened_by_initials'] }}
+                        </td>
+                        <td style="width:8%; border: 1px solid #353131; text-align: center;">
+                            @if ($ticket['master_id'] != null)
+                                C
+                            @elseif (!empty($ticket['slave_ids']))
+                                M
+                            @else
+                                N
+                            @endif
                         </td>
                         <td style="width:8%; border: 1px solid #353131; text-align: center;">
                             {{ $ticket['current_status'] }}
@@ -500,7 +643,7 @@
                     <table style="width:100%">
                         <tr>
                             <td style="vertical-align: middle;">
-                                <h1 class="main-header">Ticket #{{ $ticket['id'] }}</h1>
+                                <h2 class="main-header" style="font-size:1.75rem; line-height:1.75rem;">Ticket #{{ $ticket['id'] }}</h2>
                             </td>
                             <td style="vertical-align: middle;">
                                 <div class="ticket-pill"
@@ -535,6 +678,34 @@
                             <span class="ticket-section-title">Tempo:</span>
                             <span>{{ sprintf('%02d:%02d', intdiv($ticket['actual_processing_time'], 60), $ticket['actual_processing_time'] % 60) }}</span>
                         </p>
+                        <p>
+                            <span class="ticket-section-title">Ticket </span>
+                            <span>{{ $ticket['master_id'] != null 
+                                // ? 'Collegato a <a href="#ticket-'.e($ticket['master_id']).'">#'.e($ticket['master_id']).'</a>'  
+                                ? 'Collegato'  
+                                : (empty($ticket['slave_ids']) ? 'Normale' : 'Master' ) }}</span>
+                        </p>
+                        @if($ticket['master_id'] != null)
+                            <p>
+                                <span class="ticket-section-title">Ticket master: </span>
+                                <a href="#ticket-{{ $ticket['master_id'] }}">
+                                    #{{ $ticket['master_id'] }}
+                                </a>
+                            </p>
+                        @endif
+                        @if(!empty($ticket['slave_ids']))
+                            <p>
+                                <span class="ticket-section-title">Ticket collegati: </span>
+                                @foreach ($ticket['slave_ids'] as $slave_id)
+                                    <a href="#ticket-{{ $slave_id }}">
+                                        #{{ $slave_id }}
+                                    </a>
+                                    @if (!$loop->last)
+                                        ,
+                                    @endif
+                                @endforeach
+                            </p>
+                        @endif
                     </div>
 
                     <div class="ticket-webform-{{ strtolower($ticket['incident_request']) }}-section">

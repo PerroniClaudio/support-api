@@ -85,9 +85,12 @@ class GeneratePdfReport implements ShouldQueue {
             $unbillable_work_time = 0;
 
             // Conteggio ticket fatturabili
-            $billable_tickets_count = 0;
+            // $billable_tickets_count = 0;
+            $remote_billable_tickets_count = 0;
+            $on_site_billable_tickets_count = 0;
             // Tempo di lavoro per gestire i ticket fatturabili (in minuti)
-            $billable_work_time = 0;
+            $remote_billable_work_time = 0;
+            $on_site_billable_work_time = 0;
 
             $tickets_data = [];
 
@@ -122,11 +125,22 @@ class GeneratePdfReport implements ShouldQueue {
 
                     // Dei ticket da includere bisogna contare separatamente quanti sono quelli fatturabili e quelli no, oltre ai tempi di gestione.
                     if($ticket->is_billable == 0) {
+                        // Anche qui vogliamo escludere gli slave? per ora non faccio niente, poi si vedrà
                         $unbillable_tickets_count++;
                         $unbillable_work_time += $ticket->actual_processing_time;
                     } else if($ticket->is_billable == 1) {
-                        $billable_tickets_count++;
-                        $billable_work_time += $ticket->actual_processing_time;
+                        // $billable_tickets_count++;
+                        // $billable_work_time += $ticket->actual_processing_time;
+                        if($ticket->master_id == null) {
+                            if($ticket->work_mode == "on_site"){
+                                $on_site_billable_tickets_count++;
+                                $on_site_billable_work_time += $ticket->actual_processing_time;
+                            } else if($ticket->work_mode == "remote") {
+                                $remote_billable_tickets_count++;
+                                $remote_billable_work_time += $ticket->actual_processing_time;
+                            }
+                        } 
+                        // Il ticket è slave e non va sommato il suo tempo
                     }
 
                     if (!$ticket->messages()->first()) {
@@ -530,6 +544,8 @@ class GeneratePdfReport implements ShouldQueue {
                     'current_status' => $current_status,
                     'is_billable' => $ticket['data']['is_billable'],
                     'actual_processing_time' => $ticket['data']['actual_processing_time'],
+                    'master_id' => $ticket['data']['master_id'],
+                    'slave_ids' => Ticket::where('master_id', $ticket['data']['id'])->pluck('id')->toArray(),
                 ];
 
                 if (count($ticket['data']['messages']) > 3) {
@@ -1386,8 +1402,10 @@ class GeneratePdfReport implements ShouldQueue {
                 'other_tickets_count' => $other_tickets_count,
                 'unbillable_tickets_count' => $unbillable_tickets_count,
                 'unbillable_work_time' => $unbillable_work_time,
-                'billable_tickets_count' => $billable_tickets_count,
-                'billable_work_time' => $billable_work_time,
+                'remote_billable_tickets_count' => $remote_billable_tickets_count,
+                'on_site_billable_tickets_count' => $on_site_billable_tickets_count,
+                'remote_billable_work_time' => $remote_billable_work_time,
+                'on_site_billable_work_time' => $on_site_billable_work_time,
                 'ticket_graph_data' => $ticket_graph_data,
                 'ticket_by_category_url' => $ticket_by_category_url,
                 'ticket_closed_time_url' => $ticket_closed_time_url,
@@ -1426,7 +1444,11 @@ class GeneratePdfReport implements ShouldQueue {
 
             // Se ci mette troppo tempo potremmo rispondere ok alla creazione del report e generarlo tramite un job, che quando ha fatto aggiorna il report
             
-            $report->update(['is_generated' => true]);
+            $report->update([
+                'is_generated' => true,
+                'error_message' => null,
+                'is_failed' => false
+            ]);
         } catch (Exception $e) {
             $shortenedMessage = $e->getMessage();
             if (strlen($shortenedMessage) > 500) {
