@@ -837,6 +837,42 @@
                             <span class="ticket-section-title">Stato al {{ $date_to->format('d/m/Y') }}:</span>
                             <span>{{ $ticket['current_status'] }}</span>
                         </p>
+                        <p>
+                            <span class="ticket-section-title">Fatturabile:</span>
+                            <span>{{ $ticket['is_billable'] ? 'Si' : 'No' }}</span>
+                        </p>
+                        <p>
+                            <span class="ticket-section-title">Tempo:</span>
+                            <span>{{ sprintf('%02d:%02d', intdiv($ticket['actual_processing_time'], 60), $ticket['actual_processing_time'] % 60) }}</span>
+                        </p>
+                        <p>
+                            <span class="ticket-section-title">Ticket </span>
+                            <span>{{ $ticket['master_id'] != null 
+                                // ? 'Collegato a <a href="#ticket-'.e($ticket['master_id']).'">#'.e($ticket['master_id']).'</a>'  
+                                ? 'Collegato'  
+                                : (empty($ticket['slave_ids']) ? 'Normale' : 'Master' ) }}</span>
+                        </p>
+                        @if($ticket['master_id'] != null)
+                            <p>
+                                <span class="ticket-section-title">Ticket master: </span>
+                                <a href="#ticket-{{ $ticket['master_id'] }}">
+                                    #{{ $ticket['master_id'] }}
+                                </a>
+                            </p>
+                        @endif
+                        @if(!empty($ticket['slave_ids']))
+                            <p>
+                                <span class="ticket-section-title">Ticket collegati: </span>
+                                @foreach ($ticket['slave_ids'] as $slave_id)
+                                    <a href="#ticket-{{ $slave_id }}">
+                                        #{{ $slave_id }}
+                                    </a>
+                                    @if (!$loop->last)
+                                        ,
+                                    @endif
+                                @endforeach
+                            </p>
+                        @endif
                     </div>
 
                     <div class="ticket-webform-{{ strtolower($ticket['incident_request']) }}-section">
