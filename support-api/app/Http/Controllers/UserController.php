@@ -333,7 +333,7 @@ class UserController extends Controller {
         }
 
         return response([
-            'ticketTypes' => $ticketTypes
+            'ticketTypes' => $ticketTypes->values()->all()
         ], 200);
     }
 
