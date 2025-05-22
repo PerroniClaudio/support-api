@@ -54,6 +54,8 @@
             <p style="margin-bottom: 0.5rem;"><b>Conteggio e fatturabilità ticket</b></p>
             <p style="font-size: 0.75rem; margin-top: 0; margin-bottom: 0.5rem;">
                 In caso di ticket Master e collegati, viene conteggiato solo il tempo del ticket Master.
+                <br>
+                Per "Remoto fatturabile" si intendono ad esempio: prosecuzione di progetto, attività non incluse nel contratto, ecc.
             </p>
             
             <table style="width:100%; border: 1px solid #353131; border-collapse: collapse;">
@@ -63,19 +65,19 @@
                         <th style="border: 1px solid #353131;" class="text-small-plus  ">
                             Descrizione
                         </th>
-                        <th style="border: 1px solid #353131; width:9%;" class="text-small-plus  ">
-                            Conteggio
+                        <th style="border: 1px solid #353131; width:15%;" class="text-small-plus  ">
+                            Conteggio ticket
                         </th>
                         <th style="border: 1px solid #353131; width:25%;" class="text-small-plus  ">
-                            Tempo di gestione (hh:mm)
+                            Tempo gestione ticket (hh:mm)
                         </th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr style="border: 1px solid #353131;">
-                        <td style="border: 1px solid #353131;">
+                        <td style="border: 1px solid #353131; padding-left: 0.5rem;">
                             <p class="text-small-plus">
-                                Ticket chiusi fatturabili (on site)
+                                On site fatturabile
                             </p>
                         </td>
                         <td style="border: 1px solid #353131; text-align: center;">
@@ -90,9 +92,9 @@
                         </td>
                     </tr>
                     <tr style="border: 1px solid #353131;">
-                        <td style="border: 1px solid #353131;">
+                        <td style="border: 1px solid #353131; padding-left: 0.5rem;">
                             <p class="text-small-plus">
-                                Ticket chiusi fatturabili (remoto)
+                                Remoto fatturabile
                             </p>
                         </td>
                         <td style="border: 1px solid #353131; text-align: center;">
@@ -107,9 +109,9 @@
                         </td>
                     </tr>
                     <tr style="border: 1px solid #353131;">
-                        <td style="border: 1px solid #353131;">
+                        <td style="border: 1px solid #353131; padding-left: 0.5rem;">
                             <p class="text-small-plus">
-                                Ticket chiusi inclusi nel contratto (non fatturabili)
+                                Incluso nel contratto (non fatturabile)
                             </p>
                         </td>
                         <td style="border: 1px solid #353131; text-align: center;">
@@ -124,9 +126,9 @@
                         </td>
                     </tr>
                     <tr style="border: 1px solid #353131;">
-                        <td style="border: 1px solid #353131;">
+                        <td style="border: 1px solid #353131; padding-left: 0.5rem;">
                             <p class="text-small-plus">
-                                Ticket ancora in gestione (non ancora fatturabili)
+                                Ancora in gestione (non ancora fatturabile)
                             </p>
                         </td>
                         <td style="border: 1px solid #353131; text-align: center;">
@@ -180,6 +182,9 @@
 
             {{-- Tabella ticket fatturabili col dettaglio del tempo, divisi per categoria --}}
             <p style="margin-bottom: 0.5rem;"><b>Tempo di gestione ticket fatturabili per categoria</b></p>
+            <p style="font-size: 0.75rem; margin-top: 0; margin-bottom: 0.5rem;">
+                Qui vengono accorpati i ticket per categoria, escludendo quelli collegati ai master.
+            </p>
 
             <table style="width:100%; border: 1px solid #353131; border-collapse: collapse;">
 
@@ -210,7 +215,7 @@
 
                     @foreach ($billableTicketsByCategory as $category => $groupedTickets)
                         <tr style="border: 1px solid #353131;">
-                            <td style="border: 1px solid #353131;">
+                            <td style="border: 1px solid #353131; padding-left: 0.5rem;">
                                 <p class="text-small-plus">
                                     {{ $category }}
                                 </p>
@@ -229,7 +234,7 @@
                     @endforeach
                     
                     <tr>
-                        <td style="border: 1px solid #353131;">
+                        <td style="border: 1px solid #353131; padding-left: 0.5rem;">
                             <p  style="font-weight: 600">
                                 Totale
                             </p>
@@ -275,6 +280,72 @@
         </div> --}}
     </div>
 
+    <div class="page-break"></div>
+        <div class="card">
+
+            {{-- Tabella ticket fatturabili col dettaglio del tempo e tecnico (handler). esclusi gli slave --}}
+            <p style="margin-bottom: 0.5rem; text-align: center;"><b>Ticket on site fatturabili</b></p>
+            <p style="font-size:9; margin-top: 0; margin-bottom: 0.5rem; text-align: center;">
+                <span>Esclusi i collegati</span>
+            </p>
+            <table style="width:100%; border: 1px solid #353131; border-collapse: collapse;">
+
+                <thead>
+                    <tr style="border: 1px solid #353131;">
+                        <th style="border: 1px solid #353131; width:20%;" class="text-small-plus  ">
+                            Giorno (chiusura)
+                        </th>
+                        <th style="border: 1px solid #353131; width:62%;" class="text-small-plus  ">
+                            Dettaglio tecnico
+                        </th>
+                        <th style="border: 1px solid #353131; width:9%;" class="text-small-plus  ">
+                            Ore
+                        </th>
+                        <th style="border: 1px solid #353131; width:9%;" class="text-small-plus  ">
+                            Ticket
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @php
+                        $billableTicketsOnsite = collect($tickets)
+                            ->filter(function ($ticket) {
+                                return $ticket['is_billable'] && ($ticket['master_id'] == null);
+                            });
+                    @endphp
+
+                    @foreach ($billableTicketsOnsite as $ticket)
+                        <tr style="border: 1px solid #353131;">
+                            <td style="border: 1px solid #353131; text-align: center;">
+                                <p class="text-small-plus">
+                                    {{-- {{ $ticket['closed_at']->format('d/m/Y') }} --}}
+                                    {{ \Carbon\Carbon::createFromFormat('d/m/Y H:i', $ticket['closed_at'])->format('d/m/Y') }}
+                                </p>
+                            </td>
+                            <td style="border: 1px solid #353131; padding-left: 0.5rem;">
+                                <p class="text-small-plus ">
+                                    {{ $ticket['handler_full_name'] }}
+                                </p>
+                            </td>
+                            <td style="border: 1px solid #353131; text-align: center;">
+                                <p class="text-small-plus " style="font-weight: 600">
+                                    {{ sprintf('%02d:%02d', intdiv($ticket['actual_processing_time'], 60), $ticket['actual_processing_time'] % 60) }}
+                                </p>
+                            </td>
+                            <td style="border: 1px solid #353131; text-align: center;">
+                                <p class="text-small-plus " style="font-weight: 600">
+                                    <a href="#ticket-{{ $ticket['id'] }}">
+                                        #{{ $ticket['id'] }}
+                                    </a>
+                                </p>
+                            </td>
+                        </tr>
+                    @endforeach
+                    
+                </tbody>
+
+            </table>            
+        </div>
     <div class="page-break"></div>
 
     <div>
@@ -531,7 +602,7 @@
     <div class="page-break"></div>
 
     <div>
-        <h1>Indice</h1>
+        <h1 style="text-align: center;">Indice</h1>
         <p style="font-size:9">
             <span>R/I indica Request/Incident ovvero Richiesta/Problema.</span>
             <br>

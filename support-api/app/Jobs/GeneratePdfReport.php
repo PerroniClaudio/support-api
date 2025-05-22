@@ -94,6 +94,9 @@ class GeneratePdfReport implements ShouldQueue {
 
             $tickets_data = [];
 
+            $loadErrorsOnly = false;
+            $errorsString = "";
+
             foreach ($tickets as $ticket) {
                 $ticket['category'] = $ticket->ticketType->category()->first();
 
@@ -117,11 +120,20 @@ class GeneratePdfReport implements ShouldQueue {
                     }
 
                     if(!$ticket->actual_processing_time) {
-                        throw new Exception("Il ticket " . $ticket->id . " non ha il tempo di lavoro.");
+                        $loadErrorsOnly = true;
+                        $errorsString .= "- #" . $ticket->id . " non ha il tempo di lavoro.";
                     }
                     if($ticket->is_billable === null){
-                        throw new Exception("Il ticket " . $ticket->id . " non ha il flag di fatturabilità.");
+                        $loadErrorsOnly = true;
+                        $errorsString .= "- #" . $ticket->id . " non ha il flag di fatturabilità.";
                     }
+                    if($ticket->work_mode === null){
+                        $loadErrorsOnly = true;
+                        $errorsString .= "- #" . $ticket->id . " non ha la modalità di lavoro.";
+                    }
+
+                    // Qui aggiungere la funzione che salta il ciclo se si devono solo caricare gli errori.
+                    
 
                     // Dei ticket da includere bisogna contare separatamente quanti sono quelli fatturabili e quelli no, oltre ai tempi di gestione.
                     if($ticket->is_billable == 0) {
@@ -259,6 +271,11 @@ class GeneratePdfReport implements ShouldQueue {
 
                     ];
                 }
+            }
+
+            // Qui si restituisce la stringa di errore se c'è loadErrorsOnly
+            if ($loadErrorsOnly == true) {
+                throw new Exception($errorsString);
             }
 
             // Parte presa da exportBatch, quindi quella che crea il pdf
@@ -522,7 +539,11 @@ class GeneratePdfReport implements ShouldQueue {
                     $tickets_by_billable_time['unbillable'][$ticket['data']['ticketType']['category']['name']]+= $ticket['data']['actual_processing_time'];
                 }
 
-
+                // Gestore
+                $handler = $ticket['data']['admin_user_id'] != null ? User::find($ticket['data']['admin_user_id']) : null;
+                if($handler){
+                    $handlerFullName = $handler->surname ? $handler->surname . ' ' . strtoupper(substr($handler->name, 0, 1)) . '.' : $handler->name;
+                }
 
                 // Ticket ridotto
 
@@ -546,6 +567,7 @@ class GeneratePdfReport implements ShouldQueue {
                     'actual_processing_time' => $ticket['data']['actual_processing_time'],
                     'master_id' => $ticket['data']['master_id'],
                     'slave_ids' => Ticket::where('master_id', $ticket['data']['id'])->pluck('id')->toArray(),
+                    'handler_full_name' => $handlerFullName,
                 ];
 
                 if (count($ticket['data']['messages']) > 3) {
