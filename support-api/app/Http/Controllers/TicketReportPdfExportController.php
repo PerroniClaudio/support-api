@@ -310,6 +310,61 @@ class TicketReportPdfExportController extends Controller {
     }
 
     /**
+     * Regenerates the report
+     */
+    public function regenerate(Request $request) {
+        try {
+            $authUser = request()->user();
+            if ($authUser["is_admin"] != 1) {
+                return response([
+                    'message' => 'Unauthorized.',
+                ], 401);
+            }
+            // Verifico se il report esiste
+            $ticketReportPdfExport = TicketReportPdfExport::find($request->id);
+            if (!$ticketReportPdfExport) {
+                return response([
+                    'message' => 'Report not found',
+                ], 404);
+            }
+            // Verifico se il report è stato approvato (quindi collegabile alle fatture tramite il suo identificativo)
+            if($ticketReportPdfExport->is_approved_billing == 1) {
+                return response([
+                    'message' => 'You can\'t regenerate a report that has been approved for billing.',
+                ], 401);
+            }
+
+            // Cancello il file dal bucket
+            if ($ticketReportPdfExport->is_generated) {
+                $filePath = $ticketReportPdfExport->file_path;
+                if (Storage::disk('gcs')->exists($filePath)) {
+                    Storage::disk('gcs')->delete($filePath);
+                }
+            }
+
+            // Imposta come non generato e cancella il messaggio di errore
+            $ticketReportPdfExport->update([
+                'is_generated' => false,
+                'error_message' => null,
+                'is_failed' => false,
+            ]);
+    
+            // Dispatch per rigenerarlo
+            dispatch(new GeneratePdfReport($ticketReportPdfExport));
+    
+            return response([
+                'message' => 'The report is scheduled to be regenerated',
+                'report' => $ticketReportPdfExport
+            ], 200);
+        } catch (\Exception $e) {
+            return response([
+                'message' => 'Error scheduling the report for regeneration',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Remove the specified resource from storage.
      */
     public function destroy(TicketReportPdfExport $ticketReportPdfExport) {

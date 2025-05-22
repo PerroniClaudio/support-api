@@ -122,18 +122,23 @@ class GeneratePdfReport implements ShouldQueue {
                     if(!$ticket->actual_processing_time) {
                         $loadErrorsOnly = true;
                         $errorsString .= "- #" . $ticket->id . " non ha il tempo di lavoro.";
+                        continue;
                     }
                     if($ticket->is_billable === null){
                         $loadErrorsOnly = true;
                         $errorsString .= "- #" . $ticket->id . " non ha il flag di fatturabilità.";
+                        continue;
                     }
                     if($ticket->work_mode === null){
                         $loadErrorsOnly = true;
                         $errorsString .= "- #" . $ticket->id . " non ha la modalità di lavoro.";
+                        continue;
                     }
 
                     // Qui aggiungere la funzione che salta il ciclo se si devono solo caricare gli errori.
-                    
+                    if($loadErrorsOnly == true) {
+                        continue;
+                    }
 
                     // Dei ticket da includere bisogna contare separatamente quanti sono quelli fatturabili e quelli no, oltre ai tempi di gestione.
                     if($ticket->is_billable == 0) {
