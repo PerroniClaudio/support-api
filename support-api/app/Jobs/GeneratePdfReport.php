@@ -571,7 +571,7 @@ class GeneratePdfReport implements ShouldQueue {
                     'is_billable' => $ticket['data']['is_billable'],
                     'actual_processing_time' => $ticket['data']['actual_processing_time'],
                     'master_id' => $ticket['data']['master_id'],
-                    'is_master' => $$ticket['data']['ticketType']['is_master'],
+                    'is_master' => $ticket['data']['ticketType']['is_master'],
                     'slave_ids' => Ticket::where('master_id', $ticket['data']['id'])->pluck('id')->toArray(),
                     'handler_full_name' => $handlerFullName,
                     'work_mode' => $ticket['data']['work_mode'],
