@@ -686,7 +686,7 @@
                         <td style="width:8%; border: 1px solid #353131; text-align: center;">
                             @if ($ticket['master_id'] != null)
                                 C
-                            @elseif (!empty($ticket['slave_ids']))
+                            @elseif ($ticket['is_master'])
                                 M
                             @else
                                 N
@@ -754,7 +754,7 @@
                             <span>{{ $ticket['master_id'] != null 
                                 // ? 'Collegato a <a href="#ticket-'.e($ticket['master_id']).'">#'.e($ticket['master_id']).'</a>'  
                                 ? 'Collegato'  
-                                : (empty($ticket['slave_ids']) ? 'Normale' : 'Master' ) }}</span>
+                                : ($ticket['is_master'] ? 'Master' : 'Normale') }}</span>
                         </p>
                         @if($ticket['master_id'] != null)
                             <p>
@@ -764,17 +764,21 @@
                                 </a>
                             </p>
                         @endif
-                        @if(!empty($ticket['slave_ids']))
+                        @if($ticket['is_master'])
                             <p>
                                 <span class="ticket-section-title">Ticket collegati: </span>
-                                @foreach ($ticket['slave_ids'] as $slave_id)
-                                    <a href="#ticket-{{ $slave_id }}">
-                                        #{{ $slave_id }}
-                                    </a>
-                                    @if (!$loop->last)
-                                        ,
-                                    @endif
-                                @endforeach
+                                @if(!empty($ticket['slave_ids']))
+                                    @foreach ($ticket['slave_ids'] as $slave_id)
+                                        <a href="#ticket-{{ $slave_id }}">
+                                            #{{ $slave_id }}
+                                        </a>
+                                        @if (!$loop->last)
+                                            ,
+                                        @endif
+                                    @endforeach
+                                @else
+                                    <span>Non ci sono ticket collegati</span>
+                                @endif
                             </p>
                         @endif
                     </div>
@@ -921,7 +925,7 @@
                             <span>{{ $ticket['master_id'] != null 
                                 // ? 'Collegato a <a href="#ticket-'.e($ticket['master_id']).'">#'.e($ticket['master_id']).'</a>'  
                                 ? 'Collegato'  
-                                : (empty($ticket['slave_ids']) ? 'Normale' : 'Master' ) }}</span>
+                                : ($ticket['is_master'] ? 'Master' : 'Normale') }}</span>
                         </p>
                         @if($ticket['master_id'] != null)
                             <p>
@@ -931,17 +935,21 @@
                                 </a>
                             </p>
                         @endif
-                        @if(!empty($ticket['slave_ids']))
+                        @if($ticket['is_master'])
                             <p>
                                 <span class="ticket-section-title">Ticket collegati: </span>
-                                @foreach ($ticket['slave_ids'] as $slave_id)
-                                    <a href="#ticket-{{ $slave_id }}">
-                                        #{{ $slave_id }}
-                                    </a>
-                                    @if (!$loop->last)
-                                        ,
-                                    @endif
-                                @endforeach
+                                @if(!empty($ticket['slave_ids']))
+                                    @foreach ($ticket['slave_ids'] as $slave_id)
+                                        <a href="#ticket-{{ $slave_id }}">
+                                            #{{ $slave_id }}
+                                        </a>
+                                        @if (!$loop->last)
+                                            ,
+                                        @endif
+                                    @endforeach
+                                @else
+                                    <span>Non ci sono ticket collegati</span>
+                                @endif
                             </p>
                         @endif
                     </div>
