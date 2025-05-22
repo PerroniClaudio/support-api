@@ -128,7 +128,7 @@
                     <tr style="border: 1px solid #353131;">
                         <td style="border: 1px solid #353131; padding-left: 0.5rem;">
                             <p class="text-small-plus">
-                                Ancora in gestione (non ancora fatturabile)
+                                Ancora in gestione
                             </p>
                         </td>
                         <td style="border: 1px solid #353131; text-align: center;">
