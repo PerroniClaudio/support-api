@@ -310,7 +310,7 @@
                     @php
                         $billableTicketsOnsite = collect($tickets)
                             ->filter(function ($ticket) {
-                                return $ticket['is_billable'] && ($ticket['master_id'] == null);
+                                return $ticket['is_billable'] && ($ticket['master_id'] == null) && ($ticket['work_mode'] == 'on_site');
                             });
                     @endphp
 

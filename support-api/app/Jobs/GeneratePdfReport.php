@@ -573,6 +573,7 @@ class GeneratePdfReport implements ShouldQueue {
                     'master_id' => $ticket['data']['master_id'],
                     'slave_ids' => Ticket::where('master_id', $ticket['data']['id'])->pluck('id')->toArray(),
                     'handler_full_name' => $handlerFullName,
+                    'work_mode' => $ticket['data']['work_mode'],
                 ];
 
                 if (count($ticket['data']['messages']) > 3) {
