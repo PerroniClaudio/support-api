@@ -492,7 +492,7 @@ class GeneratePdfReport implements ShouldQueue {
                     $ticket['data']['id']
                 )
                     ->whereIn('type', ['status', 'closing'])
-                    ->where('created_at', '<=', \Carbon\Carbon::createFromFormat('Y-m-d', $report->end_date))
+                    ->where('created_at', '<', \Carbon\Carbon::parse($report->end_date)->endOfDay()->toDateTimeString())
                     ->orderBy('created_at', 'DESC')
                     ->first();
 
