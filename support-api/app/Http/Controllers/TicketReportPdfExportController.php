@@ -21,7 +21,7 @@ class TicketReportPdfExportController extends Controller {
     /**
      * Lista per company singola
      */
-    
+
     public function pdfCompany(Company $company, Request $request) {
         $user = $request->user();
         if ($user["is_admin"] != 1) {
@@ -41,7 +41,6 @@ class TicketReportPdfExportController extends Controller {
     }
 
     public function generic() {
-        
     }
 
     /**
@@ -50,7 +49,7 @@ class TicketReportPdfExportController extends Controller {
 
     public function pdfUser(Request $request) {
         $user = $request->user();
-        if($user["is_admin"] != 1){
+        if ($user["is_admin"] != 1) {
             // non è admin
             if ($user["is_company_admin"] != 1) {
                 // non è company admin
@@ -78,7 +77,7 @@ class TicketReportPdfExportController extends Controller {
 
     public function pdfBilling(Request $request) {
         $user = $request()->user();
-        if($user["is_admin"] != 1){
+        if ($user["is_admin"] != 1) {
             // non è admin
             if ($user["is_company_admin"] != 1) {
                 // non è company admin
@@ -106,7 +105,7 @@ class TicketReportPdfExportController extends Controller {
 
         try {
             $user = $request->user();
-            if($user["is_admin"] != 1){
+            if ($user["is_admin"] != 1) {
                 // non è admin
                 if ($user["is_company_admin"] != 1) {
                     // non è company admin
@@ -115,13 +114,13 @@ class TicketReportPdfExportController extends Controller {
                     ], 401);
                 }
                 // è company admin
-                if($user["company_id"] != $request->company_id) {
+                if ($user["company_id"] != $request->company_id) {
                     return response([
                         'message' => 'You can only request reports for your company.',
                     ], 401);
                 }
             }
-            
+
             $company = Company::find($request->company_id);
 
             // $name = preg_replace('/[^a-zA-Z0-9_-]/', '', strtolower($company->name)) . '_' . time() . '_' . $request->company_id . '_tickets.pdf';
@@ -140,8 +139,8 @@ class TicketReportPdfExportController extends Controller {
             ]);
 
             dispatch(new GeneratePdfReport($report));
-            
-            return response ([
+
+            return response([
                 'message' => 'Report created successfully',
                 'report' => $report
             ], 200);
@@ -151,9 +150,8 @@ class TicketReportPdfExportController extends Controller {
                 'error' => $e->getMessage()
             ], 500);
         }
-        
     }
-    
+
     /**
      * Preview (restituisce il link generato da google cloud storage)
      */
@@ -161,7 +159,7 @@ class TicketReportPdfExportController extends Controller {
     public function pdfPreview(TicketReportPdfExport $ticketReportPdfExport, Request $request) {
 
         $user = $request->user();
-        if($user["is_admin"] != 1){
+        if ($user["is_admin"] != 1) {
             // non è admin
             if ($user["is_company_admin"] != 1) {
                 // non è company admin
@@ -170,7 +168,7 @@ class TicketReportPdfExportController extends Controller {
                 ], 401);
             }
             // è company admin
-            if($user["company_id"] != $ticketReportPdfExport->company_id) {
+            if ($user["company_id"] != $ticketReportPdfExport->company_id) {
                 return response([
                     'message' => 'You can\'t download this report.',
                 ], 401);
@@ -194,7 +192,7 @@ class TicketReportPdfExportController extends Controller {
         $user = $request->user();
         // il controllo è così perchè altrimenti stefano che è sia admin che company admin non può scaricare i report 
         // perchè se è company admin controllava sempre il company_id, che nel suo caso può essere diverso essendo comunque admin.
-        if($user["is_admin"] != 1){
+        if ($user["is_admin"] != 1) {
             // non è admin
             if ($user["is_company_admin"] != 1) {
                 // non è company admin
@@ -203,7 +201,7 @@ class TicketReportPdfExportController extends Controller {
                 ], 401);
             }
             // è company admin
-            if($user["company_id"] != $ticketReportPdfExport->company_id) {
+            if ($user["company_id"] != $ticketReportPdfExport->company_id) {
                 return response([
                     'message' => 'You can\'t download this report.',
                 ], 401);
@@ -221,7 +219,8 @@ class TicketReportPdfExportController extends Controller {
 
         return response($fileContent, 200)
             ->header('Content-Type', Storage::disk('gcs')->mimeType($filePath))
-            ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+            ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"')
+            ->header('Access-Control-Expose-Headers', 'Content-Disposition');
     }
 
     /**
@@ -229,7 +228,7 @@ class TicketReportPdfExportController extends Controller {
      * @param string $path
      * @return string
      */
-    
+
     private function generatedSignedUrlForFile($path) {
 
         /**
@@ -275,7 +274,7 @@ class TicketReportPdfExportController extends Controller {
                 'is_approved_billing' => 'boolean',
                 // 'approved_billing_identification' => 'nullable|string|unique:ticket_report_pdf_exports,approved_billing_identification',
             ]);
-            
+
             $ticketReportPdfExport = TicketReportPdfExport::find($request->id);
             if (!$ticketReportPdfExport) {
                 return response([
@@ -284,19 +283,19 @@ class TicketReportPdfExportController extends Controller {
             }
 
             // Verifico se il report è stato approvato (quindi collegabile alle fatture tramite il suo identificativo)
-            if($ticketReportPdfExport->is_approved_billing == 1 && $validatedData['is_approved_billing'] == 0) {
+            if ($ticketReportPdfExport->is_approved_billing == 1 && $validatedData['is_approved_billing'] == 0) {
                 return response([
                     'message' => 'You can\'t unapprove a report that has been approved for billing.',
                 ], 401);
             }
-    
+
             // Genero l'identificativo da utilizzare per la fatturazione
-            if($validatedData['is_approved_billing'] == 1 && !$ticketReportPdfExport->approved_billing_identification) {
+            if ($validatedData['is_approved_billing'] == 1 && !$ticketReportPdfExport->approved_billing_identification) {
                 $validatedData['approved_billing_identification'] = $ticketReportPdfExport->generatePdfIdentificationString();
             }
-    
+
             $ticketReportPdfExport->update($validatedData);
-    
+
             return response([
                 'message' => 'Report updated successfully',
                 'report' => $ticketReportPdfExport
@@ -328,7 +327,7 @@ class TicketReportPdfExportController extends Controller {
                 ], 404);
             }
             // Verifico se il report è stato approvato (quindi collegabile alle fatture tramite il suo identificativo)
-            if($ticketReportPdfExport->is_approved_billing == 1) {
+            if ($ticketReportPdfExport->is_approved_billing == 1) {
                 return response([
                     'message' => 'You can\'t regenerate a report that has been approved for billing.',
                 ], 401);
@@ -348,10 +347,10 @@ class TicketReportPdfExportController extends Controller {
                 'error_message' => null,
                 'is_failed' => false,
             ]);
-    
+
             // Dispatch per rigenerarlo
             dispatch(new GeneratePdfReport($ticketReportPdfExport));
-    
+
             return response([
                 'message' => 'The report is scheduled to be regenerated',
                 'report' => $ticketReportPdfExport
@@ -382,7 +381,7 @@ class TicketReportPdfExportController extends Controller {
                 ], 404);
             }
             // Verifico se il report è stato approvato (quindi collegabile alle fatture tramite il suo identificativo)
-            if($ticketReportPdfExport->is_approved_billing == 1) {
+            if ($ticketReportPdfExport->is_approved_billing == 1) {
                 return response([
                     'message' => 'You can\'t delete a report that has been approved for billing.',
                 ], 401);
@@ -396,7 +395,7 @@ class TicketReportPdfExportController extends Controller {
             }
             // Cancello il report dal db
             $ticketReportPdfExport->delete();
-    
+
             return response([
                 'message' => 'Report deleted successfully',
             ], 200);
@@ -407,5 +406,4 @@ class TicketReportPdfExportController extends Controller {
             ], 500);
         }
     }
-
 }
