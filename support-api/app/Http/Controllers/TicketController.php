@@ -692,6 +692,18 @@ class TicketController extends Controller {
             ], 401);
         }
 
+        $ticketType = $ticket->ticketType;
+        if($fields["actualProcessingTime"] <= 0 || ($fields["actualProcessingTime"] < ($ticketType->expected_processing_time ?? 0)) ){
+            return response([
+                'message' => 'Actual processing time must be set and greater than or equal to the minimum processing time for this ticket type.',
+            ], 400);
+        }
+
+        if($fields["actualProcessingTime"] % 10 != 0){
+            return response([
+                'message' => 'Actual processing time must be a multiple of 10 minutes.',
+            ], 400);
+        }
 
         // Se viene indicato un master_id si controlla che questo ticket non sia master 
         // e che il ticket con l'id indicato esista e sia master. quindi non può essere nemmeno l'id del ticket stesso.

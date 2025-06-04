@@ -57,8 +57,7 @@
             <p style="font-size: 0.75rem; margin-top: 0; margin-bottom: 0.5rem;">
                 In caso di ticket Master e collegati, viene conteggiato solo il tempo del ticket Master.
                 <br>
-                Per "Remoto fatturabile" si intendono ad esempio: prosecuzione di progetto, attività non incluse nel
-                contratto, ecc.
+                Per "Remoto fatturabile" si intendono ad esempio: attività di progetto, non incluse nel contratto, ecc.
             </p>
 
             <table style="width:100%; border: 1px solid #353131; border-collapse: collapse;">
