@@ -215,6 +215,7 @@ return [
         "sla" => "Cambio SLA",
         "blame" => "Cambio responsabilità",
         "billing" => "Fatturazione",
+        "time" => "Tempo esecuzione",
     ],
 
     /* 
