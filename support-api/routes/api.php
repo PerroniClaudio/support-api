@@ -67,6 +67,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post("/ticket/{ticket}/blame", [App\Http\Controllers\TicketController::class, "updateTicketBlame"]);
     Route::post("/ticket/{ticket}/blame-update", [App\Http\Controllers\TicketController::class, "updateTicketBlame"]);
     Route::post("/ticket/{ticket}/status-update", [App\Http\Controllers\TicketController::class, "updateStatus"]);
+    Route::post("/ticket/{ticket}/time-update", [App\Http\Controllers\TicketController::class, "updateTicketActualProcessingTime"]);
     Route::post("/ticket/{ticket}/add-note", [App\Http\Controllers\TicketController::class, "addNote"]);
     Route::post("/ticket/{ticket}/close", [App\Http\Controllers\TicketController::class, "closeTicket"]);
     Route::get("/ticket/file/{id}/temporary_url", [App\Http\Controllers\TicketController::class, "generatedSignedUrlForFile"]);

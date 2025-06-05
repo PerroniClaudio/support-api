@@ -677,6 +677,61 @@ class TicketController extends Controller {
         ], 200);
     }
 
+    public function updateTicketActualProcessingTime(Ticket $ticket, Request $request) {
+        $fields = $request->validate([
+            'actual_processing_time' => 'required|int',
+        ]);
+
+        if ($request->user()["is_admin"] != 1) {
+            return response([
+                'message' => 'The user must be an admin.',
+            ], 401);
+        }
+
+        // Se il valore è diverso da quello già esistente, lo aggiorna
+        if($ticket->actual_processing_time != $fields['actual_processing_time']){
+            // Controlli vari sul tempo e poi aggiornamento dati e registrazione modifica.
+            
+            // Il tempo deve essere maggiore di 0, un multiplo di 10 minuti e almeno uguale al tempo atteso, se impostato.
+            if ($fields['actual_processing_time'] <= 0) {
+                return response([
+                    'message' => 'Actual processing time must be greater than 0.',
+                ], 400);
+            }
+            if ($fields['actual_processing_time'] % 10 != 0) {
+                return response([
+                    'message' => 'Actual processing time must be a multiple of 10 minutes.',
+                ], 400);
+            }
+            $ticketType = $ticket->ticketType;
+            if ($ticketType->expected_processing_time && ($fields['actual_processing_time'] < $ticketType->expected_processing_time)) {
+                return response([
+                    'message' => 'Actual processing time must be greater than or equal to the expected processing time for this ticket type.',
+                ], 400);
+            }
+
+            $ticket->update([
+                'actual_processing_time' => $fields['actual_processing_time'],
+            ]);
+
+            $editMessage = 'Tempo di lavorazione effettivo modificato a ' . 
+                str_pad(intval($fields['actual_processing_time'] / 60), 2, '0', STR_PAD_LEFT) . ':' . str_pad($fields['actual_processing_time'] % 60, 2, '0', STR_PAD_LEFT);
+
+            $update = TicketStatusUpdate::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $request->user()->id,
+                'content' => $editMessage,
+                'type' => 'time',
+            ]);
+
+            dispatch(new SendUpdateEmail($update));
+        }
+
+        return response([
+            'ticket' => $ticket,
+        ], 200);
+    }
+
     public function closeTicket(Ticket $ticket, Request $request) {
         $fields = $request->validate([
             'message' => 'required|string',
