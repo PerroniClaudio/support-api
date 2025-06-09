@@ -253,11 +253,12 @@ class TicketReportPdfExportController extends Controller {
             }
 
             // Verifico se il report è stato approvato (quindi collegabile alle fatture tramite il suo identificativo)
-            if ($ticketReportPdfExport->is_approved_billing == 1 && $validatedData['is_approved_billing'] == 0) {
-                return response([
-                    'message' => 'You can\'t unapprove a report that has been approved for billing.',
-                ], 401);
-            }
+            // è stato deciso che dev'essere possibile modificare un report anche se è già stato approvato
+            // if ($ticketReportPdfExport->is_approved_billing == 1 && $validatedData['is_approved_billing'] == 0) {
+            //     return response([
+            //         'message' => 'You can\'t unapprove a report that has been approved for billing.',
+            //     ], 401);
+            // }
 
             // Genero l'identificativo da utilizzare per la fatturazione
             if ($validatedData['is_approved_billing'] == 1 && !$ticketReportPdfExport->approved_billing_identification) {
