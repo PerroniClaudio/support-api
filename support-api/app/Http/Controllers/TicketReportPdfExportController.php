@@ -40,29 +40,22 @@ class TicketReportPdfExportController extends Controller {
         ], 200);
     }
 
-    public function generic() {
-    }
-
     /**
-     * Lista per utente singolo
+     * Lista approvati per azienda singola
      */
-
-    public function pdfUser(Request $request) {
+    
+    public function approvedPdfCompany(Company $company, Request $request) {
         $user = $request->user();
-        if ($user["is_admin"] != 1) {
-            // non è admin
-            if ($user["is_company_admin"] != 1) {
-                // non è company admin
-                return response([
-                    'message' => 'The user must be at least company admin.',
-                ], 401);
-            }
+        if ($user["is_admin"] != 1 && ($user["is_company_admin"] != 1 || ($user->company_id != $company->id))) {
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
         }
 
-        // Per ora non vengono ancora generati dall'utente, quindi qui si deve ancora decidere come prenderli.
-        // penso tutti quelli dell'azienda dell'utente, generati da loro.
-        $reports = TicketReportPdfExport::where('company_id', $user->company_id)
-            ->where('is_user_generated', true)
+        $reports = TicketReportPdfExport::where([
+                'company_id' => $company->id,
+                'is_approved_billing' => true,
+            ])
             ->orderBy('created_at', 'DESC')
             ->get();
 
@@ -71,30 +64,7 @@ class TicketReportPdfExportController extends Controller {
         ], 200);
     }
 
-    /**
-     * Lista report approvati come billing
-     */
-
-    public function pdfBilling(Request $request) {
-        $user = $request()->user();
-        if ($user["is_admin"] != 1) {
-            // non è admin
-            if ($user["is_company_admin"] != 1) {
-                // non è company admin
-                return response([
-                    'message' => 'The user must be at least company admin.',
-                ], 401);
-            }
-        }
-
-        $reports = TicketReportPdfExport::where('company_id', $user->company_id)
-            ->where('is_approved_billing', true)
-            ->orderBy('created_at', 'DESC')
-            ->get();
-
-        return response([
-            'reports' => $reports,
-        ], 200);
+    public function generic() {
     }
 
     /**

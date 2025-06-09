@@ -240,6 +240,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete("/ticket-pdf-report/delete/{ticketReportPdfExport}", [App\Http\Controllers\TicketReportPdfExportController::class, "destroy"]);
     Route::post("/ticket-pdf-report/export", [App\Http\Controllers\TicketReportPdfExportController::class, "storePdfExport"]);
     Route::get("/ticket-pdf-report/list/{company}", [App\Http\Controllers\TicketReportPdfExportController::class, "pdfCompany"]);
+    Route::get("/approved-ticket-pdf-report/list/{company}", [App\Http\Controllers\TicketReportPdfExportController::class, "approvedPdfCompany"]);
     Route::get("/ticket-pdf-report/preview/{ticketReportPdfExport}", [App\Http\Controllers\TicketReportPdfExportController::class, "pdfPreview"]);
     Route::get("/ticket-pdf-report/download/{ticketReportPdfExport}", [App\Http\Controllers\TicketReportPdfExportController::class, "pdfDownload"]);
 });
