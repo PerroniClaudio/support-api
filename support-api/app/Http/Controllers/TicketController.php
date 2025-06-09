@@ -731,6 +731,43 @@ class TicketController extends Controller {
             'ticket' => $ticket,
         ], 200);
     }
+    
+    public function updateTicketWorkMode(Ticket $ticket, Request $request) {
+        $workModes = config('app.work_modes');
+
+        $fields = $request->validate([
+            'work_mode' => ['required', 'string', 'in:' . implode(',', array_keys($workModes))],
+        ]);
+
+        if ($request->user()["is_admin"] != 1) {
+            return response([
+                'message' => 'The user must be an admin.',
+            ], 401);
+        }
+
+        // Se il valore è diverso da quello già esistente, lo aggiorna
+        if($ticket->work_mode != $fields['work_mode']){
+            // Controlli vari sul tempo e poi aggiornamento dati e registrazione modifica.
+            $ticket->update([
+                'work_mode' => $fields['work_mode'],
+            ]);
+
+            $editMessage = 'Modalità di lavoro modificata in "' . $workModes[$fields['work_mode']] . '"';
+
+            $update = TicketStatusUpdate::create([
+                'ticket_id' => $ticket->id,
+                'user_id' => $request->user()->id,
+                'content' => $editMessage,
+                'type' => 'work_mode',
+            ]);
+
+            dispatch(new SendUpdateEmail($update));
+        }
+
+        return response([
+            'ticket' => $ticket,
+        ], 200);
+    }
 
     public function closeTicket(Ticket $ticket, Request $request) {
         $fields = $request->validate([
