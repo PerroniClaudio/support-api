@@ -79,10 +79,12 @@ class GeneratePdfReport implements ShouldQueue {
             // ticket ancora aperti a fine periodo selezionato
             $still_open_tickets_count = 0;
 
-            // Conteggio ticket nonfatturabili
-            $unbillable_tickets_count = 0;
+            // Conteggio ticket non fatturabili
+            $unbillable_remote_tickets_count = 0;
+            $unbillable_on_site_tickets_count = 0;
             // Tempo di lavoro per gestire i ticket non fatturabili (in minuti)
-            $unbillable_work_time = 0;
+            $unbillable_remote_work_time = 0;
+            $unbillable_on_site_work_time = 0;
 
             // Conteggio ticket fatturabili
             // $billable_tickets_count = 0;
@@ -143,8 +145,13 @@ class GeneratePdfReport implements ShouldQueue {
                     // Dei ticket da includere bisogna contare separatamente quanti sono quelli fatturabili e quelli no, oltre ai tempi di gestione.
                     if($ticket->is_billable == 0) {
                         // Anche qui vogliamo escludere gli slave? per ora non faccio niente, poi si vedrà
-                        $unbillable_tickets_count++;
-                        $unbillable_work_time += $ticket->actual_processing_time;
+                        if($ticket->work_mode == "on_site"){
+                            $unbillable_on_site_tickets_count++;
+                            $unbillable_on_site_work_time += $ticket->actual_processing_time;
+                        } else if($ticket->work_mode == "remote") {
+                            $unbillable_remote_tickets_count++;
+                            $unbillable_remote_work_time += $ticket->actual_processing_time;
+                        }
                     } else if($ticket->is_billable == 1) {
                         // $billable_tickets_count++;
                         // $billable_work_time += $ticket->actual_processing_time;
@@ -770,24 +777,44 @@ class GeneratePdfReport implements ShouldQueue {
                 "options" => [
                     "title" => ["display" => true, "text" => "Incident per Categoria"],
                     "legend" => ["display" => false],
-
+                    "scales" => [
+                        "xAxes" => [
+                            [
+                                "ticks" => [
+                                    "beginAtZero" => true,
+                                ]
+                            ]
+                        ]
+                    ],
+                    "plugins" => [
+                        "datalabels" => [
+                           "display" => true,
+                            "color" => "white",
+                            "align" => "center",
+                            "anchor" => "center",
+                            "font" => [
+                                "weight" => "bold"
+                            ]
+                        ]
+                    ]
                 ]
             ];
             $maxValue = max([0, ...array_values($ticket_by_category_incident_bar_data['data']['datasets'][0]['data'])]);
-            if ($maxValue < 5) {
-                $ticket_by_category_incident_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
+            if ($maxValue < 10) {
+                // $ticket_by_category_incident_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
                 $ticket_by_category_incident_bar_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = 1;
                 $ticket_by_category_incident_bar_data['options']['scales']['xAxes'][0]['ticks']['max'] = 10;
             } else {
-                $ticket_by_category_incident_bar_data['options']["plugins"]["datalabels"] = [
-                    "display" => true,
-                    "color" => "white",
-                    "align" => "center",
-                    "anchor" => "center",
-                    "font" => [
-                        "weight" => "bold"
-                    ]
-                ];
+                // Inseriti in ogni caso
+                // $ticket_by_category_incident_bar_data['options']["plugins"]["datalabels"] = [
+                //     "display" => true,
+                //     "color" => "white",
+                //     "align" => "center",
+                //     "anchor" => "center",
+                //     "font" => [
+                //         "weight" => "bold"
+                //     ]
+                // ];
             }
 
             $ticket_by_category_incident_bar_url = $charts_base_url . urlencode(json_encode($ticket_by_category_incident_bar_data));
@@ -809,27 +836,48 @@ class GeneratePdfReport implements ShouldQueue {
                 "options" => [
                     "title" => ["display" => true, "text" => "Request più frequenti per Categoria"],
                     "legend" => ["display" => false],
-
+                    "scales" => [
+                        "xAxes" => [
+                            [
+                                "ticks" => [
+                                    "beginAtZero" => true,
+                                ]
+                            ]
+                        ]
+                    ],
+                    "plugins" => [
+                        "datalabels" => [
+                            "display" => true,
+                            "color" => "white",
+                            "align" => "center",
+                            "anchor" => "center",
+                            "font" => [
+                                "weight" => "bold"
+                            ]
+                        ]
+                    ]
                 ]
             ];
 
             $maxValue = count($ticket_by_category_request_bar_data['data']['datasets'][0]['data']) > 0 
                 ? max([0, ...array_values($ticket_by_category_request_bar_data['data']['datasets'][0]['data'])]) 
                 : 0;
-            if ($maxValue < 5) {
-                $ticket_by_category_request_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
+            if ($maxValue < 10) {
+                // beginAtZero già inserito prima
+                // $ticket_by_category_request_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
                 $ticket_by_category_request_bar_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = 1;
                 $ticket_by_category_request_bar_data['options']['scales']['xAxes'][0]['ticks']['max'] = 10;
             } else {
-                $ticket_by_category_request_bar_data['options']["plugins"]["datalabels"] = [
-                    "display" => true,
-                    "color" => "white",
-                    "align" => "center",
-                    "anchor" => "center",
-                    "font" => [
-                        "weight" => "bold"
-                    ]
-                ];
+                // Inseriti in ogni caso
+                // $ticket_by_category_request_bar_data['options']["plugins"]["datalabels"] = [
+                //     "display" => true,
+                //     "color" => "white",
+                //     "align" => "center",
+                //     "anchor" => "center",
+                //     "font" => [
+                //         "weight" => "bold"
+                //     ]
+                // ];
             }
 
             $ticket_by_category_request_bar_url = $charts_base_url . urlencode(json_encode($ticket_by_category_request_bar_data));
@@ -868,25 +916,44 @@ class GeneratePdfReport implements ShouldQueue {
                 "options" => [
                     "title" => ["display" => true, "text" => "Top 5 Incident per Tipo"],
                     "legend" => ["display" => false],
-
+                    "scales" => [
+                        "xAxes" => [
+                            [
+                                "ticks" => [
+                                    "beginAtZero" => true,
+                                ]
+                            ]
+                        ]
+                    ],
+                    "plugins" => [
+                        "datalabels" => [
+                            "display" => true,
+                            "color" => "white",
+                            "align" => "center",
+                            "anchor" => "center",
+                            "font" => [
+                                "weight" => "bold"
+                            ]
+                        ]
+                    ]
                 ]
             ];
 
             $maxValue = max([0, ...array_values($ticket_by_type_incident_bar_data['data']['datasets'][0]['data'])]);
-            if ($maxValue < 5) {
-                $ticket_by_type_incident_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
+            if ($maxValue < 10) {
+                // $ticket_by_type_incident_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
                 $ticket_by_type_incident_bar_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = 1;
                 $ticket_by_type_incident_bar_data['options']['scales']['xAxes'][0]['ticks']['max'] = 10;
             } else {
-                $ticket_by_type_incident_bar_data['options']["plugins"]["datalabels"] = [
-                    "display" => true,
-                    "color" => "white",
-                    "align" => "center",
-                    "anchor" => "center",
-                    "font" => [
-                        "weight" => "bold"
-                    ]
-                ];
+                // $ticket_by_type_incident_bar_data['options']["plugins"]["datalabels"] = [
+                //     "display" => true,
+                //     "color" => "white",
+                //     "align" => "center",
+                //     "anchor" => "center",
+                //     "font" => [
+                //         "weight" => "bold"
+                //     ]
+                // ];
             }
 
             $ticket_by_type_incident_bar_url = $charts_base_url . urlencode(json_encode($ticket_by_type_incident_bar_data));
@@ -907,27 +974,40 @@ class GeneratePdfReport implements ShouldQueue {
                 ],
                 "options" => [
                     "title" => ["display" => true, "text" => "Top 5 Request per Tipo"],
-                    "legend" => ["display" => false]
+                    "legend" => ["display" => false],
+                    "plugins" => [
+                        "datalabels" => [
+                            "display" => true,
+                            "color" => "white",
+                            "align" => "center",
+                            "anchor" => "center",
+                            "font" => [
+                                "weight" => "bold"
+                            ]
+                        ]
+                    ]
                 ]
             ];
 
             $maxValue = count($ticket_by_type_request_bar_data['data']['datasets'][0]['data']) > 0 
                 ? max([0, ...array_values($ticket_by_type_request_bar_data['data']['datasets'][0]['data'])]) 
                 : 0;
-            if ($maxValue < 5) {
-                $ticket_by_type_request_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
+                
+            $ticket_by_type_request_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
+            if ($maxValue < 10) {
+                // $ticket_by_type_request_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
                 $ticket_by_type_request_bar_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = 1;
                 $ticket_by_type_request_bar_data['options']['scales']['xAxes'][0]['ticks']['max'] = 10;
             } else {
-                $ticket_by_type_request_bar_data['options']["plugins"]["datalabels"] = [
-                    "display" => true,
-                    "color" => "white",
-                    "align" => "center",
-                    "anchor" => "center",
-                    "font" => [
-                        "weight" => "bold"
-                    ]
-                ];
+                // $ticket_by_type_request_bar_data['options']["plugins"]["datalabels"] = [
+                //     "display" => true,
+                //     "color" => "white",
+                //     "align" => "center",
+                //     "anchor" => "center",
+                //     "font" => [
+                //         "weight" => "bold"
+                //     ]
+                // ];
             }
 
             $ticket_by_type_request_bar_url = $charts_base_url . urlencode(json_encode($ticket_by_type_request_bar_data));
@@ -954,25 +1034,35 @@ class GeneratePdfReport implements ShouldQueue {
                 "options" => [
                     "title" => ["display" => true, "text" => "Ticket per Provenienza"],
                     "legend" => ["display" => false],
-
+                    "plugins" => [
+                        "datalabels" => [
+                            "display" => true,
+                            "color" => "white",
+                            "align" => "center",
+                            "anchor" => "center",
+                            "font" => [
+                                "weight" => "bold"
+                            ]
+                        ]
+                    ]
                 ]
             ];
 
+            $ticket_by_source_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
             $maxValue = max([0, ...array_values($ticket_by_source_data['data']['datasets'][0]['data'])]);
-            if ($maxValue < 5) {
-                $ticket_by_source_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
+            if ($maxValue < 10) {
                 $ticket_by_source_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = 1;
                 $ticket_by_source_data['options']['scales']['xAxes'][0]['ticks']['max'] = 10;
             } else {
-                $ticket_by_source_data['options']["plugins"]["datalabels"] = [
-                    "display" => true,
-                    "color" => "white",
-                    "align" => "center",
-                    "anchor" => "center",
-                    "font" => [
-                        "weight" => "bold"
-                    ]
-                ];
+                // $ticket_by_source_data['options']["plugins"]["datalabels"] = [
+                //     "display" => true,
+                //     "color" => "white",
+                //     "align" => "center",
+                //     "anchor" => "center",
+                //     "font" => [
+                //         "weight" => "bold"
+                //     ]
+                // ];
             }
 
             $ticket_by_source_url = $charts_base_url . urlencode(json_encode($ticket_by_source_data));
@@ -1000,9 +1090,9 @@ class GeneratePdfReport implements ShouldQueue {
                 ]
             ];
 
+            $ticket_by_weekday_data['options']['scales']['yAxes'][0]['ticks']['beginAtZero'] = true;
             $maxValue = max([0, ...array_values($ticket_by_weekday_data['data']['datasets'][0]['data'])]);
-            if ($maxValue < 5) {
-                $ticket_by_weekday_data['options']['scales']['yAxes'][0]['ticks']['beginAtZero'] = true;
+            if ($maxValue < 10) {
                 $ticket_by_weekday_data['options']['scales']['yAxes'][0]['ticks']['stepSize'] = 1;
                 $ticket_by_weekday_data['options']['scales']['yAxes'][0]['ticks']['max'] = 10;
             } else {
@@ -1135,9 +1225,10 @@ class GeneratePdfReport implements ShouldQueue {
                 ]
             ];
 
+            $ticket_by_priority_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
             $maxValue = max([0, ...array_values($ticket_by_priority_bar_data['data']['datasets'][0]['data'])]);
-            if ($maxValue < 5) {
-                $ticket_by_priority_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
+            if ($maxValue < 10) {
+                // $ticket_by_priority_bar_data['options']['scales']['xAxes'][0]['ticks']['beginAtZero'] = true;
                 $ticket_by_priority_bar_data['options']['scales']['xAxes'][0]['ticks']['stepSize'] = 1;
                 $ticket_by_priority_bar_data['options']['scales']['xAxes'][0]['ticks']['max'] = 10;
             }
@@ -1189,8 +1280,8 @@ class GeneratePdfReport implements ShouldQueue {
             $tickets_by_user_data['options']['scales']['yAxes'][0]['ticks']['stepSize'] = $maxValue <= 10 
                 ? 1
                 : ceil($maxValue / 10 / 5) * 5;
-            if ($maxValue < 5) {
-                $tickets_by_user_data['options']['scales']['yAxes'][0]['ticks']['beginAtZero'] = true;
+            if ($maxValue < 10) {
+                // $tickets_by_user_data['options']['scales']['yAxes'][0]['ticks']['beginAtZero'] = true;
                 $tickets_by_user_data['options']['scales']['yAxes'][0]['ticks']['stepSize'] = 1;
                 $tickets_by_user_data['options']['scales']['yAxes'][0]['ticks']['max'] = 10;
             } else {
@@ -1276,25 +1367,46 @@ class GeneratePdfReport implements ShouldQueue {
                 "options" => [
                     "title" => ["display" => true, "text" => "Form non corretto"],
                     "legend" => ["display" => false],
-
+                    "scales" => [
+                        "yAxes" => [
+                            [
+                                "ticks" => [
+                                    "beginAtZero" => true,
+                                    "stepSize" => 1,
+                                    "max" => 10
+                                ]
+                            ]
+                        ]
+                    ],
+                    "plugins" => [
+                        "datalabels" => [
+                            "display" => true,
+                            "color" => "white",
+                            "align" => "center",
+                            "anchor" => "center",
+                            "font" => [
+                                "weight" => "bold"
+                            ]
+                        ]
+                    ]
                 ]
             ];
 
             $maxValue = max([0, ...array_values($wrong_type_data['data']['datasets'][0]['data'])]);
-            if ($maxValue < 5) {
-                $wrong_type_data['options']['scales']['yAxes'][0]['ticks']['beginAtZero'] = true;
+            if ($maxValue < 10) {
+                // $wrong_type_data['options']['scales']['yAxes'][0]['ticks']['beginAtZero'] = true;
                 $wrong_type_data['options']['scales']['yAxes'][0]['ticks']['stepSize'] = 1;
                 $wrong_type_data['options']['scales']['yAxes'][0]['ticks']['max'] = 10;
             } else {
-                $wrong_type_data['options']["plugins"]["datalabels"] = [
-                    "display" => true,
-                    "color" => "white",
-                    "align" => "center",
-                    "anchor" => "center",
-                    "font" => [
-                        "weight" => "bold"
-                    ]
-                ];
+                // $wrong_type_data['options']["plugins"]["datalabels"] = [
+                //     "display" => true,
+                //     "color" => "white",
+                //     "align" => "center",
+                //     "anchor" => "center",
+                //     "font" => [
+                //         "weight" => "bold"
+                //     ]
+                // ];
             }
 
             $wrong_type_url = $charts_base_url . urlencode(json_encode($wrong_type_data));
@@ -1429,8 +1541,10 @@ class GeneratePdfReport implements ShouldQueue {
                 'closed_tickets_count' => $closed_tickets_count,
                 'still_open_tickets_count' => $still_open_tickets_count,
                 'other_tickets_count' => $other_tickets_count,
-                'unbillable_tickets_count' => $unbillable_tickets_count,
-                'unbillable_work_time' => $unbillable_work_time,
+                'unbillable_on_site_tickets_count' => $unbillable_on_site_tickets_count,
+                'unbillable_remote_tickets_count' => $unbillable_remote_tickets_count,
+                'unbillable_on_site_work_time' => $unbillable_on_site_work_time,
+                'unbillable_remote_work_time' => $unbillable_remote_work_time,
                 'remote_billable_tickets_count' => $remote_billable_tickets_count,
                 'on_site_billable_tickets_count' => $on_site_billable_tickets_count,
                 'remote_billable_work_time' => $remote_billable_work_time,

@@ -11,7 +11,7 @@
 
 <body>
 
-    <div style="text-align:center; height:100%">
+    <div style="text-align:center;">
 
         <div>
             @php
@@ -49,251 +49,327 @@
                 </tr>
             </table>
         </div>
+    </div>
+    
+    <div style="height: 1rem;"></div>
+
+    <div class="card">
+        <p style="margin-bottom: 0.5rem;"><b>Conteggio e fatturabilità ticket</b></p>
+        <p style="font-size: 0.75rem; margin-top: 0; margin-bottom: 0.5rem;">
+            In caso di ticket Master e collegati, viene conteggiato solo il tempo del ticket Master.
+            <br>
+            Per "Remoto fatturabile" si intendono ad esempio: attività di progetto, non incluse nel contratto, ecc.
+        </p>
+
+        @php
+            $total_billable_tickets_count =
+                $on_site_billable_tickets_count + $remote_billable_tickets_count;
+            $total_billable_work_time = $on_site_billable_work_time + $remote_billable_work_time;
+            $total_unbillable_tickets_count =
+                $unbillable_on_site_tickets_count + $unbillable_remote_tickets_count;
+            $total_unbillable_work_time = $unbillable_on_site_work_time + $unbillable_remote_work_time;
+        @endphp
+
+        <table style="width:100%; border: 1px solid #353131; border-collapse: collapse;">
+
+            <thead>
+                <tr style="border: 1px solid #353131;">
+                    <th style="border: 1px solid #353131;" class="text-small-plus  ">
+                        Descrizione delle attività
+                    </th>
+                    <th style="border: 1px solid #353131; width:15%;" class="text-small-plus  ">
+                        Conteggio ticket
+                    </th>
+                    <th style="border: 1px solid #353131; width:25%;" class="text-small-plus  ">
+                        Tempo gestione ticket (hh:mm)
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="border: 1px solid #353131;">
+                    <td style="border: 1px solid #353131; padding-left: 0.5rem;">
+                        <p class="text-small-plus">
+                            Attività onsite fatturabili
+                        </p>
+                    </td>
+                    <td style="border: 1px solid #353131; text-align: center;">
+                        <p class="text-small-plus " style="font-weight: 600">
+                            {{ $on_site_billable_tickets_count }}
+                        </p>
+                    </td>
+                    <td style="border: 1px solid #353131; text-align: center;">
+                        <p class="text-small-plus " style="font-weight: 600">
+                            {{ sprintf('%02d:%02d', intdiv($on_site_billable_work_time, 60), $on_site_billable_work_time % 60) }}
+                        </p>
+                    </td>
+                </tr>
+                <tr style="border: 1px solid #353131;">
+                    <td style="border: 1px solid #353131; padding-left: 0.5rem;">
+                        <p class="text-small-plus">
+                            Attività in remoto fatturabile
+                        </p>
+                    </td>
+                    <td style="border: 1px solid #353131; text-align: center;">
+                        <p class="text-small-plus " style="font-weight: 600">
+                            {{ $remote_billable_tickets_count }}
+                        </p>
+                    </td>
+                    <td style="border: 1px solid #353131; text-align: center;">
+                        <p class="text-small-plus " style="font-weight: 600">
+                            {{ sprintf('%02d:%02d', intdiv($remote_billable_work_time, 60), $remote_billable_work_time % 60) }}
+                        </p>
+                    </td>
+                </tr>
+                <tr style="border: 1px solid #353131;">
+                    <td style="border: 1px solid #353131; padding-left: 0.5rem;">
+                        <p class="text-small-plus">
+                            Totale attività fatturabili
+                        </p>
+                    </td>
+                    <td style="border: 1px solid #353131; text-align: center;">
+                        <p class="text-small-plus " style="font-weight: 600">
+                            {{ $total_billable_tickets_count }}
+                        </p>
+                    </td>
+                    <td style="border: 1px solid #353131; text-align: center;">
+                        <p class="text-small-plus " style="font-weight: 600">
+                            {{ sprintf('%02d:%02d', intdiv($total_billable_work_time, 60), $total_billable_work_time % 60) }}
+                        </p>
+                    </td>
+                </tr>
+            </tbody>
+
+        </table>
+        
+        <div style="height: 1rem;"></div>
+
+        <table style="width:100%; border: 1px solid #353131; border-collapse: collapse;">
+
+            <thead>
+                <tr style="border: 1px solid #353131;">
+                    <th style="border: 1px solid #353131;" class="text-small-plus  ">
+                        Descrizione delle attività
+                    </th>
+                    <th style="border: 1px solid #353131; width:15%;" class="text-small-plus  ">
+                        Conteggio ticket
+                    </th>
+                    <th style="border: 1px solid #353131; width:25%;" class="text-small-plus  ">
+                        Tempo gestione ticket (hh:mm)
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr style="border: 1px solid #353131;">
+                    <td style="border: 1px solid #353131; padding-left: 0.5rem;">
+                        <p class="text-small-plus">
+                            Attività onsite incluse nel contratto quadro/accordi di servizio
+                        </p>
+                    </td>
+                    <td style="border: 1px solid #353131; text-align: center;">
+                        <p class="text-small-plus " style="font-weight: 600">
+                            {{ $unbillable_on_site_tickets_count }}
+                        </p>
+                    </td>
+                    <td style="border: 1px solid #353131; text-align: center;">
+                        <p class="text-small-plus " style="font-weight: 600">
+                            {{ sprintf('%02d:%02d', intdiv($unbillable_on_site_work_time, 60), $unbillable_on_site_work_time % 60) }}
+                        </p>
+                    </td>
+                </tr>
+                <tr style="border: 1px solid #353131;">
+                    <td style="border: 1px solid #353131; padding-left: 0.5rem;">
+                        <p class="text-small-plus">
+                            Attività in remoto incluse nel contratto quadro/accordi di servizio
+                        </p>
+                    </td>
+                    <td style="border: 1px solid #353131; text-align: center;">
+                        <p class="text-small-plus " style="font-weight: 600">
+                            {{ $unbillable_remote_tickets_count }}
+                        </p>
+                    </td>
+                    <td style="border: 1px solid #353131; text-align: center;">
+                        <p class="text-small-plus " style="font-weight: 600">
+                            {{ sprintf('%02d:%02d', intdiv($unbillable_remote_work_time, 60), $unbillable_remote_work_time % 60) }}
+                        </p>
+                    </td>
+                </tr>
+                <tr style="border: 1px solid #353131;">
+                    <td style="border: 1px solid #353131; padding-left: 0.5rem;">
+                        <p class="text-small-plus">
+                            Ancora in gestione (non conteggiati)
+                        </p>
+                    </td>
+                    <td style="border: 1px solid #353131; text-align: center;">
+                        <p class="text-small-plus " style="font-weight: 600">
+                            {{ $still_open_tickets_count }}
+                        </p>
+                    </td>
+                    <td style="border: 1px solid #353131;"></td>
+                </tr>
+                <tr style="border: 1px solid #353131;">
+                    <td style="border: 1px solid #353131; padding-left: 0.5rem;">
+                        <p class="text-small-plus">
+                            Totale attività incluse nel contratto
+                        </p>
+                    </td>
+                    <td style="border: 1px solid #353131; text-align: center;">
+                        <p class="text-small-plus " style="font-weight: 600">
+                            {{ $total_unbillable_tickets_count }}
+                        </p>
+                    </td>
+                    <td style="border: 1px solid #353131; text-align: center;">
+                        <p class="text-small-plus " style="font-weight: 600">
+                            {{ sprintf('%02d:%02d', intdiv($total_unbillable_work_time, 60), $total_unbillable_work_time % 60) }}
+                        </p>
+                    </td>
+                </tr>
+            </tbody>
+
+        </table>
 
         <div style="height: 1rem;"></div>
 
-        <div class="card">
-            <p style="margin-bottom: 0.5rem;"><b>Conteggio e fatturabilità ticket</b></p>
-            <p style="font-size: 0.75rem; margin-top: 0; margin-bottom: 0.5rem;">
-                In caso di ticket Master e collegati, viene conteggiato solo il tempo del ticket Master.
-                <br>
-                Per "Remoto fatturabile" si intendono ad esempio: attività di progetto, non incluse nel contratto, ecc.
-            </p>
-
-            <table style="width:100%; border: 1px solid #353131; border-collapse: collapse;">
-
-                <thead>
-                    <tr style="border: 1px solid #353131;">
-                        <th style="border: 1px solid #353131;" class="text-small-plus  ">
-                            Descrizione delle attività
-                        </th>
-                        <th style="border: 1px solid #353131; width:15%;" class="text-small-plus  ">
-                            Conteggio ticket
-                        </th>
-                        <th style="border: 1px solid #353131; width:25%;" class="text-small-plus  ">
-                            Tempo gestione ticket (hh:mm)
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr style="border: 1px solid #353131;">
-                        <td style="border: 1px solid #353131; padding-left: 0.5rem;">
-                            <p class="text-small-plus">
-                                Attività on site fatturabili
-                            </p>
-                        </td>
-                        <td style="border: 1px solid #353131; text-align: center;">
-                            <p class="text-small-plus " style="font-weight: 600">
-                                {{ $on_site_billable_tickets_count }}
-                            </p>
-                        </td>
-                        <td style="border: 1px solid #353131; text-align: center;">
-                            <p class="text-small-plus " style="font-weight: 600">
-                                {{ sprintf('%02d:%02d', intdiv($on_site_billable_work_time, 60), $on_site_billable_work_time % 60) }}
-                            </p>
-                        </td>
-                    </tr>
-                    <tr style="border: 1px solid #353131;">
-                        <td style="border: 1px solid #353131; padding-left: 0.5rem;">
-                            <p class="text-small-plus">
-                                Attività in remoto fatturabile
-                            </p>
-                        </td>
-                        <td style="border: 1px solid #353131; text-align: center;">
-                            <p class="text-small-plus " style="font-weight: 600">
-                                {{ $remote_billable_tickets_count }}
-                            </p>
-                        </td>
-                        <td style="border: 1px solid #353131; text-align: center;">
-                            <p class="text-small-plus " style="font-weight: 600">
-                                {{ sprintf('%02d:%02d', intdiv($remote_billable_work_time, 60), $remote_billable_work_time % 60) }}
-                            </p>
-                        </td>
-                    </tr>
-                    <tr style="border: 1px solid #353131;">
-                        <td style="border: 1px solid #353131; padding-left: 0.5rem;">
-                            <p class="text-small-plus">
-                                Incluse nel contratto quadro/accordi di servizio
-                            </p>
-                        </td>
-                        <td style="border: 1px solid #353131; text-align: center;">
-                            <p class="text-small-plus " style="font-weight: 600">
-                                {{ $unbillable_tickets_count }}
-                            </p>
-                        </td>
-                        <td style="border: 1px solid #353131; text-align: center;">
-                            <p class="text-small-plus " style="font-weight: 600">
-                                {{ sprintf('%02d:%02d', intdiv($unbillable_work_time, 60), $unbillable_work_time % 60) }}
-                            </p>
-                        </td>
-                    </tr>
-                    <tr style="border: 1px solid #353131;">
-                        <td style="border: 1px solid #353131; padding-left: 0.5rem;">
-                            <p class="text-small-plus">
-                                Ancora in gestione
-                            </p>
-                        </td>
-                        <td style="border: 1px solid #353131; text-align: center;">
-                            <p class="text-small-plus " style="font-weight: 600">
-                                {{ $still_open_tickets_count }}
-                            </p>
-                        </td>
-                        <td style="border: 1px solid #353131;"></td>
-                    </tr>
-                    {{-- <tr>
-                        <td><p class="text-small">Ticket creati nel periodo</p></td>
-                        <td><p style="font-weight: 600">{{ $opened_tickets_count }}</p></td>
-                    </tr> --}}
-                </tbody>
-
-            </table>
-
-            <div style="height: 1rem;"></div>
-
-            {{-- Grafici top 5 tempo di esecuzione per fatturabilità --}}
-            <table width="100%" style="margin-top: 1rem;">
-                <tr>
-                    <td>
-                        @php
-                            $imgData = @file_get_contents($ticket_by_billable_time_url);
-                        @endphp
-                        @if ($imgData !== false)
-                            <img src="data:image/png;base64,{{ base64_encode($imgData) }}"
-                                style="width: 100%; height: auto;">
-                        @else
-                            <span>Immagine non disponibile</span>
-                        @endif
-                    </td>
-
-                    <td>
-                        @php
-                            $imgData = @file_get_contents($ticket_by_unbillable_time_url);
-                        @endphp
-                        @if ($imgData !== false)
-                            <img src="data:image/png;base64,{{ base64_encode($imgData) }}"
-                                style="width: 100%;height: auto;">
-                        @else
-                            <span>Immagine non disponibile</span>
-                        @endif
-
-                    </td>
-                </tr>
-            </table>
-
-            <div style="height: 1rem;"></div>
-
-            {{-- Tabella ticket fatturabili col dettaglio del tempo, divisi per categoria --}}
-            <p style="margin-bottom: 0.5rem;"><b>Tempo di gestione ticket fatturabili per categoria</b></p>
-            <p style="font-size: 0.75rem; margin-top: 0; margin-bottom: 0.5rem;">
-                Qui vengono accorpati i ticket per categoria, escludendo quelli collegati ai master.
-            </p>
-
-            <table style="width:100%; border: 1px solid #353131; border-collapse: collapse;">
-
-                <thead>
-                    <tr style="border: 1px solid #353131;">
-                        <th style="border: 1px solid #353131;" class="text-small-plus  ">
-                            Categoria
-                        </th>
-                        <th style="border: 1px solid #353131; width:9%;" class="text-small-plus  ">
-                            Quantità
-                        </th>
-                        <th style="border: 1px solid #353131; width:25%;" class="text-small-plus  ">
-                            Tempo totale di gestione (hh:mm)
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
+        {{-- Grafici top 5 tempo di esecuzione per fatturabilità --}}
+        <table width="100%" style="margin-top: 1rem;">
+            <tr>
+                <td>
                     @php
-                        $billableTicketsByCategory = collect($tickets)
-                            ->filter(function ($ticket) {
-                                return $ticket['is_billable'] && $ticket['master_id'] == null;
-                            })
-                            ->groupBy('category')
-                            ->sortByDesc(function ($groupedTickets) {
-                                return $groupedTickets->sum('actual_processing_time');
-                            });
+                        $imgData = @file_get_contents($ticket_by_billable_time_url);
                     @endphp
-
-                    @foreach ($billableTicketsByCategory as $category => $groupedTickets)
-                        <tr style="border: 1px solid #353131;">
-                            <td style="border: 1px solid #353131; padding-left: 0.5rem;">
-                                <p class="text-small-plus">
-                                    {{ $category }}
-                                </p>
-                            </td>
-                            <td style="border: 1px solid #353131; text-align: center;">
-                                <p class="text-small-plus " style="font-weight: 600">
-                                    {{ $groupedTickets->count() }}
-                                </p>
-                            </td>
-                            <td style="border: 1px solid #353131; text-align: center;">
-                                <p class="text-small-plus " style="font-weight: 600">
-                                    {{ sprintf('%02d:%02d', intdiv($groupedTickets->sum('actual_processing_time'), 60), $groupedTickets->sum('actual_processing_time') % 60) }}
-                                </p>
-                            </td>
-                        </tr>
-                    @endforeach
-
-                    <tr>
-                        <td style="border: 1px solid #353131; padding-left: 0.5rem;">
-                            <p style="font-weight: 600">
-                                Totale
-                            </p>
-                        </td>
-                        @php
-                            $total_billable_tickets_count =
-                                $on_site_billable_tickets_count + $remote_billable_tickets_count;
-                            $total_billable_work_time = $on_site_billable_work_time + $remote_billable_work_time;
-                        @endphp
-                        <td style="border: 1px solid #353131; text-align: center;">
-                            <p style="font-weight: 600">
-                                {{ $total_billable_tickets_count }}
-                            </p>
-                        </td>
-                        <td style="border: 1px solid #353131; text-align: center;">
-                            <p style="font-weight: 600">
-                                {{ sprintf('%02d:%02d', intdiv($total_billable_work_time, 60), $total_billable_work_time % 60) }}
-                            </p>
-                        </td>
-                    </tr>
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-        {{-- <div style="height: 1rem;"></div> --}}
-
-        {{-- <div class="card">
-            <table width="100%" style="margin-top: 1rem;">
-                <tr>
-                    <td>
-                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($ticket_by_billable_time_url)) }}"
+                    @if ($imgData !== false)
+                        <img src="data:image/png;base64,{{ base64_encode($imgData) }}"
                             style="width: 100%; height: auto;">
-                    </td>
-    
-                    <td>
-                        <img src="data:image/png;base64,{{ base64_encode(file_get_contents($ticket_by_unbillable_time_url)) }}"
-                            style=" width:100%;height: auto;">
-                    </td>
-                </tr>
-            </table>
-        </div> --}}
+                    @else
+                        <span>Immagine non disponibile</span>
+                    @endif
+                </td>
+
+                <td>
+                    @php
+                        $imgData = @file_get_contents($ticket_by_unbillable_time_url);
+                    @endphp
+                    @if ($imgData !== false)
+                        <img src="data:image/png;base64,{{ base64_encode($imgData) }}"
+                            style="width: 100%;height: auto;">
+                    @else
+                        <span>Immagine non disponibile</span>
+                    @endif
+
+                </td>
+            </tr>
+        </table>
+
     </div>
 
     <div class="page-break"></div>
+
+    <div class="card">
+            
+        {{-- Tabella ticket fatturabili col dettaglio del tempo, divisi per categoria --}}
+        <p style="margin-bottom: 0.5rem;"><b>Tempo di gestione ticket fatturabili per categoria</b></p>
+        <p style="font-size: 0.75rem; margin-top: 0; margin-bottom: 0.5rem;">
+            Qui vengono accorpati i ticket per categoria, escludendo quelli collegati ai master.
+        </p>
+
+        <table style="width:100%; border: 1px solid #353131; border-collapse: collapse;">
+
+            <thead>
+                <tr style="border: 1px solid #353131;">
+                    <th style="border: 1px solid #353131;" class="text-small-plus  ">
+                        Categoria
+                    </th>
+                    <th style="border: 1px solid #353131; width:9%;" class="text-small-plus  ">
+                        Quantità
+                    </th>
+                    <th style="border: 1px solid #353131; width:25%;" class="text-small-plus  ">
+                        Tempo totale di gestione (hh:mm)
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                @php
+                    $billableTicketsByCategory = collect($tickets)
+                        ->filter(function ($ticket) {
+                            return $ticket['is_billable'] && $ticket['master_id'] == null;
+                        })
+                        ->groupBy('category')
+                        ->sortByDesc(function ($groupedTickets) {
+                            return $groupedTickets->sum('actual_processing_time');
+                        });
+                @endphp
+
+                @foreach ($billableTicketsByCategory as $category => $groupedTickets)
+                    <tr style="border: 1px solid #353131;">
+                        <td style="border: 1px solid #353131; padding-left: 0.5rem;">
+                            <p class="text-small-plus">
+                                {{ $category }}
+                            </p>
+                        </td>
+                        <td style="border: 1px solid #353131; text-align: center;">
+                            <p class="text-small-plus " style="font-weight: 600">
+                                {{ $groupedTickets->count() }}
+                            </p>
+                        </td>
+                        <td style="border: 1px solid #353131; text-align: center;">
+                            <p class="text-small-plus " style="font-weight: 600">
+                                {{ sprintf('%02d:%02d', intdiv($groupedTickets->sum('actual_processing_time'), 60), $groupedTickets->sum('actual_processing_time') % 60) }}
+                            </p>
+                        </td>
+                    </tr>
+                @endforeach
+
+                <tr>
+                    <td style="border: 1px solid #353131; padding-left: 0.5rem;">
+                        <p style="font-weight: 600">
+                            Totale
+                        </p>
+                    </td>
+                    <td style="border: 1px solid #353131; text-align: center;">
+                        <p style="font-weight: 600">
+                            {{ $total_billable_tickets_count }}
+                        </p>
+                    </td>
+                    <td style="border: 1px solid #353131; text-align: center;">
+                        <p style="font-weight: 600">
+                            {{ sprintf('%02d:%02d', intdiv($total_billable_work_time, 60), $total_billable_work_time % 60) }}
+                        </p>
+                    </td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <div style="height: 1rem;"></div>
+
+    {{-- <div class="card">
+        <table width="100%" style="margin-top: 1rem;">
+            <tr>
+                <td>
+                    <img src="data:image/png;base64,{{ base64_encode(file_get_contents($ticket_by_billable_time_url)) }}"
+                        style="width: 100%; height: auto;">
+                </td>
+
+                <td>
+                    <img src="data:image/png;base64,{{ base64_encode(file_get_contents($ticket_by_unbillable_time_url)) }}"
+                        style=" width:100%;height: auto;">
+                </td>
+            </tr>
+        </table>
+    </div> --}}
+
     <div class="card">
 
         @php
             $billableTicketsOnsite = collect($tickets)->filter(function ($ticket) {
-                return $ticket['is_billable'] && $ticket['master_id'] == null && $ticket['work_mode'] == 'on_site';
+                return $ticket['is_billable'] && ($ticket['master_id'] == null) && ($ticket['work_mode'] == 'on_site');
             });
         @endphp
 
         {{-- Tabella ticket fatturabili col dettaglio del tempo e tecnico (handler). esclusi gli slave --}}
-        <p style="margin-bottom: 0.5rem; text-align: center;"><b>Ticket on site fatturabili</b></p>
+        <p style="margin-bottom: 0.5rem; text-align: center;"><b>Ticket onsite fatturabili</b></p>
         <p style="font-size:9; margin-top: 0; margin-bottom: 0.5rem; text-align: center;">
             <span>Esclusi i collegati</span>
         </p>
@@ -351,7 +427,7 @@
                     <tr style="border: 1px solid #353131;">
                         <td colspan="4" style="border: 1px solid #353131; text-align: center;">
                             <p class="text-small-plus" style="font-weight: 600">
-                                Nessun ticket on site fatturabile trovato.
+                                Nessun ticket onsite fatturabile trovato.
                             </p>
                         </td>
                     </tr>
@@ -621,9 +697,11 @@
         <p style="font-size:9">
             <span>R/I indica Request/Incident ovvero Richiesta/Problema.</span>
             <br>
-            <span>M/C/N indica se è un Master, se Collegato a un master o se è Normale.</span>
+            <span>M/C/S indica se è un Master, se Collegato a un master o se è Singolo.</span>
             <br>
             <span>SUP indica il Supporto.</span>
+            <br>
+            <span>RM/OS indica Remoto o Onsite</span>
             <br>
             <span>Lo stato attuale è in riferimento alla data {{ $date_to->format('d/m/Y') }} </span>
         </p>
@@ -631,46 +709,33 @@
 
         <table style="width:100%; border: 1px solid #201e1e; border-collapse: collapse;">
             <tbody>
-                {{-- <tr>
-                    <th style="width:20%">
-                        <a href="#ticket-{{ $ticket['id'] }}">
-                            Ticket
-                        </a>
-                    </th>
-                    <th style="width:20%" class="text-small">
-                        Apertura
-                    </th>
-                    <th style="width:20%">
-                        I/R
-                    </th>
-                    <th style="width:20%">
-                        Aperto da
-                    </th>
-                    <th style="width:20%">
-                        Stato attuale
-                    </th>
-                </tr> --}}
                 <tr style=" border: 1px solid #353131;" class="text-small-plus">
                     <th style="width:8%; border: 1px solid #353131;">
                         Ticket
                     </th>
-                    <th style="width:44%; border: 1px solid #353131;">
+                    <th style="width:8%; border: 1px solid #353131;">
+                        R/I
+                    </th>
+                    <th style="width:28%; border: 1px solid #353131;">
                         Categoria
                     </th>
-                    <th style="width:16%; border: 1px solid #353131;">
+                    <th style="width:12%; border: 1px solid #353131;">
                         Apertura
+                    </th>
+                    <th style="width:6%; border: 1px solid #353131;">
+                        RM/OS
+                    </th>
+                    <th style="width:6%; border: 1px solid #353131;">
+                        Tempo
                     </th>
                     <th style="width:8%; border: 1px solid #353131;">
                         Fatturabile
                     </th>
                     <th style="width:8%; border: 1px solid #353131;">
-                        R/I
-                    </th>
-                    <th style="width:8%; border: 1px solid #353131;">
                         Aperto da
                     </th>
                     <th style="width:8%; border: 1px solid #353131;">
-                        M/C/N
+                        M/C/S
                     </th>
                     <th style="width:8%; border: 1px solid #353131;">
                         Stato attuale
@@ -683,17 +748,24 @@
                                 #{{ $ticket['id'] }}
                             </a>
                         </td>
-                        <td style="width:36%; border: 1px solid #353131;">
+                        <td style="width:8%; border: 1px solid #353131; text-align: center;">
+                            {{ $ticket['incident_request'] == 'Request' ? 'R' : 'I' }}
+                        </td>
+                        <td style="width:28%; border: 1px solid #353131; padding-left: 0.5rem;">
+                            {{-- {{ $ticket['category'] }} --}}
                             {{ $ticket['category'] }}
                         </td>
-                        <td style="width:16%; border: 1px solid #353131; text-align: center;" class="text-small">
+                        <td style="width:12%; border: 1px solid #353131; text-align: center;" class="text-small">
                             {{ $ticket['opened_at'] }}
+                        </td>
+                        <td style="width:6%; border: 1px solid #353131; text-align: center;">
+                            {{ $ticket['work_mode'] == 'remote' ? 'RM' : ($ticket['work_mode'] == 'on_site' ? 'OS' : '') }}
+                        </td>
+                        <td style="width:6%; border: 1px solid #353131; text-align: center;">
+                            {{ sprintf('%02d:%02d', intdiv($ticket['actual_processing_time'], 60), $ticket['actual_processing_time'] % 60) }}
                         </td>
                         <td style="width:8%; border: 1px solid #353131; text-align: center;">
                             {{ $ticket['is_billable'] ? 'Si' : 'No' }}
-                        </td>
-                        <td style="width:8%; border: 1px solid #353131; text-align: center;">
-                            {{ $ticket['incident_request'] == 'Request' ? 'R' : 'I' }}
                         </td>
                         <td style="width:8%; border: 1px solid #353131; text-align: center;">
                             {{ $ticket['opened_by_initials'] }}
@@ -704,7 +776,7 @@
                             @elseif ($ticket['is_master'])
                                 M
                             @else
-                                N
+                                S
                             @endif
                         </td>
                         <td style="width:8%; border: 1px solid #353131; text-align: center;">
@@ -744,62 +816,106 @@
                     <hr>
 
                     <div class="ticket-section">
-                        <p><span class="ticket-section-title">Data di apertura:</span>
-                            <span>{{ $ticket['opened_at'] }}</span>
-                        </p>
-                        <p><span class="ticket-section-title">Aperto da:</span>
-                            <span>{{ $ticket['opened_by'] }}</span>
-                        </p>
-                        <p><span class="ticket-section-title">Categoria:</span> <span>{{ $ticket['category'] }}</span>
-                        </p>
-                        <p><span class="ticket-section-title">Tipologia:</span> <span>{{ $ticket['type'] }}</span>
-                        </p>
-                        <p>
-                            <span class="ticket-section-title">Stato al {{ $date_to->format('d/m/Y') }}:</span>
-                            <span>{{ $ticket['current_status'] }}</span>
-                        </p>
-                        <p>
-                            <span class="ticket-section-title">Fatturabile:</span>
-                            <span>{{ $ticket['is_billable'] ? 'Si' : 'No' }}</span>
-                        </p>
-                        <p>
-                            <span class="ticket-section-title">Tempo:</span>
-                            <span>{{ sprintf('%02d:%02d', intdiv($ticket['actual_processing_time'], 60), $ticket['actual_processing_time'] % 60) }}</span>
-                        </p>
-                        <p>
-                            <span class="ticket-section-title">Ticket </span>
-                            <span>{{ $ticket['master_id'] != null
-                                ? // ? 'Collegato a <a href="#ticket-'.e($ticket['master_id']).'">#'.e($ticket['master_id']).'</a>'
-                                'Collegato'
-                                : ($ticket['is_master']
-                                    ? 'Master'
-                                    : 'Normale') }}</span>
-                        </p>
-                        @if ($ticket['master_id'] != null)
-                            <p>
-                                <span class="ticket-section-title">Ticket master: </span>
-                                <a href="#ticket-{{ $ticket['master_id'] }}">
-                                    #{{ $ticket['master_id'] }}
-                                </a>
-                            </p>
-                        @endif
-                        @if ($ticket['is_master'])
-                            <p>
-                                <span class="ticket-section-title">Ticket collegati: </span>
-                                @if (!empty($ticket['slave_ids']))
-                                    @foreach ($ticket['slave_ids'] as $slave_id)
-                                        <a href="#ticket-{{ $slave_id }}">
-                                            #{{ $slave_id }}
-                                        </a>
-                                        @if (!$loop->last)
-                                            ,
+                        <table style="width: 100%;">
+                            <tr>
+                                <td style="width: 50%;">
+                                    <p>
+                                        <span class="ticket-section-title">Data di apertura:</span>
+                                        <span>{{ $ticket['opened_at'] }}</span>
+                                    </p>
+                                </td>
+                                <td style="width: 50%;">
+                                    <p>
+                                        <span class="ticket-section-title">Stato al {{ $date_to->format('d/m/Y') }}:</span>
+                                        <span>{{ $ticket['current_status'] }}</span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="width: 50%;">
+                                    <p>
+                                        <span class="ticket-section-title">Ticket </span>
+                                        <span>{{ $ticket['master_id'] != null
+                                            ? // ? 'Collegato a <a href="#ticket-'.e($ticket['master_id']).'">#'.e($ticket['master_id']).'</a>'
+                                            'Collegato'
+                                            : ($ticket['is_master']
+                                                ? 'Master'
+                                                : 'Singolo') }}</span>
+                                    </p>
+                                </td>
+                                <td style="width: 50%;">
+                                    <p>
+                                        <span class="ticket-section-title">Tempo:</span>
+                                        <span>{{ sprintf('%02d:%02d', intdiv($ticket['actual_processing_time'], 60), $ticket['actual_processing_time'] % 60) }}</span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="width: 50%;">
+                                    <p>
+                                        <span class="ticket-section-title">Gestione:</span>
+                                        <span>{{ $ticket['work_mode'] == 'remote' ? 'In remoto' : ($ticket['work_mode'] == 'on_site' ? 'Onsite' : '') }}</span>
+                                    </p>
+                                </td>
+                                <td style="width: 50%;">
+                                    <p>
+                                        <span class="ticket-section-title">Fatturabile:</span>
+                                        <span>{{ $ticket['is_billable'] ? 'Si' : 'No' }}</span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2">
+                                    <p><span class="ticket-section-title">Aperto da:</span>
+                                        <span>{{ $ticket['opened_by'] }}</span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2">
+                                    <p><span class="ticket-section-title">Categoria:</span> <span>{{ $ticket['category'] }}</span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2">
+                                    <p><span class="ticket-section-title">Tipologia:</span> <span>{{ $ticket['type'] }}</span>
+                                    </p>
+                                </td>
+                            </tr>
+                            @if ($ticket['master_id'] != null || $ticket['is_master'])
+                                <tr>
+                                    <td colspan="2">
+                                        @if ($ticket['master_id'] != null)
+                                            <p>
+                                                <span class="ticket-section-title">Ticket master: </span>
+                                                <a href="#ticket-{{ $ticket['master_id'] }}">
+                                                    #{{ $ticket['master_id'] }}
+                                                </a>
+                                            </p>
                                         @endif
-                                    @endforeach
-                                @else
-                                    <span>Non ci sono ticket collegati</span>
-                                @endif
-                            </p>
-                        @endif
+                                        @if ($ticket['is_master'])
+                                            <p>
+                                                <span class="ticket-section-title">Ticket collegati: </span>
+                                                @if (!empty($ticket['slave_ids']))
+                                                    @foreach ($ticket['slave_ids'] as $slave_id)
+                                                        <a href="#ticket-{{ $slave_id }}">
+                                                            #{{ $slave_id }}
+                                                        </a>
+                                                        @if (!$loop->last)
+                                                            ,
+                                                        @endif
+                                                    @endforeach
+                                                @else
+                                                    <span>Non ci sono ticket collegati</span>
+                                                @endif
+                                            </p>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endif
+                        </table>
+
                     </div>
 
                     <div class="ticket-webform-{{ strtolower($ticket['incident_request']) }}-section">
@@ -917,62 +1033,107 @@
                     <hr>
 
                     <div class="ticket-section">
-                        <p><span class="ticket-section-title">Data di apertura:</span>
-                            <span>{{ $ticket['opened_at'] }}</span>
-                        </p>
-                        <p><span class="ticket-section-title">Aperto da:</span>
-                            <span>{{ $ticket['opened_by'] }}</span>
-                        </p>
-                        <p><span class="ticket-section-title">Categoria:</span> <span>{{ $ticket['category'] }}</span>
-                        </p>
-                        <p><span class="ticket-section-title">Tipologia:</span> <span>{{ $ticket['type'] }}</span>
-                        </p>
-                        <p>
-                            <span class="ticket-section-title">Stato al {{ $date_to->format('d/m/Y') }}:</span>
-                            <span>{{ $ticket['current_status'] }}</span>
-                        </p>
-                        <p>
-                            <span class="ticket-section-title">Fatturabile:</span>
-                            <span>{{ $ticket['is_billable'] ? 'Si' : 'No' }}</span>
-                        </p>
-                        <p>
-                            <span class="ticket-section-title">Tempo:</span>
-                            <span>{{ sprintf('%02d:%02d', intdiv($ticket['actual_processing_time'], 60), $ticket['actual_processing_time'] % 60) }}</span>
-                        </p>
-                        <p>
-                            <span class="ticket-section-title">Ticket </span>
-                            <span>{{ $ticket['master_id'] != null
-                                ? // ? 'Collegato a <a href="#ticket-'.e($ticket['master_id']).'">#'.e($ticket['master_id']).'</a>'
-                                'Collegato'
-                                : ($ticket['is_master']
-                                    ? 'Master'
-                                    : 'Normale') }}</span>
-                        </p>
-                        @if ($ticket['master_id'] != null)
-                            <p>
-                                <span class="ticket-section-title">Ticket master: </span>
-                                <a href="#ticket-{{ $ticket['master_id'] }}">
-                                    #{{ $ticket['master_id'] }}
-                                </a>
-                            </p>
-                        @endif
-                        @if ($ticket['is_master'])
-                            <p>
-                                <span class="ticket-section-title">Ticket collegati: </span>
-                                @if (!empty($ticket['slave_ids']))
-                                    @foreach ($ticket['slave_ids'] as $slave_id)
-                                        <a href="#ticket-{{ $slave_id }}">
-                                            #{{ $slave_id }}
-                                        </a>
-                                        @if (!$loop->last)
-                                            ,
+
+                        <table style="width: 100%;">
+                            <tr>
+                                <td style="width: 50%;">
+                                    <p>
+                                        <span class="ticket-section-title">Data di apertura:</span>
+                                        <span>{{ $ticket['opened_at'] }}</span>
+                                    </p>
+                                </td>
+                                <td style="width: 50%;">
+                                    <p>
+                                        <span class="ticket-section-title">Stato al {{ $date_to->format('d/m/Y') }}:</span>
+                                        <span>{{ $ticket['current_status'] }}</span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="width: 50%;">
+                                    <p>
+                                        <span class="ticket-section-title">Ticket </span>
+                                        <span>{{ $ticket['master_id'] != null
+                                            ? // ? 'Collegato a <a href="#ticket-'.e($ticket['master_id']).'">#'.e($ticket['master_id']).'</a>'
+                                            'Collegato'
+                                            : ($ticket['is_master']
+                                                ? 'Master'
+                                                : 'Singolo') }}</span>
+                                    </p>
+                                </td>
+                                <td style="width: 50%;">
+                                    <p>
+                                        <span class="ticket-section-title">Tempo:</span>
+                                        <span>{{ sprintf('%02d:%02d', intdiv($ticket['actual_processing_time'], 60), $ticket['actual_processing_time'] % 60) }}</span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="width: 50%;">
+                                    <p>
+                                        <span class="ticket-section-title">Gestione:</span>
+                                        <span>{{ $ticket['work_mode'] == 'remote' ? 'In remoto' : ($ticket['work_mode'] == 'on_site' ? 'Onsite' : '') }}</span>
+                                    </p>
+                                </td>
+                                <td style="width: 50%;">
+                                    <p>
+                                        <span class="ticket-section-title">Fatturabile:</span>
+                                        <span>{{ $ticket['is_billable'] ? 'Si' : 'No' }}</span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2">
+                                    <p><span class="ticket-section-title">Aperto da:</span>
+                                        <span>{{ $ticket['opened_by'] }}</span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2">
+                                    <p><span class="ticket-section-title">Categoria:</span> <span>{{ $ticket['category'] }}</span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2">
+                                    <p><span class="ticket-section-title">Tipologia:</span> <span>{{ $ticket['type'] }}</span>
+                                    </p>
+                                </td>
+                            </tr>
+                            @if ($ticket['master_id'] != null || $ticket['is_master'])
+                                <tr>
+                                    <td colspan="2">
+                                        @if ($ticket['master_id'] != null)
+                                            <p>
+                                                <span class="ticket-section-title">Ticket master: </span>
+                                                <a href="#ticket-{{ $ticket['master_id'] }}">
+                                                    #{{ $ticket['master_id'] }}
+                                                </a>
+                                            </p>
                                         @endif
-                                    @endforeach
-                                @else
-                                    <span>Non ci sono ticket collegati</span>
-                                @endif
-                            </p>
-                        @endif
+                                        @if ($ticket['is_master'])
+                                            <p>
+                                                <span class="ticket-section-title">Ticket collegati: </span>
+                                                @if (!empty($ticket['slave_ids']))
+                                                    @foreach ($ticket['slave_ids'] as $slave_id)
+                                                        <a href="#ticket-{{ $slave_id }}">
+                                                            #{{ $slave_id }}
+                                                        </a>
+                                                        @if (!$loop->last)
+                                                            ,
+                                                        @endif
+                                                    @endforeach
+                                                @else
+                                                    <span>Non ci sono ticket collegati</span>
+                                                @endif
+                                            </p>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endif
+                        </table>
+
                     </div>
 
                     <div class="ticket-webform-{{ strtolower($ticket['incident_request']) }}-section">
