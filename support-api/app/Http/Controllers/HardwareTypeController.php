@@ -14,7 +14,9 @@ class HardwareTypeController extends Controller
     {
         
         $authUser = $request->user();
-        if ($authUser->is_admin) {
+        // Anche i company admin possono vedere tutti i tipi di hardware perchè devono poter richiedere l'aggiunta di hardware che non hanno ancora in azienda.
+        // Al massimo andranno implementati i gruppi di hardware visibili in azienda.
+        if ($authUser->is_admin || $authUser->is_company_admin) {
             $hardwareTypes = HardwareType::all();
             return response([
                 'hardwareTypes' => $hardwareTypes,
