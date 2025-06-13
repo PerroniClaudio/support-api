@@ -20,4 +20,3 @@ yarn-error.log
 /keys
 /storage/fonts/*
 start.sh
-/sslcert
