@@ -15,7 +15,4 @@ yarn-error.log
 # Ignore macOS specific files
 .DS_Store
 
-**/.env
-**/bootstrap/cache/
-**/storage/
 **/vendor/
