@@ -90,11 +90,12 @@ class TicketMessageController extends Controller
 
         $brand_url = $ticket->brandUrl();
 
+        $ticketStages = config('app.ticket_stages');
+
         if($user['is_admin'] == 1) {
             $ticket->update(['unread_mess_for_usr' => ($ticket->unread_mess_for_usr + 1)]);
 
             // A messaggio da admin modificare lo stato in 'In corso', se lo stato è 'Nuovo' o 'Assegnato' ed assegnarlo a chi invia il messaggio se non è assegnato.
-            $ticketStages = config('app.ticket_stages');
             $index_status_nuovo = array_search("Nuovo", $ticketStages);
             $index_status_assegnato = array_search("Assegnato", $ticketStages);
             if($ticket->status == $index_status_nuovo || $ticket->status == $index_status_assegnato){
@@ -135,6 +136,22 @@ class TicketMessageController extends Controller
 
         } else {
             $ticket->update(['unread_mess_for_adm' => ($ticket->unread_mess_for_adm + 1)]);
+            $index_status_attesa_feedback = array_search("Attesa feedback cliente", $ticketStages);
+            if ($ticket->status == $index_status_attesa_feedback) {
+                $index_status_in_corso = array_search("In corso", $ticketStages);
+
+                $old_status = $ticketStages[$ticket->status];
+                $ticket->update(['status' => $index_status_in_corso]);
+                $new_status = $ticketStages[$ticket->status];
+
+                $sentence = 'Modifica automatica: Stato del ticket modificato in "' . $new_status . '"';
+                TicketStatusUpdate::create([
+                    'ticket_id' => $ticket->id,
+                    'user_id' => $user->id,
+                    'content' => $sentence,
+                    'type' => 'status',
+                ]);
+            }
         }
         
         dispatch(new SendNewMessageEmail($ticket, $user, $ticket_message->message, $brand_url));

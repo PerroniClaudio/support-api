@@ -462,9 +462,11 @@ class TicketController extends Controller {
     }
 
     public function updateStatus(Ticket $ticket, Request $request) {
+        $ticketStages = config('app.ticket_stages');
 
+        // Controlla se lo status è presente nella richiesta e se è tra quelli validi.
         $request->validate([
-            'status' => 'required|int',
+            'status' => 'required|int|max:' . (count($ticketStages) - 1),
         ]);
         $isAdminRequest = $request->user()["is_admin"] == 1;
 
@@ -474,7 +476,6 @@ class TicketController extends Controller {
             ], 401);
         }
 
-        $ticketStages = config('app.ticket_stages');
 
         // Se lo status della richiesta è uguale a quello attuale, non fa nulla.
         if ($ticket->status == $request->status) {

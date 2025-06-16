@@ -200,7 +200,8 @@ return [
         "In corso",
         "In attesa",
         "Risolto",
-        "Chiuso"
+        "Chiuso",
+        "Attesa feedback cliente",
     ],
 
     /* 
