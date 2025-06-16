@@ -474,12 +474,28 @@ class TicketController extends Controller {
             ], 401);
         }
 
+        $ticketStages = config('app.ticket_stages');
+
+        // Se lo status della richiesta è uguale a quello attuale, non fa nulla.
+        if ($ticket->status == $request->status) {
+            return response([
+                'message' => 'The ticket is already in this status.',
+            ], 200);
+        }
+
+        // Se lo status corrisponde a "Chiuso", non permette la modifica. 
+        // si può chiudere solo usando l'apposita funzione di chiusura, che fa i controlli e richiede le informazioni necessarie.
+        $index_status_chiuso = array_search("Chiuso", $ticketStages); // dovrebbe essere 5
+        if ($request->status == $index_status_chiuso) {
+                return response([
+                    'message' => 'It\'s not possible to close the ticket from here',
+                ], 400);
+        }
+
         $ticket->fill([
             'status' => $request->status,
             'wait_end' => $request['wait_end'],
         ])->save();
-
-        $ticketStages = config('app.ticket_stages');
 
         $update = TicketStatusUpdate::create([
             'ticket_id' => $ticket->id,
