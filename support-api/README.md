@@ -1,66 +1,478 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# ⚙️ Spreetzitt Backend API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Backend Laravel dell'applicazione Spreetzitt con API REST, autenticazione, e integrazione con servizi moderni.
 
-## About Laravel
+## 🚀 Panoramica
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Il backend è un'API Laravel completa che include:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+-   **Framework**: Laravel 10+ (PHP 8.1+)
+-   **Database**: MySQL/PostgreSQL (configurabile)
+-   **Cache**: Redis per sessioni e cache
+-   **Search**: Meilisearch per ricerca avanzata
+-   **Queue**: Laravel Horizon per job in background
+-   **Authentication**: Laravel Sanctum per API
+-   **Testing**: PHPUnit e Pest per testing
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 🏗️ Struttura del Progetto
 
-## Learning Laravel
+```
+support-api/
+├── app/
+│   ├── Actions/           # Action classes
+│   ├── Console/           # Artisan commands
+│   ├── Exceptions/        # Exception handlers
+│   ├── Exports/           # Export classes
+│   ├── Http/
+│   │   ├── Controllers/   # API Controllers
+│   │   ├── Middleware/    # Custom middleware
+│   │   └── Requests/      # Form requests
+│   ├── Imports/           # Import classes
+│   ├── Jobs/              # Queue jobs
+│   ├── Mail/              # Mail classes
+│   ├── Models/            # Eloquent models
+│   └── Providers/         # Service providers
+├── config/                # Configurazioni Laravel
+├── database/
+│   ├── factories/         # Model factories
+│   ├── migrations/        # Database migrations
+│   └── seeders/           # Database seeders
+├── routes/
+│   ├── api.php           # API routes
+│   ├── web.php           # Web routes
+│   ├── auth.php          # Auth routes
+│   └── webhook.php       # Webhook routes
+├── tests/                 # Test suite
+├── storage/               # File storage
+└── vendor/                # Composer dependencies
+```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 🚀 Quick Start
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### Con Docker (Consigliato)
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains over 2000 video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+```bash
+# Dalla directory server/
+make up
 
-## Laravel Sponsors
+# L'API sarà disponibile su:
+# http://localhost/api (via Nginx)
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the Laravel [Patreon page](https://patreon.com/taylorotwell).
+### Comandi Backend
 
-### Premium Partners
+```bash
+# Accedi al container backend
+make shell-backend
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Cubet Techno Labs](https://cubettech.com)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[Many](https://www.many.co.uk)**
-- **[Webdock, Fast VPS Hosting](https://www.webdock.io/en)**
-- **[DevSquad](https://devsquad.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[OP.GG](https://op.gg)**
-- **[WebReinvent](https://webreinvent.com/?utm_source=laravel&utm_medium=github&utm_campaign=patreon-sponsors)**
-- **[Lendio](https://lendio.com)**
+# Comandi Artisan
+make artisan CMD="migrate"
+make artisan CMD="db:seed"
+make artisan CMD="key:generate"
 
-## Contributing
+# Log del backend
+make backend-logs
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## 🛠️ Comandi Artisan Utili
 
-## Code of Conduct
+### Database
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+# Migrazioni
+make artisan CMD="migrate"
+make artisan CMD="migrate:fresh"
+make artisan CMD="migrate:rollback"
 
-## Security Vulnerabilities
+# Seeder
+make artisan CMD="db:seed"
+make artisan CMD="db:seed --class=UserSeeder"
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# Tinker (REPL)
+make artisan CMD="tinker"
+```
 
-## License
+### Cache e Performance
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```bash
+# Cache delle configurazioni
+make artisan CMD="config:cache"
+make artisan CMD="route:cache"
+make artisan CMD="view:cache"
+
+# Pulizia cache
+make artisan CMD="cache:clear"
+make artisan CMD="config:clear"
+make artisan CMD="route:clear"
+make artisan CMD="view:clear"
+```
+
+### Code Generation
+
+```bash
+# Creare componenti
+make artisan CMD="make:controller UserController --api"
+make artisan CMD="make:model Post -mfsr"
+make artisan CMD="make:request StoreUserRequest"
+make artisan CMD="make:job ProcessPayment"
+make artisan CMD="make:mail WelcomeEmail"
+```
+
+## 🔧 Configurazione
+
+### Variabili d'Ambiente
+
+Il file `.env` principale è nella directory `server/`. Variabili importanti:
+
+```env
+# App
+APP_NAME=Spreetzitt
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://localhost
+
+# Database
+DB_CONNECTION=mysql
+DB_HOST=mysql
+DB_PORT=3306
+DB_DATABASE=spreetzitt
+DB_USERNAME=root
+DB_PASSWORD=
+
+# Redis
+REDIS_HOST=redis
+REDIS_PASSWORD=null
+REDIS_PORT=6379
+
+# Meilisearch
+MEILISEARCH_HOST=http://meilisearch:7700
+MEILISEARCH_KEY=your-master-key
+
+# Mail
+MAIL_MAILER=smtp
+MAIL_HOST=mailpit
+MAIL_PORT=1025
+
+# Queue
+QUEUE_CONNECTION=redis
+```
+
+### Prima Configurazione
+
+```bash
+# Setup iniziale
+make artisan CMD="key:generate"
+make artisan CMD="migrate"
+make artisan CMD="db:seed"
+
+# Reset completo
+make artisan CMD="migrate:fresh --seed"
+```
+
+## 📡 API Documentation
+
+### Struttura API
+
+Le API seguono le convenzioni REST:
+
+```
+GET    /api/users           # Lista utenti
+POST   /api/users           # Crea utente
+GET    /api/users/{id}      # Dettaglio utente
+PUT    /api/users/{id}      # Aggiorna utente
+DELETE /api/users/{id}      # Elimina utente
+```
+
+### Autenticazione
+
+Laravel Sanctum per autenticazione API:
+
+```bash
+# Login
+POST /api/auth/login
+{
+  "email": "user@example.com",
+  "password": "password"
+}
+
+# Risposta
+{
+  "token": "1|abcdef...",
+  "user": { ... }
+}
+
+# Uso del token
+Authorization: Bearer 1|abcdef...
+```
+
+### Response Format
+
+Tutte le API seguono un formato standard:
+
+```json
+{
+  "success": true,
+  "data": { ... },
+  "message": "Operation successful",
+  "meta": {
+    "current_page": 1,
+    "total": 100
+  }
+}
+```
+
+## 🔍 Integrazione Meilisearch
+
+### Setup nei Model
+
+```php
+<?php
+
+namespace App\Models;
+
+use Laravel\Scout\Searchable;
+use Illuminate\Database\Eloquent\Model;
+
+class Post extends Model
+{
+    use Searchable;
+
+    protected $fillable = ['title', 'content', 'author_id'];
+
+    // Definisci cosa indicizzare
+    public function toSearchableArray()
+    {
+        return [
+            'title' => $this->title,
+            'content' => $this->content,
+            'author' => $this->author->name,
+        ];
+    }
+}
+```
+
+### Comandi Search
+
+```bash
+# Importa tutti i record esistenti
+make artisan CMD="scout:import 'App\Models\Post'"
+
+# Reindicizza tutto
+make artisan CMD="scout:fresh 'App\Models\Post'"
+
+# Apri Meilisearch UI
+make meilisearch-ui
+```
+
+## 💾 Redis per Cache e Queue
+
+### Cache
+
+```php
+<?php
+
+use Illuminate\Support\Facades\Cache;
+
+// Salva in cache
+Cache::put('users.all', $users, 3600); // 1 ora
+
+// Recupera dalla cache
+$users = Cache::remember('users.all', 3600, function () {
+    return User::all();
+});
+```
+
+### Queue Jobs
+
+```php
+<?php
+
+namespace App\Jobs;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+
+class ProcessEmail implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public function handle()
+    {
+        // Logica del job
+    }
+}
+
+// Dispatch del job
+ProcessEmail::dispatch();
+```
+
+## 🧪 Testing
+
+### Eseguire Test
+
+```bash
+# Tutti i test
+make shell-backend
+./vendor/bin/pest
+
+# Test specifici
+./vendor/bin/pest tests/Feature/UserTest.php
+./vendor/bin/pest --filter test_user_can_login
+
+# Con coverage
+./vendor/bin/pest --coverage
+```
+
+### Esempio Test
+
+```php
+<?php
+
+use App\Models\User;
+
+test('user can login with valid credentials', function () {
+    $user = User::factory()->create([
+        'email' => 'test@example.com',
+        'password' => bcrypt('password')
+    ]);
+
+    $response = $this->postJson('/api/auth/login', [
+        'email' => 'test@example.com',
+        'password' => 'password'
+    ]);
+
+    $response->assertStatus(200)
+        ->assertJsonStructure([
+            'token',
+            'user' => ['id', 'email']
+        ]);
+});
+```
+
+## 🔧 Sviluppo e Debug
+
+### Tinker (REPL Laravel)
+
+```bash
+make artisan CMD="tinker"
+
+# Esempi in Tinker
+User::count()
+User::factory()->create()
+Cache::put('test', 'value')
+```
+
+### Logging
+
+```php
+<?php
+
+use Illuminate\Support\Facades\Log;
+
+// Diversi livelli di log
+Log::info('User logged in', ['user_id' => $user->id]);
+Log::error('Database connection failed');
+Log::debug('Debug information');
+```
+
+### Debug in Real Time
+
+```bash
+# Log generale
+make backend-logs
+
+# Log specifici
+make shell-backend
+tail -f storage/logs/laravel.log
+```
+
+## 🚀 Deployment e Ottimizzazioni
+
+### Ottimizzazioni Produzione
+
+```bash
+# Cache tutto per produzione
+make artisan CMD="config:cache"
+make artisan CMD="route:cache"
+make artisan CMD="view:cache"
+
+# Ottimizza autoloader
+make shell-backend
+composer install --optimize-autoloader --no-dev
+
+# Link storage pubblico
+make artisan CMD="storage:link"
+```
+
+## 🐛 Troubleshooting
+
+### Problemi Comuni
+
+**Errori di cache:**
+
+```bash
+make artisan CMD="cache:clear"
+make artisan CMD="config:clear"
+make artisan CMD="route:clear"
+```
+
+**Problemi database:**
+
+```bash
+make artisan CMD="migrate:status"
+make artisan CMD="migrate --force"
+```
+
+**Problemi Meilisearch:**
+
+```bash
+# Controlla connessione
+make meilisearch-logs
+
+# Reindicizza
+make artisan CMD="scout:fresh 'App\Models\Post'"
+```
+
+**Problemi queue:**
+
+```bash
+make artisan CMD="queue:restart"
+make redis-cli  # Accedi a Redis per debug
+```
+
+### Log e Debug
+
+```bash
+# Log backend
+make backend-logs
+
+# Accedi al container
+make shell-backend
+
+# Controlla configurazione
+php artisan config:show database
+php artisan route:list
+```
+
+## 📚 Risorse Utili
+
+### Documentazione
+
+-   [Laravel Documentation](https://laravel.com/docs)
+-   [Laravel Scout (Meilisearch)](https://laravel.com/docs/scout)
+-   [Laravel Sanctum (API Auth)](https://laravel.com/docs/sanctum)
+-   [Laravel Horizon (Queue)](https://laravel.com/docs/horizon)
+-   [Pest Testing](https://pestphp.com/)
+
+### Package Consigliati
+
+-   **Laravel Telescope**: Debug e profiling avanzato
+-   **Spatie Laravel Permission**: Gestione ruoli e permessi
+-   **Laravel Excel**: Import/Export Excel
+-   **Laravel Backup**: Backup automatici
+
+---
+
+**Happy coding! ⚙️**
+
+_Backend completamente dockerizzato per Spreetzitt. Usa i comandi Make per un'esperienza di sviluppo fluida!_
