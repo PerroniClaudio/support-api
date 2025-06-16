@@ -13,6 +13,7 @@ services:
       - app-network
     depends_on:
       - backend
+      - frontend
   backend:
     build:
       context: .
@@ -29,7 +30,20 @@ services:
     networks:
       - app-network
     platform: linux/amd64
-
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: frontend
+    restart: unless-stopped
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules # Volume anonimo per preservare node_modules
+    ports:
+      - "5173:5173"
+    networks:
+      - app-network
+    platform: linux/amd64
   redis:
     image: redis:alpine
     container_name: redis
