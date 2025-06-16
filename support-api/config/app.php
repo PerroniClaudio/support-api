@@ -260,4 +260,17 @@ return [
         'hardware_ticket' => 'Associazione con ticket',
         'hardware_company' => 'Associazione con azienda',
     ],
+    
+    // Ancora non vengono usate, ma da implementare.
+    // 'problem_causes' => [
+    //     'user_data_entry' => 'Errore del cliente in inserimento dati',
+    //     'user_app_usage' => 'Errore cliente nell\'uso dell\'applicazione',
+    //     'user_formation' => 'Cliente non formato sull\'applicazione',
+    //     'app_error' => 'Errore dell\'applicazione',
+    //     'user_necessity_change' => 'Cambio necessità del cliente',
+    //     'user_necessity_new' => 'Nuova necessità del cliente',
+    //     'other_support_service_error' => 'Errore di altro servizio di supporto',
+    //     'support_error' => 'Errore del Supporto iFortech',
+    // ],
+
 ];
