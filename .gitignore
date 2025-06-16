@@ -6,7 +6,6 @@ erp
 .env
 /redis/dump.rdb
 **/.DS_Store
-/nginx
 /sslcert/certificate.crt
 /html/keys
 data.ms
