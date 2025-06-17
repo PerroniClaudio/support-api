@@ -9,6 +9,7 @@ use Opcodes\LogViewer\Facades\LogViewer;
 
 use Laravel\Pennant\Feature;
 use App\Features\TicketFeatures;
+use App\Features\HardwareFeatures;
 
 class AppServiceProvider extends ServiceProvider {
     /**
@@ -25,6 +26,7 @@ class AppServiceProvider extends ServiceProvider {
         //
 
         $this->registerFeatures();
+        $this->configurePennantScope();
 
         // LogViewer::auth(function ($request) {
         //     $user = $request->user();
@@ -33,10 +35,21 @@ class AppServiceProvider extends ServiceProvider {
     }
 
     /**
+     * Configura lo scope di default per Laravel Pennant
+     */
+    private function configurePennantScope(): void {
+        Feature::resolveScopeUsing(function () {
+            // Usa il tenant corrente come scope di default
+            return config('app.tenant', 'default');
+        });
+    }
+
+    /**
      * Registra automaticamente tutte le feature flags
      */
     private function registerFeatures(): void {
         $this->registerFeaturesFromClass('ticket', TicketFeatures::class);
+        $this->registerFeaturesFromClass('hardware', HardwareFeatures::class);
         // Qui potrai aggiungere altre classi come:
         // $this->registerFeaturesFromClass('hardware', HardwareFeatures::class);
         // $this->registerFeaturesFromClass('user', UserFeatures::class);

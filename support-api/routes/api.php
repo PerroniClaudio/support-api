@@ -300,28 +300,31 @@ Route::middleware(['auth:sanctum'])->group(function () {
 Route::get('/features', function () {
 
     $user = auth()->user();
-    $ticketListFeature = Feature::active('ticket.list');
+
+
+    // Usa il tenant corrente come scope per le feature flags
+    $currentTenant = config('app.tenant');
 
     return response()->json([
         "success" => true,
         "message" => "Feature flags retrieved successfully",
         "features" => [
-            "tickets_list" => $ticketListFeature,
-            "tickets_create" => true,
-            "tickets_massive_generation" => false,
-            "ticket_types" => true,
-            "tickets_billing" => true,
-            "ticket_search" => true,
-            "ticket_search_erp" => false,
-            "hardware_list" => true,
-            "hardware_massive_generation" => true,
-            "hardware_assign_massive" => false,
-            "hardware_delete_massive" => false,
+            "tickets_list" =>  Feature::for($currentTenant)->active('ticket.list'),
+            "tickets_create" => Feature::for($currentTenant)->active('ticket.create'),
+            "tickets_massive_generation" => Feature::for($currentTenant)->active('ticket.massive_generation'),
+            "ticket_types" =>  Feature::for($currentTenant)->active('ticket.types'),
+            "tickets_billing" => Feature::for($currentTenant)->active('ticket.billing'),
+            "ticket_search" => Feature::for($currentTenant)->active('ticket.search'),
+            "ticket_search_erp" => Feature::for($currentTenant)->active('ticket.search_erp'),
+            "hardware_list" => Feature::for($currentTenant)->active('hardware.list'),
+            "hardware_massive_generation" => Feature::for($currentTenant)->active('hardware.massive_generation'),
+            "hardware_assign_massive" => Feature::for($currentTenant)->active('hardware.assign_massive'),
+            "hardware_delete_massive" => Feature::for($currentTenant)->active('hardware.hardware_delete_massive'),
             "users_management" => true,
             "companies_management" => true,
-            "groups_management" => false,
+            "groups_management" => true,
             "suppliers_management" => true,
-            "brand_management" => false,
+            "brand_management" => true,
             "reports" => true,
             "documentation" => true
         ],
