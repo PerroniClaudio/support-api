@@ -26,7 +26,6 @@ Route::get('/', function () {
     ];
 });
 
-
 Route::get('/info', function () {
     phpinfo();
 });
