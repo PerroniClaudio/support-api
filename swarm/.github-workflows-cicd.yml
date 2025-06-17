@@ -1,0 +1,237 @@
+name: CI/CD with Docker Swarm
+
+on:
+  push:
+    branches: [main, develop]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME_BACKEND: ${{ github.repository }}-backend
+  IMAGE_NAME_FRONTEND: ${{ github.repository }}-frontend
+
+jobs:
+  # Test del codice
+  test:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: mbstring, xml, ctype, iconv, intl, pdo, pdo_mysql, dom, filter, gd, iconv, json, mbstring, redis
+          coverage: none
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: server/frontend/package-lock.json
+
+      # Test Backend (Laravel)
+      - name: Copy Laravel environment
+        run: |
+          cd server/support-api
+          cp .env.example .env
+          # Database configurato su Google Cloud - usa variabili di ambiente CI
+          sed -i 's/REDIS_HOST=127.0.0.1/REDIS_HOST=localhost/' .env
+
+      - name: Install PHP dependencies
+        run: |
+          cd server/support-api
+          composer install --no-dev --optimize-autoloader
+
+      - name: Generate application key
+        run: |
+          cd server/support-api
+          php artisan key:generate
+
+      - name: Run PHP tests (with external DB)
+        env:
+          DB_CONNECTION: ${{ secrets.DB_CONNECTION }}
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_DATABASE: ${{ secrets.DB_DATABASE_TEST }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        run: |
+          cd server/support-api
+          php artisan test
+
+      # Test Frontend (React)
+      - name: Install frontend dependencies
+        run: |
+          cd server/frontend
+          npm ci
+
+      - name: Run frontend tests
+        run: |
+          cd server/frontend
+          npm run test:ci
+
+      - name: Build frontend
+        run: |
+          cd server/frontend
+          npm run build
+
+  # Build e push delle immagini Docker
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        component: [backend, frontend]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_BACKEND }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=sha,prefix={{branch}}-
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./server
+          file: ./server/docker/prod.${{ matrix.component }}.dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ github.repository }}-${{ matrix.component }}:${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+
+  # Deploy su produzione
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    environment: production
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.8.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add server to known hosts
+        run: |
+          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Extract version
+        id: version
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            echo "version=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_SHA:0:7}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy to production
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+            set -e
+            
+            # Aggiorna repository
+            cd /opt/spreetzitt
+            sudo git pull origin main
+            
+            # Deploy con la nuova versione
+            cd swarm
+            export VERSION="${{ steps.version.outputs.version }}"
+            export GITHUB_REPOSITORY_OWNER="${{ github.repository_owner }}"
+            
+            # Esegui deploy
+            sudo ./deploy.sh deploy $VERSION
+            
+            # Verifica deployment
+            sleep 30
+            sudo ./deploy.sh status
+          EOF
+
+      - name: Health check
+        run: |
+          # Attendi che i servizi siano pronti
+          sleep 60
+
+          # Test health endpoints
+          curl -f https://${{ secrets.FRONTEND_DOMAIN }}/health || exit 1
+          curl -f https://${{ secrets.API_DOMAIN }}/health || exit 1
+
+          echo "✅ Deployment successful and healthy"
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_HOST }} << 'EOF'
+            cd /opt/spreetzitt/swarm
+            sudo ./deploy.sh rollback
+          EOF
+
+  # Notifiche
+  notify:
+    needs: [test, build, deploy]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+      - name: Notify success
+        if: needs.deploy.result == 'success'
+        run: |
+          echo "🎉 Deploy successful!"
+          # Qui puoi aggiungere notifiche Slack, Discord, etc.
+
+      - name: Notify failure
+        if: needs.deploy.result == 'failure'
+        run: |
+          echo "❌ Deploy failed!"
+          # Qui puoi aggiungere notifiche di errore

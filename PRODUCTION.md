@@ -1,323 +1,300 @@
-# 🚀 Spreetzitt - Guida Deploy Produzione
+# 🚀 Guida Deploy Produzione - Spreetzitt
 
-## 📋 Checklist Pre-Deploy
+## 📋 Prerequisiti
 
-### 1. Preparazione Environment
+### **Sistema Operativo**
 
-- [ ] Copiare `.env.prod.example` in `.env.prod`
-- [ ] Configurare tutte le variabili d'ambiente
-- [ ] Generare `APP_KEY` sicura: `php artisan key:generate --show`
-- [ ] Configurare certificati SSL in `./sslcert/`
-- [ ] Verificare configurazione database
+- Linux (Ubuntu 20.04+ raccomandato) o macOS
+- Docker 20.10+ installato
+- Docker Compose 2.0+ installato
 
-### 2. Sicurezza
+### **Certificati SSL**
 
-- [ ] Passwords sicure per tutti i servizi
-- [ ] Firewall configurato (solo porte 80, 443, 22)
-- [ ] Fail2ban attivo
-- [ ] Backup automatici configurati
-- [ ] Monitoring attivo
+- Certificato SSL valido in `./sslcert/certificate.crt`
+- Chiave privata in `./sslcert/private.key`
 
-### 3. Performance
+### **Domini DNS**
 
-- [ ] Ottimizzazione database
-- [ ] Cache Redis configurata
-- [ ] CDN configurato (se necessario)
-- [ ] Logs rotazione attiva
+- `api.ifortech.com` → IP del server (backend API)
+- `frontend.ifortech.com` → IP del server (frontend React)
 
-## 🔧 Configurazione Servizi
+---
 
-### Database Esterno
+## 🔧 Configurazione Iniziale
+
+### **1. Variabili d'Ambiente**
+
+Crea il file `.env.prod` nella root del progetto:
 
 ```bash
-# Configurazione database esterno:
-- Host: DB_HOST (tuo server database)
-- Porta: DB_PORT (solitamente 3306 per MySQL)
-- Database: DB_DATABASE
-- Utente: DB_USERNAME
-- Password: DB_PASSWORD
+# Database
+DB_CONNECTION=mysql
+DB_HOST=database_host
+DB_PORT=3306
+DB_DATABASE=spreetzitt_prod
+DB_USERNAME=spreetzitt_user
+DB_PASSWORD=your_secure_password
 
-# Assicurati che il database esterno sia:
-- Ottimizzato per produzione
-- Con backup automatici
-- Accessibile dai container Docker
-- Con firewall configurato correttamente
+# Laravel App
+APP_KEY=base64:your_generated_app_key
+APP_ENV=production
+APP_DEBUG=false
+
+# Redis
+REDIS_PASSWORD=your_redis_password
+
+# MeiliSearch
+MEILISEARCH_KEY=your_meilisearch_master_key
+
+# Email
+MAIL_MAILER=smtp
+MAIL_HOST=your_smtp_host
+MAIL_PORT=587
+MAIL_USERNAME=your_email
+MAIL_PASSWORD=your_email_password
 ```
 
-### Redis
+### **2. Certificati SSL**
 
 ```bash
-# Configurazione sicura:
-- Password protetto
-- Persistence attiva (AOF)
-- Memory optimization
+# Copia i tuoi certificati SSL
+cp your_certificate.crt ./sslcert/certificate.crt
+cp your_private.key ./sslcert/private.key
+
+# Imposta i permessi corretti
+chmod 644 ./sslcert/certificate.crt
+chmod 600 ./sslcert/private.key
 ```
 
-### Nginx
+### **3. Configurazione Frontend**
+
+Modifica il file `./frontend/.env.local` per produzione:
 
 ```bash
-# Configurazioni di sicurezza:
-- Rate limiting
-- SSL/TLS ottimizzato
-- Security headers
-- Gzip compression
+# 365 auth (Production)
+VITE_MICROSOFT_TENANT_ID=e0afdb25-123e-41b8-b985-4aab3fc0e719
+VITE_MICROSOFT_CLIENT_ID=eea21952-f77c-4996-af44-37b3c80b0cfa
+VITE_REDIRECT_URI=https://frontend.ifortech.com/support/admin
+
+# Server URLs (Production)
+VITE_SERVER_URL=https://frontend.ifortech.com
+VITE_API_BASE_URL=https://api.ifortech.com
+
+# Google API
+VITE_GOOGLE_API_KEY=AIzaSyAJcdTle4PCweTQ9trat3KNrR7jf7iKOfk
+VITE_OTP_VALIDATION_DURATION=6000000
 ```
+
+---
 
 ## 🚀 Deploy
 
-### Deploy Iniziale
+### **1. Test della Configurazione Nginx**
 
 ```bash
-# 1. Preparare environment
-cp .env.prod.example .env.prod
-# Modificare .env.prod con i valori reali
-
-# 2. Deploy
-make prod-deploy
+# Test sintassi configurazione nginx
+docker run --rm -v $(pwd)/nginx/default.prod.conf:/etc/nginx/conf.d/default.conf:ro nginx:alpine nginx -t
 ```
 
-### Deploy Aggiornamenti
+### **2. Build e Avvio dei Servizi**
 
 ```bash
-# Deploy veloce
-make prod-up
+# Fermata eventuali servizi attivi
+docker-compose -f docker-compose.prod.yml down
 
-# Deploy completo con build
-make prod-deploy
+# Build delle immagini (forza rebuild)
+docker-compose -f docker-compose.prod.yml build --no-cache
+
+# Avvio dei servizi in background
+docker-compose -f docker-compose.prod.yml up -d
 ```
 
-### Rollback
+### **3. Verifica Deploy**
 
 ```bash
-make prod-rollback
+# Controlla lo stato dei container
+docker-compose -f docker-compose.prod.yml ps
+
+# Verifica i log
+docker-compose -f docker-compose.prod.yml logs -f
+
+# Test health check
+docker-compose -f docker-compose.prod.yml exec frontend wget --spider http://localhost:3000
+docker-compose -f docker-compose.prod.yml exec backend php artisan inspire
 ```
 
-## 📊 Monitoring
+---
 
-### Health Checks
+## 🔍 Test e Verifica
 
-Tutti i servizi hanno health checks configurati:
-
-- Backend: `php artisan inspire`
-- Frontend: HTTP check
-- Database: `mysqladmin ping`
-- Redis: `redis-cli ping`
-- Meilisearch: HTTP health endpoint
-
-### Logs
+### **1. Test Nginx e SSL**
 
 ```bash
-# Tutti i logs
-make prod-logs
+# Test configurazione SSL
+curl -I https://api.ifortech.com
+curl -I https://frontend.ifortech.com
 
-# Logs specifici
-docker logs spreetzitt-backend-prod
-docker logs spreetzitt-nginx-prod
+# Test headers di sicurezza
+curl -I https://frontend.ifortech.com | grep -E "(X-Frame-Options|X-Content-Type-Options|Strict-Transport-Security)"
 ```
 
-### Metriche
+### **2. Test Applicazioni**
 
-I logs sono configurati con rotazione automatica:
+- **Frontend**: Apri https://frontend.ifortech.com
+- **API**: Test endpoint https://api.ifortech.com/api/health
+- **Admin**: https://frontend.ifortech.com/support/admin
 
-- Max size: 10MB
-- Max files: 3
-- Driver: json-file
-
-## 💾 Backup
-
-### Backup Automatico
+### **3. Test Performance**
 
 ```bash
-make prod-backup
+# Test compressione gzip
+curl -H "Accept-Encoding: gzip" -I https://frontend.ifortech.com
+
+# Test cache headers
+curl -I https://frontend.ifortech.com/assets/app.js
 ```
 
-### Backup Database Esterno
+---
+
+## 📊 Monitoraggio
+
+### **1. Log dei Container**
 
 ```bash
-# Backup del database esterno (esegui dal server dove gira il DB o da remoto)
-mysqldump -h $DB_HOST -u $DB_USERNAME -p$DB_PASSWORD $DB_DATABASE > backup_$(date +%Y%m%d).sql
+# Log di tutti i servizi
+docker-compose -f docker-compose.prod.yml logs -f
 
-# Backup con compressione
-mysqldump -h $DB_HOST -u $DB_USERNAME -p$DB_PASSWORD $DB_DATABASE | gzip > backup_$(date +%Y%m%d).sql.gz
+# Log specifici per servizio
+docker-compose -f docker-compose.prod.yml logs -f nginx
+docker-compose -f docker-compose.prod.yml logs -f frontend
+docker-compose -f docker-compose.prod.yml logs -f backend
 ```
 
-### Restore Database Esterno
+### **2. Metriche di Performance**
 
 ```bash
-# Restore del database esterno
-mysql -h $DB_HOST -u $DB_USERNAME -p$DB_PASSWORD $DB_DATABASE < backup_file.sql
+# Utilizzo risorse dei container
+docker stats
 
-# Restore da file compresso
-gunzip < backup_file.sql.gz | mysql -h $DB_HOST -u $DB_USERNAME -p$DB_PASSWORD $DB_DATABASE
+# Spazio disco
+docker system df
 ```
+
+### **3. Health Check**
+
+```bash
+# Script per controllo automatico
+#!/bin/bash
+echo "=== Health Check Spreetzitt Production ==="
+echo "Frontend: $(curl -s -o /dev/null -w "%{http_code}" https://frontend.ifortech.com)"
+echo "API: $(curl -s -o /dev/null -w "%{http_code}" https://api.ifortech.com)"
+echo "Container Status:"
+docker-compose -f docker-compose.prod.yml ps --format "table {{.Name}}\t{{.Status}}"
+```
+
+---
+
+## 🔧 Manutenzione
+
+### **1. Aggiornamenti**
+
+```bash
+# Backup before update
+docker-compose -f docker-compose.prod.yml exec backend php artisan backup:run
+
+# Pull delle modifiche
+git pull origin main
+
+# Rebuild e restart
+docker-compose -f docker-compose.prod.yml build --no-cache
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+### **2. Backup**
+
+```bash
+# Backup database
+docker-compose -f docker-compose.prod.yml exec backend php artisan backup:run
+
+# Backup volumi Docker
+docker run --rm -v spreetzitt_storage_data:/data -v $(pwd)/backups:/backup alpine tar czf /backup/storage-backup-$(date +%Y%m%d).tar.gz -C /data .
+```
+
+### **3. Risoluzione Problemi**
+
+```bash
+# Restart singolo servizio
+docker-compose -f docker-compose.prod.yml restart frontend
+
+# Ricostruzione completa
+docker-compose -f docker-compose.prod.yml down -v
+docker-compose -f docker-compose.prod.yml up -d --build
+
+# Accesso shell container
+docker-compose -f docker-compose.prod.yml exec frontend sh
+docker-compose -f docker-compose.prod.yml exec backend bash
+```
+
+---
 
 ## 🔒 Sicurezza
 
-### Scansione Vulnerabilità
+### **1. Configurazioni di Sicurezza Implementate**
+
+- ✅ SSL/TLS con cipher suite moderne
+- ✅ Headers di sicurezza (HSTS, CSP, X-Frame-Options)
+- ✅ Rate limiting e timeout configurati
+- ✅ File sensibili bloccati
+- ✅ Container con privilegi limitati
+
+### **2. Controlli Periodici**
 
 ```bash
-make security-scan
+# Test certificato SSL
+echo | openssl s_client -servername frontend.ifortech.com -connect frontend.ifortech.com:443 2>/dev/null | openssl x509 -noout -dates
+
+# Scan vulnerabilità container
+docker scan spreetzitt-frontend-prod
+docker scan spreetzitt-backend-prod
 ```
 
-### Aggiornamenti Sicurezza
+---
+
+## 🆘 Troubleshooting
+
+### **Problemi Comuni**
+
+**1. Frontend non risponde**
 
 ```bash
-# Aggiorna immagini base
-make prod-build
-make prod-deploy
+docker-compose -f docker-compose.prod.yml logs frontend
+# Controlla se serve è attivo sulla porta 3000
 ```
 
-### SSL/TLS
-
-- Certificati in `./sslcert/`
-- Rinnovo automatico configurare con certbot
-- Grade A+ SSL Labs
-
-## 🛠️ Troubleshooting
-
-### Container Non Si Avvia
+**2. Errori SSL**
 
 ```bash
-# Check status
-make prod-status
-
-# Check logs
-make prod-logs
-
-# Check health
-docker ps --filter "health=unhealthy"
+# Verifica certificati
+openssl x509 -in ./sslcert/certificate.crt -text -noout
+# Controlla permessi
+ls -la ./sslcert/
 ```
 
-### Performance Issues
+**3. Database connection failed**
 
 ```bash
-# Check resource usage
-docker stats
-
-# Check database
-docker exec spreetzitt-db-prod mysqladmin processlist -u root -p
-
-# Check Redis
-docker exec spreetzitt-redis-prod redis-cli info memory
+# Test connessione database
+docker-compose -f docker-compose.prod.yml exec backend php artisan migrate:status
 ```
 
-### Database Issues
+---
 
-```bash
-# Testa connessione al database esterno
-docker exec spreetzitt-backend-prod php artisan tinker --execute="DB::connection()->getPdo();"
+## 📞 Contatti di Emergenza
 
-# Run migrations
-docker exec spreetzitt-backend-prod php artisan migrate --force
+- **Sviluppatore**: [inserire contatto]
+- **System Admin**: [inserire contatto]
+- **Documentazione**: https://github.com/your-repo/spreetzitt
 
-# Clear cache
-docker exec spreetzitt-backend-prod php artisan cache:clear
+---
 
-# Test database connection
-docker exec spreetzitt-backend-prod php artisan migrate:status
-```
-
-## 📈 Ottimizzazioni
-
-### Performance Database Esterno
-
-⚠️ **Importante**: Dato che usi un database esterno, assicurati che sia ottimizzato:
-
-```bash
-# Configurazioni MySQL consigliate per produzione:
-- innodb_buffer_pool_size = 70-80% della RAM disponibile
-- max_connections = secondo il carico previsto
-- query_cache_type = 1
-- query_cache_size = 64M-256M
-- slow_query_log = ON
-- long_query_time = 2
-
-# Monitoraggio performance
-- Attiva slow query log
-- Monitora connessioni attive
-- Configura backup automatici
-- Imposta alert per spazio disco
-```
-
-### Performance Redis
-
-- Memory policy: allkeys-lru
-- Maxmemory configurato
-- Persistence ottimizzata
-
-### Performance Applicazione
-
-- OPcache attivo
-- Config cached
-- Routes cached
-- Views cached
-
-## 🔄 Manutenzione
-
-### Aggiornamenti Regolari
-
-```bash
-# 1. Backup
-make prod-backup
-
-# 2. Deploy
-make prod-deploy
-
-# 3. Verifica
-make prod-status
-```
-
-### Pulizia Logs
-
-```bash
-# Docker cleanup
-docker system prune -f
-
-# Application logs cleanup
-docker exec spreetzitt-backend-prod php artisan log:clear
-```
-
-### Database Maintenance (Esterno)
-
-```bash
-# Ottimizzazione tabelle database esterno
-mysqlcheck -h $DB_HOST -u $DB_USERNAME -p$DB_PASSWORD --optimize $DB_DATABASE
-
-# Analisi tabelle
-mysqlcheck -h $DB_HOST -u $DB_USERNAME -p$DB_PASSWORD --analyze $DB_DATABASE
-
-# Riparazione tabelle (se necessario)
-mysqlcheck -h $DB_HOST -u $DB_USERNAME -p$DB_PASSWORD --repair $DB_DATABASE
-
-# Check integrità
-mysqlcheck -h $DB_HOST -u $DB_USERNAME -p$DB_PASSWORD --check $DB_DATABASE
-```
-
-## 🚨 Emergenze
-
-### Downtime Completo
-
-1. Check server resources: `htop`, `df -h`
-2. Check Docker: `docker system df`
-3. Check logs: `make prod-logs`
-4. Restart services: `make prod-deploy`
-
-### Database Corrotta
-
-1. Stop application: `make prod-down`
-2. Restore backup: `[restore commands]`
-3. Start application: `make prod-up`
-
-### SSL Scaduto
-
-1. Rinnova certificati
-2. Restart nginx: `docker restart spreetzitt-nginx-prod`
-
-## 📞 Supporto
-
-Per problemi gravi:
-
-1. Backup immediato: `make prod-backup`
-2. Raccogliere logs: `make prod-logs > emergency.log`
-3. Documentare il problema
-4. Procedere con rollback se necessario
+**⚠️ IMPORTANTE**: Prima di ogni deploy in produzione, testare sempre in ambiente di staging!
