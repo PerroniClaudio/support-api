@@ -230,36 +230,6 @@ class UserController extends Controller {
         //Solo gli admin possono eliminare (disabilitare) le utenze
         $req_user = $request->user();
 
-        // if ($req_user["is_admin"] == 1 && $id) {
-        //     // Se l'utente ha ticket associati si disabilita l'utente, senza eliminarlo.
-        //     $user = User::where('id', $id)->first();
-        //     if($user->tickets()->count() > 0){
-        //         $disabled = $user->update([
-        //             'is_deleted' => true,
-        //         ]);
-        //         if($disabled){
-        //             return response([
-        //                 'deleted_user' => $id,
-        //                 'message' => 'tickets',
-        //             ], 200);
-        //         }
-        //         return response([
-        //             'message' => 'Error',
-        //         ], 400);
-        //     }
-
-        //     $deleted_user = User::destroy($id);
-        // }
-
-        // if ($deleted_user  == 0) {
-        //     return response([
-        //         'message' => 'Error',
-        //     ], 404);
-        // }
-        // return response([
-        //     'deleted_user' => $id,
-        // ], 200);
-
         if ($req_user["is_admin"] == 1 && $id) {
             // In ogni caso si disabilita l'utente, senza eliminarlo.
             $user = User::where('id', $id)->first();
@@ -325,7 +295,7 @@ class UserController extends Controller {
             }
 
             // Gli utenti normali non devono vedere i ticket master, mentre i company_admin possono solo vedere il dettaglio, ma non aprirli.
-            if (!$user->is_company_admin || ($request->get('new_ticket') == 'true') ) {
+            if (!$user->is_company_admin || ($request->get('new_ticket') == 'true')) {
                 $ticketTypes = $ticketTypes->filter(function ($ticketType) {
                     return !$ticketType->is_master;
                 });
@@ -389,7 +359,7 @@ class UserController extends Controller {
             $users = null;
         }
 
-        
+
         return response([
             'admins' => $users,
         ], 200);
@@ -526,7 +496,7 @@ class UserController extends Controller {
             ], 403);
         }
 
-        if(!$user) {
+        if (!$user) {
             return response([
                 'message' => 'User not found',
             ], 404);
@@ -555,7 +525,7 @@ class UserController extends Controller {
                     $ticket->user->email = "Supporto";
                 }
             }
-            
+
             return response([
                 'tickets' => $tickets,
             ], 200);
