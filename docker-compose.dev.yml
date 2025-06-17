@@ -22,6 +22,7 @@ services:
     container_name: backend
     volumes:
       - ./php/supervisord.conf:/etc/supervisor/conf.d/supervisord.conf
+      - ./support-api:/var/www/html
     environment:
       - APP_ENV=development
       - APP_DEBUG=true

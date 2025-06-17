@@ -14,6 +14,7 @@
         "laravel/fortify": "^1.25",
         "laravel/framework": "^10.10",
         "laravel/horizon": "^5.22",
+        "laravel/nightwatch": "^1.7",
         "laravel/sanctum": "^3.2",
         "laravel/scout": "^10.11",
         "laravel/tinker": "^2.8",
