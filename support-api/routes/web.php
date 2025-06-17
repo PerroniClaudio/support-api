@@ -21,7 +21,8 @@ Route::get('/', function () {
         'app_name' => config('app.name'),
         'Laravel' => app()->version(),
         'timezone' => config('app.timezone'),
-        'current_time' => now()->toDateTimeString()
+        'current_time' => now()->toDateTimeString(),
+        'environment' => config('app.env')
     ];
 });
 
