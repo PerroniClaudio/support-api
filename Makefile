@@ -1,11 +1,13 @@
 # Spreetzitt Development Makefile
-# Comandi semplificati per gestire l'ambiente di sviluppo
+# Comandi semplificati per gestire l'ambiente di sviluppo e produzione
 
-.PHONY: help up down build restart logs frontend-logs backend-logs nginx-logs redis-logs meilisearch-logs meilisearch-ui status clean
+.PHONY: help up down build restart logs frontend-logs backend-logs nginx-logs redis-logs meilisearch-logs meilisearch-ui status clean prod-up prod-down prod-build prod-logs prod-status prod-deploy prod-rollback prod-backup security-scan ssl-renew
 
 # Configurazione
 COMPOSE_FILE := docker-compose.dev.yml
+COMPOSE_FILE_PROD := docker-compose.prod.yml
 ENV_FILE := .env
+ENV_FILE_PROD := .env.prod
 
 # Colori per output colorato
 RED := \033[0;31m
@@ -138,6 +140,86 @@ composer-install: ## 📦 Installa le dipendenze Composer del backend
 artisan: ## 🎨 Esegui comando Artisan (es: make artisan CMD="migrate")
 	@echo "$(MAGENTA)🎨 Esecuzione comando Artisan: $(CMD)$(NC)"
 	@docker exec -it backend php artisan $(CMD)
+
+## 🚀 COMANDI DI PRODUZIONE
+
+prod-up: ## 🔥 Avvia ambiente di produzione
+	@echo "$(GREEN)🚀 Avvio dell'ambiente di produzione...$(NC)"
+	@if [ ! -f $(ENV_FILE_PROD) ]; then \
+		echo "$(RED)❌ File $(ENV_FILE_PROD) non trovato!$(NC)"; \
+		echo "$(YELLOW)💡 Copia $(ENV_FILE_PROD).example in $(ENV_FILE_PROD) e configura le variabili$(NC)"; \
+		exit 1; \
+	fi
+	@docker-compose -f $(COMPOSE_FILE_PROD) --env-file $(ENV_FILE_PROD) up -d --build
+	@echo "$(GREEN)✅ Ambiente di produzione avviato!$(NC)"
+
+prod-down: ## 🛑 Ferma ambiente di produzione
+	@echo "$(YELLOW)🛑 Fermando ambiente di produzione...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE_PROD) down
+	@echo "$(GREEN)✅ Ambiente di produzione fermato$(NC)"
+
+prod-build: ## 🔨 Build immagini produzione
+	@echo "$(BLUE)🔨 Build delle immagini di produzione...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE_PROD) build --no-cache
+	@echo "$(GREEN)✅ Immagini di produzione costruite$(NC)"
+
+prod-logs: ## 📜 Log ambiente produzione
+	@echo "$(CYAN)📜 Log dell'ambiente di produzione:$(NC)"
+	@docker-compose -f $(COMPOSE_FILE_PROD) logs -f
+
+prod-status: ## 📊 Stato ambiente produzione
+	@echo "$(CYAN)📊 Stato dell'ambiente di produzione:$(NC)"
+	@docker-compose -f $(COMPOSE_FILE_PROD) ps
+
+prod-deploy: ## 🚀 Deploy completo in produzione
+	@echo "$(MAGENTA)🚀 Deploy in produzione...$(NC)"
+	@if [ ! -f $(ENV_FILE_PROD) ]; then \
+		echo "$(RED)❌ File $(ENV_FILE_PROD) non trovato!$(NC)"; \
+		exit 1; \
+	fi
+	@echo "$(BLUE)1. Stopping existing services...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE_PROD) --env-file $(ENV_FILE_PROD) down
+	@echo "$(BLUE)2. Building new images...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE_PROD) --env-file $(ENV_FILE_PROD) build --no-cache
+	@echo "$(BLUE)3. Starting services...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE_PROD) --env-file $(ENV_FILE_PROD) up -d
+	@echo "$(BLUE)4. Running migrations...$(NC)"
+	@sleep 30
+	@docker exec spreetzitt-backend-prod php artisan migrate --force
+	@docker exec spreetzitt-backend-prod php artisan config:cache
+	@docker exec spreetzitt-backend-prod php artisan route:cache
+	@docker exec spreetzitt-backend-prod php artisan view:cache
+	@echo "$(GREEN)✅ Deploy completato!$(NC)"
+
+prod-rollback: ## 🔄 Rollback rapido
+	@echo "$(YELLOW)🔄 Rollback in corso...$(NC)"
+	@docker-compose -f $(COMPOSE_FILE_PROD) --env-file $(ENV_FILE_PROD) down
+	@docker-compose -f $(COMPOSE_FILE_PROD) --env-file $(ENV_FILE_PROD) up -d
+	@echo "$(GREEN)✅ Rollback completato$(NC)"
+
+prod-backup: ## 💾 Backup dati produzione
+	@echo "$(BLUE)💾 Backup dei dati di produzione...$(NC)"
+	@mkdir -p ./backups/$(shell date +%Y%m%d_%H%M%S)
+	@echo "$(YELLOW)⚠️  Database esterno: esegui backup manualmente$(NC)"
+	@echo "$(CYAN)💡 Esempio: mysqldump -h \$$DB_HOST -u \$$DB_USERNAME -p \$$DB_DATABASE > ./backups/\$(shell date +%Y%m%d_%H%M%S)/database.sql$(NC)"
+	@docker cp spreetzitt-redis-prod:/data ./backups/$(shell date +%Y%m%d_%H%M%S)/redis_data
+	@docker cp spreetzitt-meilisearch-prod:/meili_data ./backups/$(shell date +%Y%m%d_%H%M%S)/meilisearch_data
+	@echo "$(GREEN)✅ Backup container completato in ./backups/$(shell date +%Y%m%d_%H%M%S)$(NC)"
+
+## 🔒 SICUREZZA
+
+security-scan: ## 🔒 Scansione sicurezza container
+	@echo "$(MAGENTA)🔒 Scansione sicurezza...$(NC)"
+	@docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image spreetzitt-backend-prod
+	@docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest image spreetzitt-frontend-prod
+
+ssl-renew: ## 🔐 Rinnova certificati SSL
+	@echo "$(CYAN)🔐 Rinnovo certificati SSL...$(NC)"
+	@echo "$(YELLOW)Implementa qui il tuo sistema di rinnovo SSL (es: certbot)$(NC)"
+
+test-db: ## 🔍 Testa connessione database esterno
+	@echo "$(CYAN)🔍 Test connessione database esterno...$(NC)"
+	@./scripts/test-database-connection.sh
 
 # Target di default
 .DEFAULT_GOAL := help
