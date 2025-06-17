@@ -9,6 +9,8 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\GroupController;
 use App\Http\Controllers\OldTicketController;
 use App\Http\Controllers\TwoFactorChallengeController;
+use Laravel\Pennant\Feature;
+use Illuminate\Support\Facades\Log;
 
 /*
 |--------------------------------------------------------------------------
@@ -235,7 +237,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/user-ticket-report/list", [App\Http\Controllers\TicketReportExportController::class, "user"]);
     Route::post("/user-ticket-report/export", [App\Http\Controllers\TicketReportExportController::class, "userExport"]);
     Route::get("/ticket-report/user-stats", [App\Http\Controllers\TicketStatsController::class, "statsForCompany"]);
-    
+
     Route::post("/ticket-pdf-report/update", [App\Http\Controllers\TicketReportPdfExportController::class, "update"]);
     Route::post("/ticket-pdf-report/regenerate/", [App\Http\Controllers\TicketReportPdfExportController::class, "regenerate"]);
     Route::delete("/ticket-pdf-report/delete/{ticketReportPdfExport}", [App\Http\Controllers\TicketReportPdfExportController::class, "destroy"]);
@@ -292,4 +294,45 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/stats", [App\Http\Controllers\TicketStatsController::class, "latestStats"]);
+});
+
+Route::get('/features', function () {
+
+    $user = auth()->user();
+    $ticketListFeature = Feature::active('ticket.list');
+
+    return response()->json([
+        "success" => true,
+        "message" => "Feature flags retrieved successfully",
+        "features" => [
+            "tickets_list" => $ticketListFeature,
+            "tickets_create" => true,
+            "tickets_massive_generation" => false,
+            "ticket_types" => true,
+            "tickets_billing" => true,
+            "ticket_search" => true,
+            "ticket_search_erp" => false,
+            "hardware_list" => true,
+            "hardware_massive_generation" => true,
+            "hardware_assign_massive" => false,
+            "hardware_delete_massive" => false,
+            "users_management" => true,
+            "companies_management" => true,
+            "groups_management" => false,
+            "suppliers_management" => true,
+            "brand_management" => false,
+            "reports" => true,
+            "documentation" => true
+        ],
+        "user_role" => "admin",
+        "permissions" => [
+            "view_tickets",
+            "create_tickets",
+            "manage_hardware",
+            "manage_users",
+            "manage_companies",
+            "view_reports"
+        ],
+        "last_updated" => "2025-06-13T10:30:00Z"
+    ]);
 });
