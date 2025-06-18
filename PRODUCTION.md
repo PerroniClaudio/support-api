@@ -81,7 +81,7 @@ VITE_SERVER_URL=https://frontend.ifortech.com
 VITE_API_BASE_URL=https://api.ifortech.com
 
 # Google API
-VITE_GOOGLE_API_KEY=AIzaSyAJcdTle4PCweTQ9trat3KNrR7jf7iKOfk
+VITE_GOOGLE_API_KEY=
 VITE_OTP_VALIDATION_DURATION=6000000
 ```
 
