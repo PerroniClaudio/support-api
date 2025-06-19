@@ -103,6 +103,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/companies/{company}/master-tickets", [CompanyController::class, "getMasterTickets"]);
     Route::post("/companies/{company}/weekly-times", [CompanyController::class, "editWeeklyTime"]);
     Route::post("/companies/{company}/logo", [CompanyController::class, "uploadLogo"]);
+    Route::post("/companies/{company}/update-reading-delay-warning", [CompanyController::class, "updateDelayWarning"]);
 
     // Gruppi custom
 

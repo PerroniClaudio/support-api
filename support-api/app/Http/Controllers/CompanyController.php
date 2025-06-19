@@ -638,4 +638,30 @@ class CompanyController extends Controller {
             'group' => $customUserGroup,
         ], 200);
     }
+    
+    public function updateDelayWarning(Company $company, Request $request) {
+        $user = $request->user();
+
+        if (!$user->is_admin) {
+            return response(['message' => 'Unauthorized'], 401);
+        }
+
+        $request->validate([
+            'reading_delay_start' => 'nullable|date_format:H:i',
+            'reading_delay_notice' => 'required_if:reading_delay_start,!=,null|string',
+        ]);
+
+        $company->update([
+            'reading_delay_start' => $request->reading_delay_start,
+            'reading_delay_notice' => $request->reading_delay_notice,
+        ]);
+        
+        return response([
+            'company' => $company,
+            'reading_delay_start' => $company->reading_delay_start,
+            'reading_delay_notice' => $company->reading_delay_notice,
+            'request_reading_delay_start' => $request->reading_delay_start,
+            'request_reading_delay_notice' => $request->reading_delay_notice,
+        ], 200);
+    }
 }

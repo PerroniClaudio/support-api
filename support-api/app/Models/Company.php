@@ -38,6 +38,8 @@ class Company extends Model {
         'data_owner_surname',
         'data_owner_email',
         'logo_url',
+        'reading_delay_start',
+        'reading_delay_notice',
     ];
 
     public function users() {
