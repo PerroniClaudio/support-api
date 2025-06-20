@@ -551,11 +551,11 @@ class GeneratePdfReport implements ShouldQueue {
                     $tickets_by_billable_time['unbillable'][$ticket['data']['ticketType']['category']['name']]+= $ticket['data']['actual_processing_time'];
                 }
 
-                // Gestore
-                $handler = $ticket['data']['admin_user_id'] != null ? User::find($ticket['data']['admin_user_id']) : null;
-                if($handler){
-                    $handlerFullName = $handler->surname ? $handler->surname . ' ' . strtoupper(substr($handler->name, 0, 1)) . '.' : $handler->name;
-                }
+                // Gestore (non viene inserito nel report)
+                // $handler = $ticket['data']['admin_user_id'] != null ? User::find($ticket['data']['admin_user_id']) : null;
+                // if($handler){
+                //     $handlerFullName = $handler->surname ? $handler->surname . ' ' . strtoupper(substr($handler->name, 0, 1)) . '.' : $handler->name;
+                // }
 
                 // Ticket ridotto
 
@@ -580,7 +580,7 @@ class GeneratePdfReport implements ShouldQueue {
                     'master_id' => $ticket['data']['master_id'],
                     'is_master' => $ticket['data']['ticketType']['is_master'],
                     'slave_ids' => Ticket::where('master_id', $ticket['data']['id'])->pluck('id')->toArray(),
-                    'handler_full_name' => $handlerFullName,
+                    // 'handler_full_name' => $handlerFullName,
                     'work_mode' => $ticket['data']['work_mode'],
                 ];
 
