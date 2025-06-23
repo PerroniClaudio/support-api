@@ -4,7 +4,7 @@
 # =============================================================================
 # BUILDER STAGE - Build React app con Vite
 # =============================================================================
-FROM node:18-alpine as builder
+FROM node:18-alpine AS builder
 
 # Installa pnpm globalmente
 RUN npm install -g pnpm
@@ -27,13 +27,20 @@ RUN pnpm build
 # =============================================================================
 # RUNTIME STAGE - Nginx ottimizzato per SPA
 # =============================================================================
-FROM nginx:alpine as runtime
+FROM nginx:alpine AS runtime
+
+# Installa wget per test di connectivity
+RUN apk add --no-cache wget
 
 # Rimuovi configurazione nginx default
 RUN rm /etc/nginx/conf.d/default.conf
 
 # Copia build da builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
+
+# Verifica che i file siano stati copiati correttamente
+RUN ls -la /usr/share/nginx/html && \
+    test -f /usr/share/nginx/html/index.html || (echo "ERROR: index.html non trovato!" && exit 1)
 
 # Copia configurazione nginx ottimizzata per SPA
 COPY ../cloud-run/docker/nginx-frontend.conf /etc/nginx/conf.d/default.conf
@@ -51,8 +58,8 @@ RUN chown -R nginx:nginx /usr/share/nginx/html \
 # Esponi porta 8080 (richiesto da Cloud Run)
 EXPOSE 8080
 
-# Configura nginx per Cloud Run
-RUN sed -i 's/listen 80;/listen 8080;/' /etc/nginx/conf.d/default.conf
+# Test configurazione nginx
+RUN nginx -t
 
 # Avvia nginx
 CMD ["nginx", "-g", "daemon off;"]
