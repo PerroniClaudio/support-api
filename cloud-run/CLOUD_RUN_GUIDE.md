@@ -31,63 +31,58 @@ gcloud config set project IL-TUO-PROJECT-ID
 
 ## 🛠️ Step 1: Preparazione Progetti
 
+### Setup Automatico
+
+**Usa lo script di setup per configurare tutto automaticamente:**
+
+```bash
+# Setup iniziale - configura progetto GCP, verifica prerequisiti
+./setup.sh
+```
+
+Lo script di setup:
+
+- Verifica prerequisiti (gcloud, Docker)
+- Configura progetto Google Cloud
+- Abilita APIs necessarie
+- Crea file di configurazione base
+
 ### Backend Laravel
 
-**Crea Dockerfile ottimizzato:**
+**Il Dockerfile è già ottimizzato in `docker/backend.dockerfile`:**
 
-```dockerfile
-# docker/prod.backend.dockerfile
-FROM php:8.2-fpm-alpine as builder
-
-WORKDIR /app
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-scripts
-
-FROM php:8.2-fpm-alpine as runtime
-
-# Installa dipendenze necessarie
-RUN apk add --no-cache nginx supervisor mysql-client
-
-# Copia app
-WORKDIR /app
-COPY . .
-COPY --from=builder /app/vendor ./vendor
-
-# Configurazioni
-COPY docker/nginx.conf /etc/nginx/nginx.conf
-COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
-# Esponi porta 8080 (richiesto da Cloud Run)
-EXPOSE 8080
-
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
-```
+- Multi-stage build per immagini leggere
+- Nginx + PHP-FPM con Supervisor
+- Configurazioni ottimizzate per Cloud Run
+- Health checks integrati
 
 ### Frontend React
 
-**Crea Dockerfile per frontend:**
+**Il Dockerfile è già ottimizzato in `docker/frontend.dockerfile`:**
 
-```dockerfile
-# docker/prod.frontend.dockerfile
-FROM node:18-alpine as builder
-
-WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-RUN npm install -g pnpm && pnpm install
-
-COPY . .
-RUN pnpm build
-
-FROM nginx:alpine
-COPY --from=builder /app/dist /usr/share/nginx/html
-COPY docker/nginx-frontend.conf /etc/nginx/conf.d/default.conf
-
-EXPOSE 8080
-```
+- Build Vite ottimizzato
+- Nginx configurato per SPA routing
+- Compressione gzip abilitata
+- Security headers configurati
 
 ## 🔧 Step 2: Configurazione Environment Variables
 
-### Gestione Secrets
+### Configurazione Automatica
+
+**Usa il template e lo script di gestione secrets:**
+
+```bash
+# 1. Copia e modifica il template
+cp config/.env.template config/.env.prod
+# Modifica config/.env.prod con i tuoi valori
+
+# 2. Crea automaticamente i Google Cloud Secrets
+./scripts/create-secrets.sh
+```
+
+### Gestione Secrets Manuale
+
+Se preferisci creare i secrets manualmente:
 
 ```bash
 # Crea secrets per variabili sensibili
@@ -96,61 +91,37 @@ echo "your-db-password" | gcloud secrets create db-password --data-file=-
 echo "your-jwt-secret" | gcloud secrets create jwt-secret --data-file=-
 ```
 
-### File cloudbuild.yaml
+### CI/CD Automatico
 
-```yaml
-# cloudbuild.yaml - per CI/CD automatico
-steps:
-  # Build backend
-  - name: "gcr.io/cloud-builders/docker"
-    args:
-      [
-        "build",
-        "-t",
-        "gcr.io/$PROJECT_ID/spreetzitt-backend",
-        "-f",
-        "docker/prod.backend.dockerfile",
-        "./support-api",
-      ]
+**Il file `config/cloudbuild.yaml` è già configurato per:**
 
-  # Build frontend
-  - name: "gcr.io/cloud-builders/docker"
-    args:
-      [
-        "build",
-        "-t",
-        "gcr.io/$PROJECT_ID/spreetzitt-frontend",
-        "-f",
-        "docker/prod.frontend.dockerfile",
-        "./frontend",
-      ]
-
-  # Push images
-  - name: "gcr.io/cloud-builders/docker"
-    args: ["push", "gcr.io/$PROJECT_ID/spreetzitt-backend"]
-
-  - name: "gcr.io/cloud-builders/docker"
-    args: ["push", "gcr.io/$PROJECT_ID/spreetzitt-frontend"]
-
-  # Deploy to Cloud Run
-  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
-    entrypoint: gcloud
-    args:
-      - "run"
-      - "deploy"
-      - "spreetzitt-backend"
-      - "--image=gcr.io/$PROJECT_ID/spreetzitt-backend"
-      - "--region=europe-west1"
-      - "--platform=managed"
-      - "--allow-unauthenticated"
-```
+- Build automatico di backend e frontend
+- Push delle immagini a Google Container Registry
+- Deploy automatico su Cloud Run
+- Health checks post-deploy
 
 ## 🚀 Step 3: Deploy Backend
+
+### Deploy Automatico
+
+**Usa lo script di deploy per il backend:**
+
+```bash
+# Deploy completo (backend + frontend)
+./deploy.sh
+
+# Oppure solo backend
+./scripts/deploy-backend.sh
+```
+
+### Deploy Manuale
+
+Se preferisci deployare manualmente:
 
 ```bash
 # Deploy backend Laravel
 gcloud run deploy spreetzitt-backend \
-  --source ./support-api \
+  --source ../support-api \
   --region europe-west1 \
   --memory 1Gi \
   --cpu 1 \
@@ -165,10 +136,28 @@ gcloud run deploy spreetzitt-backend \
 
 ## 🌐 Step 4: Deploy Frontend
 
+### Deploy Automatico
+
+**Usa lo script di deploy per il frontend:**
+
+```bash
+# Deploy completo (se non già fatto)
+./deploy.sh
+
+# Oppure solo frontend
+./scripts/deploy-frontend.sh
+```
+
+Lo script configura automaticamente `VITE_API_URL` con l'URL del backend deployato.
+
+### Deploy Manuale
+
+Se preferisci deployare manualmente:
+
 ```bash
 # Deploy frontend React
 gcloud run deploy spreetzitt-frontend \
-  --source ./frontend \
+  --source ../frontend \
   --region europe-west1 \
   --memory 512Mi \
   --cpu 1 \
@@ -181,6 +170,23 @@ gcloud run deploy spreetzitt-frontend \
 
 ## 🔗 Step 5: Domini Personalizzati
 
+### Setup Automatico Domini
+
+**Usa lo script di setup DNS:**
+
+```bash
+# Setup completo domini e SSL
+./scripts/dns-setup.sh
+```
+
+Lo script:
+
+- Mostra gli URL attuali dei servizi
+- Configura i domain mappings
+- Mostra i record DNS da configurare
+- Verifica lo stato SSL
+- Testa i domini
+
 ### Verifica Domini
 
 ```bash
@@ -191,7 +197,9 @@ gcloud run deploy spreetzitt-frontend \
 #    - app.tuodominio.com
 ```
 
-### Collega Domini a Cloud Run
+### Configurazione Manuale
+
+Se preferisci configurare manualmente:
 
 ```bash
 # Backend API
@@ -255,10 +263,20 @@ Route::get('/health', function () {
 
 ## 🔄 Step 7: CI/CD Automatico
 
+### Configurazione CI/CD
+
+**Il file `config/cloudbuild.yaml` è già configurato per:**
+
+- Build automatico immagini Docker
+- Deploy automatico su Cloud Run
+- Health checks post-deploy
+- Gestione versioni con tags
+
 ### GitHub Actions
 
+Per integrare con GitHub Actions, crea `.github/workflows/deploy.yml`:
+
 ```yaml
-# .github/workflows/deploy.yml
 name: Deploy to Cloud Run
 
 on:
@@ -282,7 +300,19 @@ jobs:
 
       - name: "Build and Deploy"
         run: |
-          gcloud builds submit --config cloudbuild.yaml
+          gcloud builds submit --config cloud-run/config/cloudbuild.yaml
+```
+
+### Trigger Cloud Build
+
+```bash
+# Configura trigger automatico da GitHub
+gcloud builds triggers create github \
+  --repo-name=spreetzitt \
+  --repo-owner=YOUR_GITHUB_USERNAME \
+  --branch-pattern="^main$" \
+  --build-config=cloud-run/config/cloudbuild.yaml \
+  --name=spreetzitt-deploy
 ```
 
 ## 💡 Step 8: Ottimizzazioni Avanzate
@@ -436,13 +466,13 @@ gcloud run services update spreetzitt-backend \
 
 ```bash
 # Setup completo automatico
-./cloud-run-dns-setup.sh setup
+./scripts/dns-setup.sh
 
 # Quello che fa:
 # 1. Mostra URL Cloud Run attuali
 # 2. Configura domini personalizzati
 # 3. Mostra record DNS da configurare
-# 4. Crea Google Cloud Secrets dal tuo .env.prod
+# 4. Crea Google Cloud Secrets dal tuo config/.env.prod
 # 5. Configura environment variables
 # 6. Testa la configurazione
 ```
@@ -452,14 +482,14 @@ gcloud run services update spreetzitt-backend \
 **Prima del deploy:**
 
 ```bash
-# 1. Crea .env.prod con le tue variabili
+# 1. Crea config/.env.prod con le tue variabili
 APP_KEY=base64:your-key
 DB_HOST=your-gcp-sql-ip
 DB_PASSWORD=your-password
 DB_DATABASE=spreetzitt_prod
 # ... altre variabili
 
-# 2. Modifica domini nello script
+# 2. Modifica domini nel file config/.env.prod
 FRONTEND_DOMAIN="app.tuodominio.com"
 BACKEND_DOMAIN="api.tuodominio.com"
 
@@ -470,12 +500,12 @@ BACKEND_DOMAIN="api.tuodominio.com"
 
 ```bash
 # 4. Esegui setup DNS
-./cloud-run-dns-setup.sh setup
+./scripts/dns-setup.sh
 
 # 5. Configura record DNS nel tuo provider
 # 6. Attendi propagazione DNS (5-60 min)
 # 7. Testa configurazione
-./cloud-run-dns-setup.sh test
+./scripts/dns-setup.sh test
 ```
 
 ### **🎯 Risultato Finale**
@@ -493,12 +523,9 @@ Backend:  https://api.tuodominio.com
 
 ## 🎯 Quick Start
 
-**Tutti gli script e file necessari sono nella cartella `../cloud-run/`**
+**Usa gli script automatici per un deploy rapido:**
 
 ```bash
-# Naviga alla cartella cloud-run
-cd cloud-run/
-
 # 1. Setup iniziale (una volta sola)
 ./setup.sh
 
@@ -513,4 +540,63 @@ cp config/.env.template config/.env.prod
 ./scripts/dns-setup.sh
 ```
 
-Per una guida dettagliata degli script, vedi: `cloud-run/README.md`
+**Scripts disponibili:**
+
+- `./setup.sh` - Setup iniziale completo
+- `./deploy.sh` - Deploy backend + frontend
+- `./scripts/deploy-backend.sh` - Deploy solo backend
+- `./scripts/deploy-frontend.sh` - Deploy solo frontend
+- `./scripts/create-secrets.sh` - Gestione Google Cloud Secrets
+- `./scripts/dns-setup.sh` - Setup domini personalizzati
+- `./scripts/cleanup.sh` - Pulizia risorse
+
+Per maggiori dettagli sugli script, vedi: `README.md`
+
+## 🔧 Gestione e Monitoraggio
+
+### Comandi Utili per il Monitoraggio
+
+```bash
+# Visualizza logs backend
+./scripts/deploy-backend.sh --logs
+
+# Visualizza logs frontend
+./scripts/deploy-frontend.sh --logs
+
+# Informazioni servizi
+./scripts/deploy-backend.sh --info
+./scripts/deploy-frontend.sh --info
+
+# Test health checks
+./scripts/deploy-backend.sh --test
+./scripts/deploy-frontend.sh --test
+
+# Stato domini e SSL
+./scripts/dns-setup.sh status
+```
+
+### Gestione Secrets
+
+```bash
+# Lista secrets esistenti
+./scripts/create-secrets.sh list
+
+# Crea/aggiorna tutti i secrets
+./scripts/create-secrets.sh create
+
+# Test accesso secrets
+./scripts/create-secrets.sh test
+```
+
+### Pulizia Risorse
+
+```bash
+# Lista tutte le risorse
+./scripts/cleanup.sh --list
+
+# Rimuovi solo servizi
+./scripts/cleanup.sh --services
+
+# Rimuovi tutto
+./scripts/cleanup.sh --all
+```

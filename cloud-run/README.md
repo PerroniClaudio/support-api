@@ -57,7 +57,6 @@ cp config/.env.template config/.env.prod
 - **Frontend**: €1-3/mese
 - **Database**: €7/mese (Cloud SQL)
 - **Redis**: €25/mese (Memorystore) o €0 (Scout database)
-- **TOTALE**: €11-43/mese (vs €30/mese e2-medium)
 
 ## 🔧 Configurazioni
 
