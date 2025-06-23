@@ -136,6 +136,11 @@ class GeneratePdfReport implements ShouldQueue {
                         $errorsString .= "- #" . $ticket->id . " non ha la modalità di lavoro.";
                         continue;
                     }
+                    if($ticket->work_mode == "on_site" && ($ticket->admin_user_id == null)) {
+                        $loadErrorsOnly = true;
+                        $errorsString .= "- #" . $ticket->id . " ticket on_site senza gestore.";
+                        continue;
+                    }
 
                     // Qui aggiungere la funzione che salta il ciclo se si devono solo caricare gli errori.
                     if($loadErrorsOnly == true) {
@@ -551,11 +556,11 @@ class GeneratePdfReport implements ShouldQueue {
                     $tickets_by_billable_time['unbillable'][$ticket['data']['ticketType']['category']['name']]+= $ticket['data']['actual_processing_time'];
                 }
 
-                // Gestore (non viene inserito nel report)
-                // $handler = $ticket['data']['admin_user_id'] != null ? User::find($ticket['data']['admin_user_id']) : null;
-                // if($handler){
-                //     $handlerFullName = $handler->surname ? $handler->surname . ' ' . strtoupper(substr($handler->name, 0, 1)) . '.' : $handler->name;
-                // }
+                // Gestore viene inserito nei ticket on-site (sarebbe chi è andato dal cliente)
+                $handler = $ticket['data']['admin_user_id'] != null ? User::find($ticket['data']['admin_user_id']) : null;
+                if($handler){
+                    $handlerFullName = $handler->surname ? $handler->surname . ' ' . strtoupper(substr($handler->name, 0, 1)) . '.' : $handler->name;
+                }
 
                 // Ticket ridotto
 
@@ -580,7 +585,7 @@ class GeneratePdfReport implements ShouldQueue {
                     'master_id' => $ticket['data']['master_id'],
                     'is_master' => $ticket['data']['ticketType']['is_master'],
                     'slave_ids' => Ticket::where('master_id', $ticket['data']['id'])->pluck('id')->toArray(),
-                    // 'handler_full_name' => $handlerFullName,
+                    'handler_full_name' => $handlerFullName,
                     'work_mode' => $ticket['data']['work_mode'],
                 ];
 
