@@ -54,10 +54,6 @@ EXPOSE 8080
 # Configura nginx per Cloud Run
 RUN sed -i 's/listen 80;/listen 8080;/' /etc/nginx/conf.d/default.conf
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/ || exit 1
-
 # Avvia nginx
 CMD ["nginx", "-g", "daemon off;"]
 
