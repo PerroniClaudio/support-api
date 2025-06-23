@@ -1,6 +1,21 @@
 # 🔄 Laravel Jobs con Google Cloud Run
 
-Guida completa per eseguire Laravel Queue Workers su Google Cloud Run.
+Guida completa per eseguire Laravel Queue Workers su Google Cloud Run utilizzando gli script automatizzati.
+
+## 🚀 Quick Start
+
+**Usa gli script automatici per configurare i workers:**
+
+```bash
+# 1. Setup workers automatico
+./scripts/deploy-workers.sh
+
+# 2. Monitora workers
+./scripts/monitor-workers.sh
+
+# 3. Test job dispatch
+./scripts/test-jobs.sh
+```
 
 ## 🎯 Opzioni Disponibili
 
@@ -30,12 +45,29 @@ Guida completa per eseguire Laravel Queue Workers su Google Cloud Run.
 
 ### Setup Cloud Run Jobs
 
-#### 1. Crea Job Service
+#### 1. Setup Automatico
+
+**Usa lo script di deploy per workers:**
 
 ```bash
-# Deploy job worker
+# Deploy completo workers (service + jobs)
+./scripts/deploy-workers.sh
+
+# Deploy solo job worker
+./scripts/deploy-workers.sh --jobs-only
+
+# Deploy solo service worker
+./scripts/deploy-workers.sh --service-only
+```
+
+#### 2. Configurazione Manuale (Opzionale)
+
+Se preferisci configurare manualmente (gli script automatici sono raccomandati):
+
+```bash
+# Deploy job worker manuale (configurazione da config/.env.prod)
 gcloud run jobs create spreetzitt-worker \
-  --image=gcr.io/PROJECT_ID/spreetzitt-backend:latest \
+  --image=gcr.io/$PROJECT_ID/spreetzitt-backend:latest \
   --region=europe-west1 \
   --memory=1Gi \
   --cpu=1 \
@@ -45,10 +77,18 @@ gcloud run jobs create spreetzitt-worker \
   --command="php" \
   --args="artisan,queue:work,--stop-when-empty" \
   --set-env-vars="APP_ENV=production" \
-  --set-secrets="APP_KEY=spreetzitt-app-key:latest"
+  --set-secrets="APP_KEY=spreetzitt-app-key:latest,DB_PASSWORD=spreetzitt-db-password:latest"
 ```
 
-#### 2. Triggering Jobs
+#### 3. Triggering Automatico
+
+**Lo script configura automaticamente:**
+
+- Cloud Scheduler per processare queue periodicamente
+- API endpoints per trigger manuali
+- Monitoring e health checks
+
+#### 4. Configurazione Manuale (Opzionale)
 
 **Opzione A: Via API dal backend**
 
@@ -66,10 +106,13 @@ public function processQueue()
 }
 ```
 
-**Opzione B: Cloud Scheduler (CRON)**
+**Opzione B: Cloud Scheduler (CRON) - Configurato automaticamente**
 
 ```bash
-# Crea scheduler per processare queue ogni 5 minuti
+# ✅ Configurato automaticamente dallo script deploy-workers.sh
+# Processa queue ogni 5 minuti
+
+# Setup manuale (opzionale se gli script non funzionano):
 gcloud scheduler jobs create http spreetzitt-queue-processor \
   --location=europe-west1 \
   --schedule="*/5 * * * *" \
@@ -117,40 +160,29 @@ echo "✅ Cloud Run Job deployed"
 
 ### Setup Service Worker
 
-#### 1. Dockerfile per Worker
+#### 1. Deploy Automatico
 
-```dockerfile
-# Dockerfile.worker
-FROM php:8.2-cli
-
-# Install dependencies
-RUN apt-get update && apt-get install -y \
-    git unzip libpq-dev libzip-dev && \
-    docker-php-ext-install pdo pdo_mysql zip
-
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# Copy application
-COPY . /app
-WORKDIR /app
-
-# Install dependencies
-RUN composer install --no-dev --optimize-autoloader
-
-# Expose port for health checks
-EXPOSE 8080
-
-# Worker command
-CMD ["php", "artisan", "queue:work", "--timeout=300", "--memory=256", "--tries=3"]
-```
-
-#### 2. Deploy Worker Service
+**Usa lo script per deployare il service worker:**
 
 ```bash
-# Build e deploy worker
+# Deploy service worker per job continui
+./scripts/deploy-workers.sh --service-only
+
+# Monitor worker
+./scripts/monitor-workers.sh --service
+```
+
+#### 2. Deploy Manuale (Opzionale)
+
+**⚠️ Usa invece lo script automatico: `./scripts/deploy-workers.sh --service-only`**
+
+Se preferisci deployare manualmente:
+
+```bash
+# ⚠️ Deploy manuale (usa invece ./scripts/deploy-workers.sh --service-only)
+# Build e deploy worker (configurazione da config/.env.prod)
 gcloud run deploy spreetzitt-worker \
-  --source . \
+  --source ../support-api \
   --region=europe-west1 \
   --memory=1Gi \
   --cpu=1 \
@@ -158,12 +190,24 @@ gcloud run deploy spreetzitt-worker \
   --max-instances=10 \
   --concurrency=1 \
   --set-env-vars="APP_ENV=production,QUEUE_CONNECTION=database" \
-  --set-secrets="APP_KEY=spreetzitt-app-key:latest" \
+  --set-secrets="APP_KEY=spreetzitt-app-key:latest,DB_PASSWORD=spreetzitt-db-password:latest" \
   --no-allow-unauthenticated \
   --port=8080
 ```
 
-#### 3. Health Check per Worker
+#### 3. Dockerfile per Worker
+
+**I Dockerfile sono già configurati in `docker/backend.dockerfile`:**
+
+```dockerfile
+# Il Dockerfile include già la configurazione per worker
+# Vedi docker/backend.dockerfile nella cartella cloud-run
+# Include supporto per supervisord e queue workers
+```
+
+#### 4. Health Check per Worker
+
+**L'health check è già configurato nel backend Laravel:**
 
 ```php
 // routes/web.php - Health check per worker
@@ -281,23 +325,44 @@ php artisan migrate
 
 Guardando i tuoi job, consiglio **approccio ibrido**:
 
-### Setup Consigliato
+### Setup Consigliato con Scripts Automatici
+
+**✅ Usa lo script automatico per setup ibrido (raccomandato):**
+
+```bash
+# Setup completo workers (critical + reports)
+./scripts/deploy-workers.sh --hybrid
+
+# Monitor entrambi i workers
+./scripts/monitor-workers.sh --all
+
+# Test workers
+./scripts/test-jobs.sh --all
+```
+
+### Configurazione Manuale (Opzionale)
+
+**Se preferisci configurare manualmente (non raccomandato):**
 
 ```bash
 # 1. Worker service per job critici (email, notifiche)
 gcloud run deploy spreetzitt-worker-critical \
-  --source . \
+  --source ../support-api \
+  --region=europe-west1 \
   --min-instances=1 \
   --max-instances=5 \
   --memory=512Mi \
-  --set-env-vars="QUEUE_CONNECTION=database,QUEUE_QUEUE=critical"
+  --set-env-vars="QUEUE_CONNECTION=database,QUEUE_QUEUE=critical" \
+  --set-secrets="APP_KEY=spreetzitt-app-key:latest,DB_PASSWORD=spreetzitt-db-password:latest"
 
 # 2. Cloud Run Jobs per job pesanti (report, analytics)
 gcloud run jobs create spreetzitt-worker-reports \
-  --image=gcr.io/PROJECT_ID/spreetzitt-backend:latest \
+  --image=gcr.io/$PROJECT_ID/spreetzitt-backend:latest \
+  --region=europe-west1 \
   --memory=2Gi \
   --cpu=2 \
-  --args="artisan,queue:work,--queue=reports,--stop-when-empty"
+  --args="artisan,queue:work,--queue=reports,--stop-when-empty" \
+  --set-secrets="APP_KEY=spreetzitt-app-key:latest,DB_PASSWORD=spreetzitt-db-password:latest"
 ```
 
 ### Queue Configuration
@@ -312,9 +377,15 @@ GeneratePdfReport::dispatch($reportData)->onQueue('reports');
 
 ### Cron per Reports
 
+**✅ Configurato automaticamente dallo script `deploy-workers.sh --hybrid`**
+
+Setup manuale opzionale:
+
 ```bash
+# ⚠️ Setup manuale scheduler (gli script lo fanno automaticamente)
 # Scheduler per processare report ogni ora
 gcloud scheduler jobs create http process-reports \
+  --location=europe-west1 \
   --schedule="0 * * * *" \
   --uri="https://api.tuodominio.com/api/process-reports" \
   --http-method=POST
@@ -324,80 +395,84 @@ gcloud scheduler jobs create http process-reports \
 
 ## 🚀 Script Deploy Completo
 
+**Gli script automatici sono già configurati:**
+
 ```bash
-#!/bin/bash
-# deploy-workers.sh
+# Deploy completo workers
+./scripts/deploy-workers.sh
 
-PROJECT_ID="your-project-id"
-REGION="europe-west1"
-IMAGE="gcr.io/$PROJECT_ID/spreetzitt-backend:latest"
+# Le opzioni disponibili:
+./scripts/deploy-workers.sh --help
 
-echo "🔄 Deploying Laravel Workers to Cloud Run..."
-
-# 1. Worker service per job critici
-echo "📧 Deploying critical worker..."
-gcloud run deploy spreetzitt-worker-critical \
-  --image=$IMAGE \
-  --region=$REGION \
-  --memory=512Mi \
-  --cpu=0.5 \
-  --min-instances=1 \
-  --max-instances=5 \
-  --concurrency=1 \
-  --command="php" \
-  --args="artisan,queue:work,--queue=critical,--timeout=120" \
-  --set-env-vars="APP_ENV=production,QUEUE_CONNECTION=database" \
-  --set-secrets="APP_KEY=spreetzitt-app-key:latest,DB_PASSWORD=spreetzitt-db-password:latest" \
-  --no-allow-unauthenticated
-
-# 2. Job per report pesanti
-echo "📊 Deploying reports job..."
-gcloud run jobs create spreetzitt-worker-reports \
-  --image=$IMAGE \
-  --region=$REGION \
-  --memory=2Gi \
-  --cpu=2 \
-  --max-retries=2 \
-  --parallelism=1 \
-  --task-count=1 \
-  --command="php" \
-  --args="artisan,queue:work,--queue=reports,--stop-when-empty,--timeout=600" \
-  --set-env-vars="APP_ENV=production,QUEUE_CONNECTION=database" \
-  --set-secrets="APP_KEY=spreetzitt-app-key:latest,DB_PASSWORD=spreetzitt-db-password:latest"
-
-# 3. Scheduler per report
-echo "⏰ Setting up scheduler..."
-gcloud scheduler jobs create http process-reports \
-  --location=$REGION \
-  --schedule="0 */2 * * *" \
-  --uri="https://europe-west1-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/$PROJECT_ID/jobs/spreetzitt-worker-reports:run" \
-  --http-method=POST \
-  --oauth-service-account-email="$PROJECT_ID@appspot.gserviceaccount.com"
-
-echo "✅ Workers deployed successfully!"
-echo "📧 Critical worker: Always running (emails, notifications)"
-echo "📊 Reports job: Triggered every 2 hours"
+# Opzioni:
+#   --jobs-only     Deploy solo Cloud Run Jobs
+#   --service-only  Deploy solo Cloud Run Service
+#   --hybrid        Deploy setup ibrido (raccomandato)
+#   --critical      Deploy solo worker critici
+#   --reports       Deploy solo worker report
 ```
+
+### Script Personalizzabile
+
+**Il file `scripts/deploy-workers.sh` include:**
+
+- Configurazione automatica da `config/.env.prod`
+- Setup worker service per job critici
+- Setup Cloud Run Jobs per report pesanti
+- Configurazione Cloud Scheduler
+- Health checks e monitoring
+
+### Configurazione Manual (Opzionale)
+
+Se preferisci configurare manualmente:
 
 ---
 
 ## 🧪 Test e Monitoring
 
-### Test Jobs
+### Test Automatico Jobs
 
 ```bash
-# Test dispatch job
+# Test completo workers
+./scripts/test-jobs.sh
+
+# Test specifici
+./scripts/test-jobs.sh --critical
+./scripts/test-jobs.sh --reports
+./scripts/test-jobs.sh --dispatch
+```
+
+### Monitoring con Scripts
+
+```bash
+# Monitor tutti i workers
+./scripts/monitor-workers.sh
+
+# Monitor specifici
+./scripts/monitor-workers.sh --service
+./scripts/monitor-workers.sh --jobs
+./scripts/monitor-workers.sh --logs
+```
+
+### Test Manuali
+
+Se preferisci testare manualmente:
+
+```bash
+# Test dispatch job (comando da eseguire nel backend)
 php artisan tinker
 >>> SendWelcomeEmail::dispatch(User::first())
 
 # Verifica queue
 php artisan queue:monitor database
 
-# Log Cloud Run
+# Log Cloud Run (sostituito da ./scripts/monitor-workers.sh --logs)
 gcloud run services logs read spreetzitt-worker-critical --region=europe-west1
 ```
 
-### Monitoring
+### Monitoring Manuale
+
+Se preferisci monitorare manualmente:
 
 ```bash
 # Status worker service
