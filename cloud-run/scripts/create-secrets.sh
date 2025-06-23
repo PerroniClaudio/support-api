@@ -140,7 +140,7 @@ generate_deploy_command() {
     echo ""
     echo "gcloud run deploy spreetzitt-backend \\"
     echo "  --source ../support-api \\"
-    echo "  --region europe-west1 \\"
+    echo "  --region europe-west8 \\"
     
     # Aggiungi secrets
     local secrets_args=""

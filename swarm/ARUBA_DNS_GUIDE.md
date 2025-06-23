@@ -19,13 +19,13 @@ Se non hai ancora deployato, esegui:
 # Backend
 gcloud run deploy spreetzitt-backend \
   --source . \
-  --region europe-west1 \
+  --region europe-west8 \
   --allow-unauthenticated
 
 # Frontend
 gcloud run deploy spreetzitt-frontend \
   --source . \
-  --region europe-west1 \
+  --region europe-west8 \
   --allow-unauthenticated
 ```
 
@@ -48,13 +48,13 @@ gcloud run deploy spreetzitt-frontend \
 gcloud run domain-mappings create \
   --service=spreetzitt-backend \
   --domain=api.tuodominio.com \
-  --region=europe-west1
+  --region=europe-west8
 
 # Mappa frontend
 gcloud run domain-mappings create \
   --service=spreetzitt-frontend \
   --domain=app.tuodominio.com \
-  --region=europe-west1
+  --region=europe-west8
 ```
 
 ### Step 4: Ottieni Record DNS
@@ -64,12 +64,12 @@ Dopo la mappatura, Google ti fornirà i record DNS:
 ```bash
 # Visualizza record DNS per backend
 gcloud run domain-mappings describe api.tuodominio.com \
-  --region=europe-west1 \
+  --region=europe-west8 \
   --format="value(status.resourceRecords)"
 
 # Visualizza record DNS per frontend
 gcloud run domain-mappings describe app.tuodominio.com \
-  --region=europe-west1 \
+  --region=europe-west8 \
   --format="value(status.resourceRecords)"
 ```
 
@@ -180,7 +180,7 @@ curl -w "@curl-format.txt" -o /dev/null -s https://api.tuodominio.com
 ```bash
 gcloud run services update spreetzitt-backend \
   --set-env-vars="APP_ENV=production,DB_HOST=1.2.3.4,SCOUT_DRIVER=database" \
-  --region=europe-west1
+  --region=europe-west8
 ```
 
 ### Variabili Sensibili (Secrets)
@@ -193,7 +193,7 @@ echo "your-db-password" | gcloud secrets create spreetzitt-db-password --data-fi
 # Configura su Cloud Run
 gcloud run services update spreetzitt-backend \
   --set-secrets="APP_KEY=spreetzitt-app-key:latest,DB_PASSWORD=spreetzitt-db-password:latest" \
-  --region=europe-west1
+  --region=europe-west8
 ```
 
 ### Migrazione da .env
@@ -242,7 +242,7 @@ nslookup api.tuodominio.com
 # Google provisiona SSL automaticamente dopo 10-60 minuti
 # Verifica stato certificato
 gcloud run domain-mappings describe api.tuodominio.com \
-  --region=europe-west1 \
+  --region=europe-west8 \
   --format="value(status.conditions)"
 ```
 
@@ -250,7 +250,7 @@ gcloud run domain-mappings describe api.tuodominio.com \
 
 ```bash
 # Verifica che il servizio sia up
-gcloud run services list --region=europe-west1
+gcloud run services list --region=europe-west8
 
 # Test URL Cloud Run originale
 curl https://spreetzitt-backend-xxx-ew.a.run.app
@@ -260,13 +260,13 @@ curl https://spreetzitt-backend-xxx-ew.a.run.app
 
 ```bash
 # Log del servizio
-gcloud run services logs read spreetzitt-backend --region=europe-west1
+gcloud run services logs read spreetzitt-backend --region=europe-west8
 
 # Stato mapping domini
-gcloud run domain-mappings list --region=europe-west1
+gcloud run domain-mappings list --region=europe-west8
 
 # Verifica configurazione servizio
-gcloud run services describe spreetzitt-backend --region=europe-west1
+gcloud run services describe spreetzitt-backend --region=europe-west8
 ```
 
 ## 💡 Best Practices

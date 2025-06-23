@@ -19,8 +19,8 @@ error() { echo -e "${RED}❌ $1${NC}"; }
 
 # Configurazione
 PROJECT_ID="your-gcp-project-id"
-REGION="europe-west1"
-ZONE="europe-west1-b"
+REGION="europe-west8"
+ZONE="europe-west8-b"
 
 # Opzione 1: MeiliSearch Cloud (Raccomandato)
 setup_meilisearch_cloud() {

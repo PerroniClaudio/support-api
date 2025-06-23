@@ -68,7 +68,7 @@ Se preferisci configurare manualmente (gli script automatici sono raccomandati):
 # Deploy job worker manuale (configurazione da config/.env.prod)
 gcloud run jobs create spreetzitt-worker \
   --image=gcr.io/$PROJECT_ID/spreetzitt-backend:latest \
-  --region=europe-west1 \
+  --region=europe-west8 \
   --memory=1Gi \
   --cpu=1 \
   --max-retries=3 \
@@ -99,7 +99,7 @@ use Google\Cloud\Run\V2\JobsClient;
 public function processQueue()
 {
     $client = new JobsClient();
-    $jobName = 'projects/PROJECT_ID/locations/europe-west1/jobs/spreetzitt-worker';
+    $jobName = 'projects/PROJECT_ID/locations/europe-west8/jobs/spreetzitt-worker';
 
     $execution = $client->runJob($jobName);
     return response()->json(['execution_id' => $execution->getName()]);
@@ -114,7 +114,7 @@ public function processQueue()
 
 # Setup manuale (opzionale se gli script non funzionano):
 gcloud scheduler jobs create http spreetzitt-queue-processor \
-  --location=europe-west1 \
+  --location=europe-west8 \
   --schedule="*/5 * * * *" \
   --uri="https://api.tuodominio.com/process-queue" \
   --http-method=POST \
@@ -128,7 +128,7 @@ gcloud scheduler jobs create http spreetzitt-queue-processor \
 # deploy-jobs.sh
 
 PROJECT_ID="your-project-id"
-REGION="europe-west1"
+REGION="europe-west8"
 IMAGE="gcr.io/$PROJECT_ID/spreetzitt-backend:latest"
 
 # Deploy job worker
@@ -183,7 +183,7 @@ Se preferisci deployare manualmente:
 # Build e deploy worker (configurazione da config/.env.prod)
 gcloud run deploy spreetzitt-worker \
   --source ../support-api \
-  --region=europe-west1 \
+  --region=europe-west8 \
   --memory=1Gi \
   --cpu=1 \
   --min-instances=1 \
@@ -348,7 +348,7 @@ Guardando i tuoi job, consiglio **approccio ibrido**:
 # 1. Worker service per job critici (email, notifiche)
 gcloud run deploy spreetzitt-worker-critical \
   --source ../support-api \
-  --region=europe-west1 \
+  --region=europe-west8 \
   --min-instances=1 \
   --max-instances=5 \
   --memory=512Mi \
@@ -358,7 +358,7 @@ gcloud run deploy spreetzitt-worker-critical \
 # 2. Cloud Run Jobs per job pesanti (report, analytics)
 gcloud run jobs create spreetzitt-worker-reports \
   --image=gcr.io/$PROJECT_ID/spreetzitt-backend:latest \
-  --region=europe-west1 \
+  --region=europe-west8 \
   --memory=2Gi \
   --cpu=2 \
   --args="artisan,queue:work,--queue=reports,--stop-when-empty" \
@@ -385,7 +385,7 @@ Setup manuale opzionale:
 # ⚠️ Setup manuale scheduler (gli script lo fanno automaticamente)
 # Scheduler per processare report ogni ora
 gcloud scheduler jobs create http process-reports \
-  --location=europe-west1 \
+  --location=europe-west8 \
   --schedule="0 * * * *" \
   --uri="https://api.tuodominio.com/api/process-reports" \
   --http-method=POST
@@ -467,7 +467,7 @@ php artisan tinker
 php artisan queue:monitor database
 
 # Log Cloud Run (sostituito da ./scripts/monitor-workers.sh --logs)
-gcloud run services logs read spreetzitt-worker-critical --region=europe-west1
+gcloud run services logs read spreetzitt-worker-critical --region=europe-west8
 ```
 
 ### Monitoring Manuale
@@ -476,13 +476,13 @@ Se preferisci monitorare manualmente:
 
 ```bash
 # Status worker service
-gcloud run services describe spreetzitt-worker-critical --region=europe-west1
+gcloud run services describe spreetzitt-worker-critical --region=europe-west8
 
 # Executions job
-gcloud run jobs executions list --job=spreetzitt-worker-reports --region=europe-west1
+gcloud run jobs executions list --job=spreetzitt-worker-reports --region=europe-west8
 
 # Scheduler status
-gcloud scheduler jobs list --location=europe-west1
+gcloud scheduler jobs list --location=europe-west8
 ```
 
 ---

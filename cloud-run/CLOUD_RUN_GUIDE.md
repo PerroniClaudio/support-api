@@ -122,7 +122,7 @@ Se preferisci deployare manualmente:
 # Deploy backend Laravel
 gcloud run deploy spreetzitt-backend \
   --source ../support-api \
-  --region europe-west1 \
+  --region europe-west8 \
   --memory 1Gi \
   --cpu 1 \
   --concurrency 80 \
@@ -158,7 +158,7 @@ Se preferisci deployare manualmente:
 # Deploy frontend React
 gcloud run deploy spreetzitt-frontend \
   --source ../frontend \
-  --region europe-west1 \
+  --region europe-west8 \
   --memory 512Mi \
   --cpu 1 \
   --concurrency 1000 \
@@ -206,13 +206,13 @@ Se preferisci configurare manualmente:
 gcloud run domain-mappings create \
   --service spreetzitt-backend \
   --domain api.tuodominio.com \
-  --region europe-west1
+  --region europe-west8
 
 # Frontend App
 gcloud run domain-mappings create \
   --service spreetzitt-frontend \
   --domain app.tuodominio.com \
-  --region europe-west1
+  --region europe-west8
 ```
 
 ### Configura DNS
@@ -237,7 +237,7 @@ gcloud run domain-mappings create \
 
 ```bash
 # Visualizza logs in tempo reale
-gcloud run logs tail spreetzitt-backend --region europe-west1
+gcloud run logs tail spreetzitt-backend --region europe-west8
 
 # Logs strutturati Laravel
 Log::info('API Request', [
@@ -340,7 +340,7 @@ gcloud builds triggers create github \
 # Configura Redis per sessioni e cache
 gcloud redis instances create spreetzitt-redis \
   --size=1 \
-  --region=europe-west1 \
+  --region=europe-west8 \
   --tier=basic
 
 # Nel .env

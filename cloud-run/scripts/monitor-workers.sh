@@ -35,7 +35,7 @@ source "$ENV_FILE"
 
 # Variabili di default
 PROJECT_ID="${PROJECT_ID:-}"
-REGION="${REGION:-europe-west1}"
+REGION="${REGION:-europe-west8}"
 
 # Verifica variabili essenziali
 [[ -z "$PROJECT_ID" ]] && log_error "PROJECT_ID non definito in $ENV_FILE"
