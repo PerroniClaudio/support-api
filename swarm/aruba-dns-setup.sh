@@ -26,7 +26,7 @@ YOUR_DOMAIN="tuodominio.com"                    # Il tuo dominio principale
 FRONTEND_SUBDOMAIN="app"                        # Sottodominio per frontend
 BACKEND_SUBDOMAIN="api"                         # Sottodominio per backend
 PROJECT_ID="your-gcp-project-id"               # Il tuo project ID GCP
-REGION="europe-west1"                          # Regione GCP
+REGION="europe-west8"                          # Regione GCP
 
 # Domini finali
 FRONTEND_DOMAIN="${FRONTEND_SUBDOMAIN}.${YOUR_DOMAIN}"

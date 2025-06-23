@@ -34,7 +34,7 @@ source "$ENV_FILE"
 
 # Variabili di default se non definite nel .env
 PROJECT_ID="${PROJECT_ID:-}"
-REGION="${REGION:-europe-west1}"
+REGION="${REGION:-europe-west8}"
 DOMAIN="${DOMAIN:-}"
 IMAGE_TAG="${IMAGE_TAG:-latest}"
 

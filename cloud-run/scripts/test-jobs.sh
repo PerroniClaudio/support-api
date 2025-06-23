@@ -37,7 +37,7 @@ source "$ENV_FILE"
 
 # Variabili di default
 PROJECT_ID="${PROJECT_ID:-}"
-REGION="${REGION:-europe-west1}"
+REGION="${REGION:-europe-west8}"
 DOMAIN="${DOMAIN:-}"
 
 # Verifica variabili essenziali

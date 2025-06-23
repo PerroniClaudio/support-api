@@ -33,7 +33,7 @@ log_error() {
 
 # Configurazione (può essere override da .env.prod)
 PROJECT_ID=$(gcloud config get-value project)
-REGION="europe-west1"
+REGION="europe-west8"
 BACKEND_SERVICE="spreetzitt-backend"
 FRONTEND_SERVICE="spreetzitt-frontend"
 

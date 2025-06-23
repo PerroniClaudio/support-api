@@ -7,7 +7,7 @@ set -euo pipefail
 
 # Configurazione
 PROJECT_ID="your-gcp-project-id"
-REGION="europe-west1"
+REGION="europe-west8"
 
 # I tuoi domini
 FRONTEND_DOMAIN="app.yourdomain.com"

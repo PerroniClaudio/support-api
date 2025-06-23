@@ -78,7 +78,7 @@ steps:
       - '--image'
       - 'gcr.io/$PROJECT_ID/spreetzitt-backend:$BUILD_ID'
       - '--region'
-      - 'europe-west1'
+      - 'europe-west8'
       - '--platform'
       - 'managed'
       - '--memory'
@@ -115,7 +115,7 @@ steps:
       - '--image'
       - 'gcr.io/$PROJECT_ID/spreetzitt-frontend:$BUILD_ID'
       - '--region'
-      - 'europe-west1'
+      - 'europe-west8'
       - '--platform'
       - 'managed'
       - '--memory'
@@ -148,7 +148,7 @@ steps:
         sleep 30
         
         # Ottieni URL del backend
-        BACKEND_URL=$$(gcloud run services describe spreetzitt-backend --region=europe-west1 --format="value(status.url)")
+        BACKEND_URL=$$(gcloud run services describe spreetzitt-backend --region=europe-west8 --format="value(status.url)")
         
         # Test health check
         echo "Testing backend health check: $$BACKEND_URL/health"
@@ -167,7 +167,7 @@ steps:
         sleep 30
         
         # Ottieni URL del frontend
-        FRONTEND_URL=$$(gcloud run services describe spreetzitt-frontend --region=europe-west1 --format="value(status.url)")
+        FRONTEND_URL=$$(gcloud run services describe spreetzitt-frontend --region=europe-west8 --format="value(status.url)")
         
         # Test frontend
         echo "Testing frontend: $$FRONTEND_URL"
@@ -197,7 +197,7 @@ options:
 # SUBSTITUTIONS (variabili)
 # =============================================================================
 substitutions:
-  _REGION: 'europe-west1'
+  _REGION: 'europe-west8'
   _BACKEND_SERVICE: 'spreetzitt-backend'
   _FRONTEND_SERVICE: 'spreetzitt-frontend'
 
