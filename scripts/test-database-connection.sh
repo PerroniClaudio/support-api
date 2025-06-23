@@ -6,8 +6,8 @@
 echo "🔍 Testing external database connection..."
 
 # Load environment variables
-if [ -f .env.prod ]; then
-    export $(cat .env.prod | grep -v '#' | awk '/=/ {print $1}')
+if [ -f ../cloud-run/config/.env.prod ]; then
+    export $(cat ../cloud-run/config/.env.prod | grep -v '#' | awk '/=/ {print $1}')
 else
     echo "❌ .env.prod file not found!"
     exit 1
