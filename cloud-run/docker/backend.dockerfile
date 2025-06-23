@@ -1,133 +1,50 @@
-# 🐳 Spreetzitt Backend - Production Dockerfile
-# Multi-stage build per ottimizzare dimensioni immagine
+# Usa un'immagine PHP ufficiale.
+# https://hub.docker.com/_/php
+FROM php:8.2-fpm
 
-# =============================================================================
-# BUILDER STAGE - Installa dipendenze PHP
-# =============================================================================
-FROM php:8.2-fpm-alpine as builder
+# Imposta la directory di lavoro in /app
+WORKDIR /app
 
-# Installa dipendenze di sistema per build
-RUN apk add --no-cache \
-    curl \
-    git \
-    unzip \
+# Installa le dipendenze di sistema e le estensioni PHP necessarie per Laravel.
+RUN apt-get update && apt-get install -y \
+    build-essential \
     libpng-dev \
-    libjpeg-dev \
-    freetype-dev \
+    libjpeg62-turbo-dev \
+    libfreetype6-dev \
+    locales \
+    zip \
+    jpegoptim optipng pngquant gifsicle \
+    vim \
+    unzip \
+    git \
+    curl \
+    libonig-dev \
+    libxml2-dev \
     libzip-dev \
-    oniguruma-dev \
-    mysql-client
-
-# Installa estensioni PHP necessarie
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install \
-        pdo_mysql \
-        mysqli \
-        gd \
-        zip \
-        mbstring \
-        exif \
-        pcntl \
-        bcmath
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
 
 # Installa Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# Imposta directory di lavoro
-WORKDIR /app
-
-# Copia composer files
-COPY composer.json composer.lock ./
-
-# Installa dipendenze PHP (senza dev dependencies)
-RUN composer install \
-    --no-dev \
-    --no-scripts \
-    --no-autoloader \
-    --optimize-autoloader \
-    --prefer-dist
-
-# =============================================================================
-# RUNTIME STAGE - Immagine finale ottimizzata
-# =============================================================================
-FROM php:8.2-fpm-alpine as runtime
-
-# Installa solo dipendenze runtime necessarie
-RUN apk add --no-cache \
-    nginx \
-    supervisor \
-    mysql-client \
-    libpng \
-    libjpeg \
-    freetype \
-    libzip \
-    oniguruma
-
-# Installa estensioni PHP (stesso set del builder)
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install \
-        pdo_mysql \
-        mysqli \
-        gd \
-        zip \
-        mbstring \
-        exif \
-        pcntl \
-        bcmath
-
-# Crea utente per applicazione
-RUN addgroup -g 1000 app && adduser -D -s /bin/sh -u 1000 -G app app
-
-# Imposta directory di lavoro
-WORKDIR /app
-
-# Copia vendor da builder stage
-COPY --from=builder /app/vendor ./vendor
-
-# Copia applicazione
+# Copia i file dell'applicazione
 COPY . .
 
-# Copia file di configurazione
-COPY ../cloud-run/docker/nginx-backend.conf /etc/nginx/nginx.conf
-COPY ../cloud-run/docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+# Installa le dipendenze di Composer come root
+RUN composer install --no-dev --optimize-autoloader
 
-# Genera autoloader ottimizzato
-RUN composer dump-autoload --optimize --classmap-authoritative
+# Esegui le ottimizzazioni di Laravel
+# RUN php artisan config:cache
+# RUN php artisan route:cache
+# RUN php artisan view:cache
 
-# Crea directory per logs e cache
-RUN mkdir -p \
-    storage/logs \
-    storage/framework/cache \
-    storage/framework/sessions \
-    storage/framework/views \
-    storage/app/public \
-    bootstrap/cache
+# Imposta le autorizzazioni corrette per la directory dell'app
+RUN chown -R www-data:www-data /app
 
-# Imposta permessi
-RUN chown -R app:app \
-    storage \
-    bootstrap/cache \
-    && chmod -R 775 \
-    storage \
-    bootstrap/cache
+# Passa all'utente non-root per una maggiore sicurezza
+USER www-data
 
-# Configurazione PHP-FPM per Cloud Run
-RUN echo "php_admin_value[memory_limit] = 512M" >> /usr/local/etc/php-fpm.d/www.conf \
-    && echo "php_admin_value[max_execution_time] = 300" >> /usr/local/etc/php-fpm.d/www.conf \
-    && echo "php_admin_value[upload_max_filesize] = 50M" >> /usr/local/etc/php-fpm.d/www.conf \
-    && echo "php_admin_value[post_max_size] = 50M" >> /usr/local/etc/php-fpm.d/www.conf
-
-# Esponi porta 8080 (richiesto da Cloud Run)
+# Esponi la porta 8080 per consentire l'accesso all'applicazione
 EXPOSE 8080
 
-# Usa supervisor per gestire nginx + php-fpm
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
-
-# Health check per Cloud Run
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
-
-# Labels per metadata
-LABEL maintainer="spreetzitt-team"
-LABEL version="1.0"
-LABEL description="Spreetzitt Laravel Backend for Google Cloud Run"
+# Comando per avviare il server di sviluppo di Laravel
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8080"]
