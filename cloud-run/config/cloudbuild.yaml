@@ -1,0 +1,228 @@
+# 🚀 Google Cloud Build - Spreetzitt CI/CD Pipeline
+# Configurazione per deploy automatico su Cloud Run
+
+steps:
+  # =============================================================================
+  # BUILD BACKEND
+  # =============================================================================
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-backend'
+    args: 
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/spreetzitt-backend:$BUILD_ID'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/spreetzitt-backend:latest'
+      - '-f'
+      - 'cloud-run/docker/backend.dockerfile'
+      - './support-api'
+    timeout: '900s'
+
+  # =============================================================================
+  # BUILD FRONTEND
+  # =============================================================================
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build-frontend'
+    args: 
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/spreetzitt-frontend:$BUILD_ID'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/spreetzitt-frontend:latest'
+      - '-f'
+      - 'cloud-run/docker/frontend.dockerfile'
+      - './frontend'
+    timeout: '600s'
+
+  # =============================================================================
+  # PUSH IMAGES
+  # =============================================================================
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-backend'
+    args: 
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/spreetzitt-backend:$BUILD_ID'
+    waitFor: ['build-backend']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-backend-latest'
+    args: 
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/spreetzitt-backend:latest'
+    waitFor: ['build-backend']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-frontend'
+    args: 
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/spreetzitt-frontend:$BUILD_ID'
+    waitFor: ['build-frontend']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push-frontend-latest'
+    args: 
+      - 'push'
+      - 'gcr.io/$PROJECT_ID/spreetzitt-frontend:latest'
+    waitFor: ['build-frontend']
+
+  # =============================================================================
+  # DEPLOY BACKEND
+  # =============================================================================
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-backend'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'spreetzitt-backend'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/spreetzitt-backend:$BUILD_ID'
+      - '--region'
+      - 'europe-west1'
+      - '--platform'
+      - 'managed'
+      - '--memory'
+      - '1Gi'
+      - '--cpu'
+      - '1'
+      - '--concurrency'
+      - '80'
+      - '--timeout'
+      - '300'
+      - '--min-instances'
+      - '0'
+      - '--max-instances'
+      - '10'
+      - '--port'
+      - '8080'
+      - '--set-env-vars'
+      - 'APP_ENV=production,SCOUT_DRIVER=database'
+      - '--set-secrets'
+      - 'APP_KEY=app-key:latest,DB_PASSWORD=db-password:latest,JWT_SECRET=jwt-secret:latest'
+      - '--allow-unauthenticated'
+    waitFor: ['push-backend']
+
+  # =============================================================================
+  # DEPLOY FRONTEND
+  # =============================================================================
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy-frontend'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'spreetzitt-frontend'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/spreetzitt-frontend:$BUILD_ID'
+      - '--region'
+      - 'europe-west1'
+      - '--platform'
+      - 'managed'
+      - '--memory'
+      - '512Mi'
+      - '--cpu'
+      - '1'
+      - '--concurrency'
+      - '1000'
+      - '--timeout'
+      - '60'
+      - '--min-instances'
+      - '0'
+      - '--max-instances'
+      - '5'
+      - '--port'
+      - '8080'
+      - '--allow-unauthenticated'
+    waitFor: ['push-frontend']
+
+  # =============================================================================
+  # HEALTH CHECKS
+  # =============================================================================
+  - name: 'gcr.io/cloud-builders/curl'
+    id: 'health-check-backend'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        # Attendi che il servizio sia pronto
+        sleep 30
+        
+        # Ottieni URL del backend
+        BACKEND_URL=$$(gcloud run services describe spreetzitt-backend --region=europe-west1 --format="value(status.url)")
+        
+        # Test health check
+        echo "Testing backend health check: $$BACKEND_URL/health"
+        curl -f "$$BACKEND_URL/health" || exit 1
+        
+        echo "Backend health check passed!"
+    waitFor: ['deploy-backend']
+
+  - name: 'gcr.io/cloud-builders/curl'
+    id: 'health-check-frontend'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        # Attendi che il servizio sia pronto
+        sleep 30
+        
+        # Ottieni URL del frontend
+        FRONTEND_URL=$$(gcloud run services describe spreetzitt-frontend --region=europe-west1 --format="value(status.url)")
+        
+        # Test frontend
+        echo "Testing frontend: $$FRONTEND_URL"
+        curl -f "$$FRONTEND_URL" || exit 1
+        
+        echo "Frontend test passed!"
+    waitFor: ['deploy-frontend']
+
+# =============================================================================
+# CONFIGURAZIONI
+# =============================================================================
+
+# Timeout totale per il build (30 minuti)
+timeout: '1800s'
+
+# Configurazione logging
+options:
+  logging: CLOUD_LOGGING_ONLY
+  logStreamingOption: STREAM_ON
+  
+# Configurazione macchina build
+options:
+  machineType: 'E2_HIGHCPU_8'
+  diskSizeGb: 100
+
+# =============================================================================
+# SUBSTITUTIONS (variabili)
+# =============================================================================
+substitutions:
+  _REGION: 'europe-west1'
+  _BACKEND_SERVICE: 'spreetzitt-backend'
+  _FRONTEND_SERVICE: 'spreetzitt-frontend'
+
+# =============================================================================
+# TRIGGERS CONFIGURAZIONE
+# =============================================================================
+# Per configurare il trigger automatico:
+#
+# gcloud builds triggers create github \
+#   --repo-name=spreetzitt \
+#   --repo-owner=YOUR_GITHUB_USERNAME \
+#   --branch-pattern="^main$" \
+#   --build-config=cloud-run/config/cloudbuild.yaml \
+#   --name=spreetzitt-deploy
+
+# =============================================================================
+# NOTIFICHE (opzionale)
+# =============================================================================
+# Puoi aggiungere notifiche Slack/Discord:
+#
+# - name: 'gcr.io/cloud-builders/curl'
+#   entrypoint: 'bash'
+#   args:
+#     - '-c'
+#     - |
+#       curl -X POST -H 'Content-type: application/json' \
+#         --data '{"text":"✅ Spreetzitt deploy completed successfully!"}' \
+#         $SLACK_WEBHOOK_URL
