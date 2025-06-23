@@ -1,732 +1,360 @@
-# 🌊 Google Cloud Run - Setup Guide
+# 🚀 Google Cloud Run - Tutorial Deploy Completo
 
-## 📊 Confronto e2-medium vs Cloud Run
+## 📋 Prerequisiti
 
-| Aspetto             | **Compute Engine e2-medium** | **Google Cloud Run**      |
-| ------------------- | ---------------------------- | ------------------------- |
-| **Costo Base**      | €30/mese fisso               | €0 senza traffico         |
-| **Costo Tipico**    | €30/mese                     | €5-15/mese                |
-| **RAM Disponibile** | 4GB fissi                    | 1-8GB per container       |
-| **Scalabilità**     | Manuale (1 istanza)          | 0-1000 istanze automatico |
-| **SSL**             | Configurazione manuale       | Automatico                |
-| **Gestione**        | Server management            | Zero management           |
-| **Cold Start**      | N/A                          | 1-3 secondi               |
-| **Concorrenza**     | Limitata                     | 1000 req/istanza          |
+**Prima di iniziare, assicurati di avere:**
 
-## 🚀 Vantaggi Cloud Run per Spreetzitt
-
-### ✅ **Costi Ottimizzati**
+1. **Google Cloud Project** attivo con fatturazione abilitata
+2. **gcloud CLI** installato e configurato
+3. **Docker** installato sul tuo sistema
+4. **Domini** verificati in Google Search Console (per SSL personalizzato)
 
 ```bash
-# Tier GRATUITO (sempre disponibile):
-- 2 milioni request/mese
-- 180.000 vCPU-secondi/mese
-- 360.000 GiB-secondi memoria/mese
+# Installa gcloud CLI (macOS)
+brew install google-cloud-sdk
 
-# Tipico costo mensile progetto medio:
-- Backend: €3-8/mese
-- Frontend: €1-3/mese
-- Database: €7/mese (db-f1-micro)
-- Redis: €25/mese (Memorystore basic)
-# TOTALE: €36-43/mese (ma scala in base al traffico!)
+# Configura autenticazione
+gcloud auth login
+gcloud config set project IL-TUO-PROJECT-ID
 ```
 
-### ✅ **Perfetto per il tuo Stack**
+## 🎯 Perché Cloud Run?
 
-- **Laravel Backend**: Ottimo per Cloud Run (stateless)
-- **React Frontend**: Supporto nativo SPA
-- **Database esterno**: Già configurato su Cloud SQL
-- **Redis**: Disponibile via Memorystore
+**Vantaggi rispetto a Compute Engine e2-medium:**
 
-### ✅ **Deploy Semplificato**
+| Aspetto         | e2-medium              | Cloud Run                  |
+| --------------- | ---------------------- | -------------------------- |
+| **Costo**       | €30/mese fisso         | €5-15/mese (pay-per-use)   |
+| **Gestione**    | Server management      | Zero management            |
+| **Scalabilità** | Manuale                | 0-1000 istanze automatiche |
+| **SSL**         | Configurazione manuale | Automatico                 |
+
+## 🛠️ Step 1: Preparazione Progetti
+
+### Backend Laravel
+
+**Crea Dockerfile ottimizzato:**
+
+```dockerfile
+# docker/prod.backend.dockerfile
+FROM php:8.2-fpm-alpine as builder
+
+WORKDIR /app
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --no-scripts
+
+FROM php:8.2-fpm-alpine as runtime
+
+# Installa dipendenze necessarie
+RUN apk add --no-cache nginx supervisor mysql-client
+
+# Copia app
+WORKDIR /app
+COPY . .
+COPY --from=builder /app/vendor ./vendor
+
+# Configurazioni
+COPY docker/nginx.conf /etc/nginx/nginx.conf
+COPY docker/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+# Esponi porta 8080 (richiesto da Cloud Run)
+EXPOSE 8080
+
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+```
+
+### Frontend React
+
+**Crea Dockerfile per frontend:**
+
+```dockerfile
+# docker/prod.frontend.dockerfile
+FROM node:18-alpine as builder
+
+WORKDIR /app
+COPY package.json pnpm-lock.yaml ./
+RUN npm install -g pnpm && pnpm install
+
+COPY . .
+RUN pnpm build
+
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+COPY docker/nginx-frontend.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 8080
+```
+
+## 🔧 Step 2: Configurazione Environment Variables
+
+### Gestione Secrets
 
 ```bash
-# Deploy in un comando:
+# Crea secrets per variabili sensibili
+echo "your-app-key" | gcloud secrets create app-key --data-file=-
+echo "your-db-password" | gcloud secrets create db-password --data-file=-
+echo "your-jwt-secret" | gcloud secrets create jwt-secret --data-file=-
+```
+
+### File cloudbuild.yaml
+
+```yaml
+# cloudbuild.yaml - per CI/CD automatico
+steps:
+  # Build backend
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "build",
+        "-t",
+        "gcr.io/$PROJECT_ID/spreetzitt-backend",
+        "-f",
+        "docker/prod.backend.dockerfile",
+        "./support-api",
+      ]
+
+  # Build frontend
+  - name: "gcr.io/cloud-builders/docker"
+    args:
+      [
+        "build",
+        "-t",
+        "gcr.io/$PROJECT_ID/spreetzitt-frontend",
+        "-f",
+        "docker/prod.frontend.dockerfile",
+        "./frontend",
+      ]
+
+  # Push images
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["push", "gcr.io/$PROJECT_ID/spreetzitt-backend"]
+
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["push", "gcr.io/$PROJECT_ID/spreetzitt-frontend"]
+
+  # Deploy to Cloud Run
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
+    args:
+      - "run"
+      - "deploy"
+      - "spreetzitt-backend"
+      - "--image=gcr.io/$PROJECT_ID/spreetzitt-backend"
+      - "--region=europe-west1"
+      - "--platform=managed"
+      - "--allow-unauthenticated"
+```
+
+## 🚀 Step 3: Deploy Backend
+
+```bash
+# Deploy backend Laravel
 gcloud run deploy spreetzitt-backend \
-  --source . \
+  --source ./support-api \
   --region europe-west1 \
+  --memory 1Gi \
+  --cpu 1 \
+  --concurrency 80 \
+  --timeout 300 \
+  --min-instances 0 \
+  --max-instances 10 \
+  --set-env-vars="APP_ENV=production,SCOUT_DRIVER=database" \
+  --set-secrets="APP_KEY=app-key:latest,DB_PASSWORD=db-password:latest" \
   --allow-unauthenticated
 ```
 
-## 🛠️ Configurazione Raccomandata
-
-### **Backend Laravel**
-
-```yaml
-# Risorse:
-memory: 1Gi
-cpu: 1 vCPU
-concurrency: 80 requests/istanza
-timeout: 300s
-min-instances: 0 # Scale to zero
-max-instances: 100 # Scale up per traffico alto
-```
-
-### **Frontend React**
-
-```yaml
-# Risorse:
-memory: 512Mi
-cpu: 1 vCPU
-concurrency: 1000 requests/istanza
-timeout: 60s
-min-instances: 0
-max-instances: 50
-```
-
-## 🔧 Configurazioni Avanzate
-
-### **Custom Domains**
+## 🌐 Step 4: Deploy Frontend
 
 ```bash
-# Collega i tuoi domini
+# Deploy frontend React
+gcloud run deploy spreetzitt-frontend \
+  --source ./frontend \
+  --region europe-west1 \
+  --memory 512Mi \
+  --cpu 1 \
+  --concurrency 1000 \
+  --timeout 60 \
+  --min-instances 0 \
+  --max-instances 5 \
+  --allow-unauthenticated
+```
+
+## 🔗 Step 5: Domini Personalizzati
+
+### Verifica Domini
+
+```bash
+# 1. Vai su Google Search Console
+# https://search.google.com/search-console
+# 2. Aggiungi e verifica i tuoi domini:
+#    - api.tuodominio.com
+#    - app.tuodominio.com
+```
+
+### Collega Domini a Cloud Run
+
+```bash
+# Backend API
 gcloud run domain-mappings create \
   --service spreetzitt-backend \
-  --domain api.yourdomain.com
+  --domain api.tuodominio.com \
+  --region europe-west1
 
+# Frontend App
 gcloud run domain-mappings create \
   --service spreetzitt-frontend \
-  --domain app.yourdomain.com
+  --domain app.tuodominio.com \
+  --region europe-west1
 ```
 
-### **Environment Variables**
+### Configura DNS
 
 ```bash
-# Setta variabili ambiente
-gcloud run services update spreetzitt-backend \
-  --set-env-vars="APP_ENV=production,APP_DEBUG=false" \
-  --set-secrets="APP_KEY=app-key:latest"
+# Google ti fornirà i record DNS da aggiungere al tuo provider:
+
+# Per api.tuodominio.com:
+# Tipo: CNAME
+# Nome: api
+# Valore: ghs.googlehosted.com
+
+# Per app.tuodominio.com:
+# Tipo: CNAME
+# Nome: app
+# Valore: ghs.googlehosted.com
 ```
 
-### **Traffic Splitting** (per A/B testing)
+## 📊 Step 6: Monitoring e Ottimizzazioni
+
+### Configurazione Logs
 
 ```bash
-# Gradual rollout
-gcloud run services update-traffic spreetzitt-backend \
-  --to-revisions=spreetzitt-backend-v2=20,spreetzitt-backend-v1=80
+# Visualizza logs in tempo reale
+gcloud run logs tail spreetzitt-backend --region europe-west1
+
+# Logs strutturati Laravel
+Log::info('API Request', [
+    'endpoint' => $request->path(),
+    'method' => $request->method(),
+    'user_id' => auth()->id(),
+    'ip' => $request->ip()
+]);
 ```
 
-## 📈 Performance e Ottimizzazioni
-
-### **Cold Start Optimization**
-
-```dockerfile
-# Multi-stage build per immagini più leggere
-FROM php:8.2-fpm-alpine as builder
-# ... build steps ...
-
-FROM php:8.2-fpm-alpine as runtime
-COPY --from=builder /app /app
-# Immagine finale: ~100MB vs ~500MB
-```
-
-### **Connection Pooling**
+### Health Checks
 
 ```php
-// Laravel - ottimizza connessioni DB
+// routes/web.php - endpoint health check
+Route::get('/health', function () {
+    return response()->json([
+        'status' => 'healthy',
+        'timestamp' => now(),
+        'database' => DB::connection()->getPdo() ? 'connected' : 'disconnected'
+    ]);
+});
+```
+
+## 🔄 Step 7: CI/CD Automatico
+
+### GitHub Actions
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - id: "auth"
+        uses: "google-github-actions/auth@v1"
+        with:
+          credentials_json: "${{ secrets.GCP_SA_KEY }}"
+
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v1"
+
+      - name: "Build and Deploy"
+        run: |
+          gcloud builds submit --config cloudbuild.yaml
+```
+
+## 💡 Step 8: Ottimizzazioni Avanzate
+
+### Database Connection Pooling
+
+```php
+// config/database.php
 'connections' => [
     'mysql' => [
         'options' => [
             PDO::ATTR_PERSISTENT => true,
         ],
-    ],
-],
-```
-
-### **Caching Strategy**
-
-```bash
-# Redis per sessioni + cache
-CACHE_DRIVER=redis
-SESSION_DRIVER=redis
-QUEUE_CONNECTION=redis
-```
-
-## 🎯 **Quando Usare Cloud Run vs e2-medium**
-
-### **✅ Usa Cloud Run se:**
-
-- Traffico variabile/basso
-- Vuoi zero management
-- Budget ottimizzato
-- Scaling automatico necessario
-- SSL automatico importante
-
-### **❌ Usa e2-medium se:**
-
-- Traffico sempre alto (>80% utilizzo 24/7)
-- Controllo completo del server necessario
-- Applicazioni stateful
-- Long-running processes continui
-
-## 🚀 Migration Plan
-
-### **Fase 1: Test Environment**
-
-```bash
-# Deploy su Cloud Run ambiente test
-./cloud-run-deploy.sh setup
-./cloud-run-deploy.sh deploy test
-```
-
-### **Fase 2: A/B Testing**
-
-```bash
-# 10% traffico Cloud Run, 90% e2-medium
-# Misura performance e costi
-```
-
-### **Fase 3: Full Migration**
-
-```bash
-# Sposta completamente a Cloud Run
-# Dismetti e2-medium
-```
-
-## 📊 Monitoring e Logs
-
-### **Cloud Monitoring** (integrato)
-
-- Request latency
-- Error rates
-- Instance count
-- Memory/CPU usage
-
-### **Structured Logging**
-
-```php
-// Laravel - log strutturati per Cloud Logging
-Log::info('User action', [
-    'user_id' => $user->id,
-    'action' => 'login',
-    'ip' => $request->ip()
-]);
-```
-
-## 💡 **Raccomandazione Finale**
-
-Per il tuo progetto Spreetzitt, **Cloud Run è la scelta migliore** perché:
-
-1. **Costi**: Probabilmente spenderai 50-70% in meno
-2. **Scalabilità**: Gestisce automaticamente picchi di traffico
-3. **Semplicità**: Deploy con un comando, zero configurazione server
-4. **Reliability**: 99.95% SLA di Google
-5. **Global**: CDN e edge locations automatici
-
-Vuoi che ti aiuti a configurare la migrazione da e2-medium a Cloud Run? 🚀
-
-## 🔍 **MeiliSearch su Cloud Run - Soluzioni**
-
-### **Problema**: MeiliSearch è stateful, Cloud Run è stateless
-
-### **1. 🎯 SOLUZIONE CONSIGLIATA: MeiliSearch Cloud**
-
-_(Hosted service ufficiale)_
-
-```bash
-# Costi MeiliSearch Cloud:
-- Tier gratuito: 100k documenti, 10k ricerche/mese
-- Tier Starter: €29/mese - 1M documenti, 100k ricerche/mese
-- Tier Pro: €99/mese - 10M documenti, 1M ricerche/mese
-
-# Configurazione Laravel:
-MEILISEARCH_HOST=https://your-project.meilisearch.io
-MEILISEARCH_KEY=your_private_key
-```
-
-**✅ Vantaggi:**
-
-- Zero configurazione
-- Backup automatici
-- Scaling gestito
-- SLA 99.9%
-- Costi prevedibili
-
-### **2. 🛠️ Compute Engine dedicata per MeiliSearch**
-
-_(Architettura ibrida)_
-
-```bash
-# Crea VM micro per MeiliSearch
-gcloud compute instances create meilisearch-vm \
-  --machine-type=e2-micro \
-  --image-family=ubuntu-2004-lts \
-  --image-project=ubuntu-os-cloud \
-  --disk-size=20GB \
-  --zone=europe-west1-b
-
-# Costi: ~€7-10/mese
-```
-
-**Architettura:**
-
-```
-Cloud Run (Backend + Frontend)
-       ↓
-   e2-micro VM (MeiliSearch)
-       ↓
-   Cloud SQL (Database)
-```
-
-### **3. 🐳 Docker Swarm con MeiliSearch Cloud**
-
-_(Ibrido ottimizzato)_
-
-```yaml
-# docker-compose.hybrid.yml
-version: "3.8"
-services:
-  backend:
-    environment:
-      # MeiliSearch Cloud
-      - MEILISEARCH_HOST=https://your-project.meilisearch.io
-      - MEILISEARCH_KEY=${MEILISEARCH_CLOUD_KEY}
-  # Niente MeiliSearch locale
-```
-
-### **4. 🔧 Elasticsearch/Algolia Alternative**
-
-```bash
-# Opzione A: Elasticsearch Service
-- €50-100/mese per cluster gestito
-- Più potente ma complesso
-
-# Opzione B: Algolia
-- €0-50/mese based on operations
-- Ottimo per search, ma meno flessibile
-```
-
-## 🎯 **Raccomandazione Finale MeiliSearch**
-
-**Per il tuo progetto consiglio MeiliSearch Cloud:**
-
-1. **Tier gratuito** per iniziare (100k documenti)
-2. **€29/mese** quando cresci (vs €30/mese e2-medium completa)
-3. **Zero management** - come Cloud Run
-4. **Performance ottimali** - edge locations globali
-
-## 💡 **SOLUZIONE DEFINITIVA: Scout Database Driver**
-
-### **🎯 La Scelta più Intelligente**
-
-**"Sfanculiamo MeiliSearch e usiamo Laravel Scout con driver database!"**
-
-```bash
-# Configurazione semplicissima:
-SCOUT_DRIVER=database
-
-# E basta. Fine. 🎉
-```
-
-**✅ Vantaggi:**
-
-- **€0 costi extra** - usa il database che hai già
-- **Zero configurazione** - funziona out-of-the-box
-- **Zero gestione** - niente servizi aggiuntivi
-- **Zero problemi** - MySQL full-text search integrato
-
-**❌ Svantaggi:**
-
-- Performance meno ottimali su dataset enormi (>100k record)
-- Funzionalità di ricerca meno avanzate vs MeiliSearch
-
-### **🚀 Implementazione**
-
-```bash
-# Script automatico per la migrazione
-./migrate-to-database-search.sh migrate
-
-# Quello che fa:
-# 1. Configura Scout per usare database driver
-# 2. Crea migration per full-text indexes
-# 3. Aggiorna modelli Laravel
-# 4. Rimuove MeiliSearch da Docker/Cloud Run
-# 5. Pulisce configurazioni
-```
-
-### **📊 Confronto Finale**
-
-| Soluzione                          | **Costi/mese** | **Gestione** | **Performance** |
-| ---------------------------------- | -------------- | ------------ | --------------- |
-| **e2-medium + MeiliSearch**        | €30            | Media        | Ottima          |
-| **Cloud Run + MeiliSearch Cloud**  | €8-35          | Zero         | Ottima          |
-| **Cloud Run + Database Search**    | €8-15          | Zero         | Buona           |
-| **Docker Swarm + Database Search** | €30            | Bassa        | Buona           |
-
-### **🎯 Raccomandazione DEFINITIVA:**
-
-**Cloud Run + Scout Database Driver = €8-15/mese**
-
-- Costi minimi
-- Zero gestione
-- Performance sufficienti per la maggior parte dei casi
-- Scalabilità automatica
-- Semplicità totale
-
-# 🌊 Google Cloud Run - Setup Guide
-
-## 📊 Confronto e2-medium vs Cloud Run
-
-| Aspetto             | **Compute Engine e2-medium** | **Google Cloud Run**      |
-| ------------------- | ---------------------------- | ------------------------- |
-| **Costo Base**      | €30/mese fisso               | €0 senza traffico         |
-| **Costo Tipico**    | €30/mese                     | €5-15/mese                |
-| **RAM Disponibile** | 4GB fissi                    | 1-8GB per container       |
-| **Scalabilità**     | Manuale (1 istanza)          | 0-1000 istanze automatico |
-| **SSL**             | Configurazione manuale       | Automatico                |
-| **Gestione**        | Server management            | Zero management           |
-| **Cold Start**      | N/A                          | 1-3 secondi               |
-| **Concorrenza**     | Limitata                     | 1000 req/istanza          |
-
-## 🚀 Vantaggi Cloud Run per Spreetzitt
-
-### ✅ **Costi Ottimizzati**
-
-```bash
-# Tier GRATUITO (sempre disponibile):
-- 2 milioni request/mese
-- 180.000 vCPU-secondi/mese
-- 360.000 GiB-secondi memoria/mese
-
-# Tipico costo mensile progetto medio:
-- Backend: €3-8/mese
-- Frontend: €1-3/mese
-- Database: €7/mese (db-f1-micro)
-- Redis: €25/mese (Memorystore basic)
-# TOTALE: €36-43/mese (ma scala in base al traffico!)
-```
-
-### ✅ **Perfetto per il tuo Stack**
-
-- **Laravel Backend**: Ottimo per Cloud Run (stateless)
-- **React Frontend**: Supporto nativo SPA
-- **Database esterno**: Già configurato su Cloud SQL
-- **Redis**: Disponibile via Memorystore
-
-### ✅ **Deploy Semplificato**
-
-```bash
-# Deploy in un comando:
-gcloud run deploy spreetzitt-backend \
-  --source . \
-  --region europe-west1 \
-  --allow-unauthenticated
-```
-
-## 🛠️ Configurazione Raccomandata
-
-### **Backend Laravel**
-
-```yaml
-# Risorse:
-memory: 1Gi
-cpu: 1 vCPU
-concurrency: 80 requests/istanza
-timeout: 300s
-min-instances: 0 # Scale to zero
-max-instances: 100 # Scale up per traffico alto
-```
-
-### **Frontend React**
-
-```yaml
-# Risorse:
-memory: 512Mi
-cpu: 1 vCPU
-concurrency: 1000 requests/istanza
-timeout: 60s
-min-instances: 0
-max-instances: 50
-```
-
-## 🔧 Configurazioni Avanzate
-
-### **Custom Domains**
-
-```bash
-# Collega i tuoi domini
-gcloud run domain-mappings create \
-  --service spreetzitt-backend \
-  --domain api.yourdomain.com
-
-gcloud run domain-mappings create \
-  --service spreetzitt-frontend \
-  --domain app.yourdomain.com
-```
-
-### **Environment Variables**
-
-```bash
-# Setta variabili ambiente
-gcloud run services update spreetzitt-backend \
-  --set-env-vars="APP_ENV=production,APP_DEBUG=false" \
-  --set-secrets="APP_KEY=app-key:latest"
-```
-
-### **Traffic Splitting** (per A/B testing)
-
-```bash
-# Gradual rollout
-gcloud run services update-traffic spreetzitt-backend \
-  --to-revisions=spreetzitt-backend-v2=20,spreetzitt-backend-v1=80
-```
-
-## 📈 Performance e Ottimizzazioni
-
-### **Cold Start Optimization**
-
-```dockerfile
-# Multi-stage build per immagini più leggere
-FROM php:8.2-fpm-alpine as builder
-# ... build steps ...
-
-FROM php:8.2-fpm-alpine as runtime
-COPY --from=builder /app /app
-# Immagine finale: ~100MB vs ~500MB
-```
-
-### **Connection Pooling**
-
-```php
-// Laravel - ottimizza connessioni DB
-'connections' => [
-    'mysql' => [
-        'options' => [
-            PDO::ATTR_PERSISTENT => true,
+        'pool' => [
+            'max_connections' => 10,
+            'max_idle_time' => 60,
         ],
     ],
 ],
 ```
 
-### **Caching Strategy**
+### Caching Redis
 
 ```bash
-# Redis per sessioni + cache
+# Configura Redis per sessioni e cache
+gcloud redis instances create spreetzitt-redis \
+  --size=1 \
+  --region=europe-west1 \
+  --tier=basic
+
+# Nel .env
 CACHE_DRIVER=redis
 SESSION_DRIVER=redis
 QUEUE_CONNECTION=redis
 ```
 
-## 🎯 **Quando Usare Cloud Run vs e2-medium**
+## 🎯 Raccomandazione: Soluzione Search
 
-### **✅ Usa Cloud Run se:**
-
-- Traffico variabile/basso
-- Vuoi zero management
-- Budget ottimizzato
-- Scaling automatico necessario
-- SSL automatico importante
-
-### **❌ Usa e2-medium se:**
-
-- Traffico sempre alto (>80% utilizzo 24/7)
-- Controllo completo del server necessario
-- Applicazioni stateful
-- Long-running processes continui
-
-## 🚀 Migration Plan
-
-### **Fase 1: Test Environment**
+**Usa Laravel Scout con Database Driver:**
 
 ```bash
-# Deploy su Cloud Run ambiente test
-./cloud-run-deploy.sh setup
-./cloud-run-deploy.sh deploy test
-```
-
-### **Fase 2: A/B Testing**
-
-```bash
-# 10% traffico Cloud Run, 90% e2-medium
-# Misura performance e costi
-```
-
-### **Fase 3: Full Migration**
-
-```bash
-# Sposta completamente a Cloud Run
-# Dismetti e2-medium
-```
-
-## 📊 Monitoring e Logs
-
-### **Cloud Monitoring** (integrato)
-
-- Request latency
-- Error rates
-- Instance count
-- Memory/CPU usage
-
-### **Structured Logging**
-
-```php
-// Laravel - log strutturati per Cloud Logging
-Log::info('User action', [
-    'user_id' => $user->id,
-    'action' => 'login',
-    'ip' => $request->ip()
-]);
-```
-
-## 💡 **Raccomandazione Finale**
-
-Per il tuo progetto Spreetzitt, **Cloud Run è la scelta migliore** perché:
-
-1. **Costi**: Probabilmente spenderai 50-70% in meno
-2. **Scalabilità**: Gestisce automaticamente picchi di traffico
-3. **Semplicità**: Deploy con un comando, zero configurazione server
-4. **Reliability**: 99.95% SLA di Google
-5. **Global**: CDN e edge locations automatici
-
-Vuoi che ti aiuti a configurare la migrazione da e2-medium a Cloud Run? 🚀
-
-## 🔍 **MeiliSearch su Cloud Run - Soluzioni**
-
-### **Problema**: MeiliSearch è stateful, Cloud Run è stateless
-
-### **1. 🎯 SOLUZIONE CONSIGLIATA: MeiliSearch Cloud**
-
-_(Hosted service ufficiale)_
-
-```bash
-# Costi MeiliSearch Cloud:
-- Tier gratuito: 100k documenti, 10k ricerche/mese
-- Tier Starter: €29/mese - 1M documenti, 100k ricerche/mese
-- Tier Pro: €99/mese - 10M documenti, 1M ricerche/mese
-
-# Configurazione Laravel:
-MEILISEARCH_HOST=https://your-project.meilisearch.io
-MEILISEARCH_KEY=your_private_key
-```
-
-**✅ Vantaggi:**
-
-- Zero configurazione
-- Backup automatici
-- Scaling gestito
-- SLA 99.9%
-- Costi prevedibili
-
-### **2. 🛠️ Compute Engine dedicata per MeiliSearch**
-
-_(Architettura ibrida)_
-
-```bash
-# Crea VM micro per MeiliSearch
-gcloud compute instances create meilisearch-vm \
-  --machine-type=e2-micro \
-  --image-family=ubuntu-2004-lts \
-  --image-project=ubuntu-os-cloud \
-  --disk-size=20GB \
-  --zone=europe-west1-b
-
-# Costi: ~€7-10/mese
-```
-
-**Architettura:**
-
-```
-Cloud Run (Backend + Frontend)
-       ↓
-   e2-micro VM (MeiliSearch)
-       ↓
-   Cloud SQL (Database)
-```
-
-### **3. 🐳 Docker Swarm con MeiliSearch Cloud**
-
-_(Ibrido ottimizzato)_
-
-```yaml
-# docker-compose.hybrid.yml
-version: "3.8"
-services:
-  backend:
-    environment:
-      # MeiliSearch Cloud
-      - MEILISEARCH_HOST=https://your-project.meilisearch.io
-      - MEILISEARCH_KEY=${MEILISEARCH_CLOUD_KEY}
-  # Niente MeiliSearch locale
-```
-
-### **4. 🔧 Elasticsearch/Algolia Alternative**
-
-```bash
-# Opzione A: Elasticsearch Service
-- €50-100/mese per cluster gestito
-- Più potente ma complesso
-
-# Opzione B: Algolia
-- €0-50/mese based on operations
-- Ottimo per search, ma meno flessibile
-```
-
-## 🎯 **Raccomandazione Finale MeiliSearch**
-
-**Per il tuo progetto consiglio MeiliSearch Cloud:**
-
-1. **Tier gratuito** per iniziare (100k documenti)
-2. **€29/mese** quando cresci (vs €30/mese e2-medium completa)
-3. **Zero management** - come Cloud Run
-4. **Performance ottimali** - edge locations globali
-
-## 💡 **SOLUZIONE DEFINITIVA: Scout Database Driver**
-
-### **🎯 La Scelta più Intelligente**
-
-**"Sfanculiamo MeiliSearch e usiamo Laravel Scout con driver database!"**
-
-```bash
-# Configurazione semplicissima:
+# Configurazione più semplice ed economica
 SCOUT_DRIVER=database
 
-# E basta. Fine. 🎉
+# Vantaggi:
+# - €0 costi extra
+# - Zero configurazione
+# - Integrazione nativa MySQL full-text search
+# - Performance adeguate per <100k records
 ```
 
-**✅ Vantaggi:**
+## ✅ Checklist Deploy Finale
 
-- **€0 costi extra** - usa il database che hai già
-- **Zero configurazione** - funziona out-of-the-box
-- **Zero gestione** - niente servizi aggiuntivi
-- **Zero problemi** - MySQL full-text search integrato
+**Prima del go-live:**
 
-**❌ Svantaggi:**
+- [ ] Backend funzionante su Cloud Run URL temporaneo
+- [ ] Frontend funzionante su Cloud Run URL temporaneo
+- [ ] Database Cloud SQL connesso e funzionante
+- [ ] Domini verificati in Search Console
+- [ ] Record DNS configurati
+- [ ] SSL certificates attivi (automatico)
+- [ ] Environment variables e secrets configurati
+- [ ] Health checks funzionanti
+- [ ] Logs strutturati attivi
 
-- Performance meno ottimali su dataset enormi (>100k record)
-- Funzionalità di ricerca meno avanzate vs MeiliSearch
+**Risultato finale:**
 
-### **🚀 Implementazione**
-
-```bash
-# Script automatico per la migrazione
-./migrate-to-database-search.sh migrate
-
-# Quello che fa:
-# 1. Configura Scout per usare database driver
-# 2. Crea migration per full-text indexes
-# 3. Aggiorna modelli Laravel
-# 4. Rimuove MeiliSearch da Docker/Cloud Run
-# 5. Pulisce configurazioni
-```
-
-### **📊 Confronto Finale**
-
-| Soluzione                          | **Costi/mese** | **Gestione** | **Performance** |
-| ---------------------------------- | -------------- | ------------ | --------------- |
-| **e2-medium + MeiliSearch**        | €30            | Media        | Ottima          |
-| **Cloud Run + MeiliSearch Cloud**  | €8-35          | Zero         | Ottima          |
-| **Cloud Run + Database Search**    | €8-15          | Zero         | Buona           |
-| **Docker Swarm + Database Search** | €30            | Bassa        | Buona           |
-
-### **🎯 Raccomandazione DEFINITIVA:**
-
-**Cloud Run + Scout Database Driver = €8-15/mese**
-
-- Costi minimi
-- Zero gestione
-- Performance sufficienti per la maggior parte dei casi
-- Scalabilità automatica
-- Semplicità totale
+- **Frontend**: `https://app.tuodominio.com`
+- **Backend**: `https://api.tuodominio.com`
+- **Costi**: €8-15/mese (vs €30/mese e2-medium)
+- **Gestione**: Zero server management
+- **Scalabilità**: Automatica da 0 a 1000 istanze
 
 # 🌐 **Cloud Run: Domini e Variabili d'Ambiente**
 
@@ -862,3 +490,27 @@ Backend:  https://api.tuodominio.com
 # Costi ottimizzati ✅
 # Zero gestione server ✅
 ```
+
+## 🎯 Quick Start
+
+**Tutti gli script e file necessari sono nella cartella `../cloud-run/`**
+
+```bash
+# Naviga alla cartella cloud-run
+cd cloud-run/
+
+# 1. Setup iniziale (una volta sola)
+./setup.sh
+
+# 2. Configura variabili ambiente
+cp config/.env.template config/.env.prod
+# Modifica config/.env.prod con i tuoi valori
+
+# 3. Deploy completo
+./deploy.sh
+
+# 4. Setup domini (opzionale)
+./scripts/dns-setup.sh
+```
+
+Per una guida dettagliata degli script, vedi: `cloud-run/README.md`
