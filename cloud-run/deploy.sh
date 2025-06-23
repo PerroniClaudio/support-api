@@ -72,6 +72,17 @@ deploy_backend() {
     
     # Carica variabili ambiente
     source config/.env.prod
+
+    # Copia Dockerfile backend
+    cp ./docker/backend.dockerfile ../support-api/Dockerfile
+
+    # Crea cartella nginx e copia configurazione
+    mkdir -p ../support-api/nginx
+    cp ./docker/nginx-backend.conf ../support-api/nginx/
+
+    # Crea cartella supervisord e copia configurazione
+    mkdir -p ../support-api/supervisord
+    cp ./docker/supervisord.conf ../support-api/supervisord/
     
     # Build e deploy
     gcloud run deploy $BACKEND_SERVICE \
@@ -93,6 +104,12 @@ deploy_backend() {
     # Mostra URL
     BACKEND_URL=$(gcloud run services describe $BACKEND_SERVICE --region=$REGION --format="value(status.url)")
     log_info "Backend URL: $BACKEND_URL"
+
+    # Cleanup dei file temporanei creati per il deploy backend
+    rm -f ../support-api/Dockerfile
+    rm -rf ../support-api/nginx
+    rm -rf ../support-api/supervisord
+    log_info "File temporanei backend rimossi"
 }
 
 # Deploy frontend
@@ -106,6 +123,13 @@ deploy_frontend() {
     if [[ -n "$BACKEND_URL" ]]; then
         export VITE_API_URL="$BACKEND_URL"
     fi
+
+    # Copia Dockerfile frontend
+    cp ./docker/frontend.dockerfile ../frontend/Dockerfile
+
+    # Crea cartella nginx e copia configurazione
+    mkdir -p ../frontend/nginx
+    cp ./docker/nginx-frontend.conf ../frontend/nginx/
     
     # Build e deploy con le configurazioni semplici ma aggiungiamo health checks dopo
     gcloud run deploy $FRONTEND_SERVICE \
@@ -125,6 +149,11 @@ deploy_frontend() {
     # Mostra URL
     FRONTEND_URL=$(gcloud run services describe $FRONTEND_SERVICE --region=$REGION --format="value(status.url)")
     log_info "Frontend URL: $FRONTEND_URL"
+
+    # Cleanup dei file temporanei creati per il deploy frontend
+    rm -f ../frontend/Dockerfile
+    rm -rf ../frontend/nginx
+    log_info "File temporanei frontend rimossi"
 }
 
 # Test health checks

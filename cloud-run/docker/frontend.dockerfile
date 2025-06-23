@@ -43,10 +43,10 @@ RUN ls -la /usr/share/nginx/html && \
     test -f /usr/share/nginx/html/index.html || (echo "ERROR: index.html non trovato!" && exit 1)
 
 # Copia configurazione nginx ottimizzata per SPA
-COPY ../cloud-run/docker/nginx-frontend.conf /etc/nginx/conf.d/default.conf
+COPY nginx/nginx-frontend.conf /etc/nginx/conf.d/default.conf
 
 # Copia configurazione nginx principale
-COPY ../cloud-run/docker/nginx-main.conf /etc/nginx/nginx.conf
+COPY nginx/nginx-main.conf /etc/nginx/nginx.conf
 
 # Crea directory per logs
 RUN mkdir -p /var/log/nginx
