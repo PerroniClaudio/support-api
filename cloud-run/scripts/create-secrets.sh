@@ -106,7 +106,7 @@ create_or_update_secret() {
 # Lista tutti i secrets
 list_secrets() {
     log_info "Secrets attualmente configurati:"
-    gcloud secrets list --format="table(name,createTime)" --filter="name:app-* OR name:db-* OR name:jwt-* OR name:mail-* OR name:redis-*"
+    gcloud secrets list --format="table(name,createTime)" --filter="name~'app-|db-|jwt-|mail-|redis-|google-cloud-'"
 }
 
 # Mostra variabili d'ambiente per Cloud Run
