@@ -33,7 +33,7 @@ log_error() {
 
 # Configurazione (può essere override da .env.prod)
 PROJECT_ID=$(gcloud config get-value project)
-REGION="europe-west8"
+REGION="europe-west1" # Cambiato da europe-west8 perché non supporta i domain mapping
 BACKEND_SERVICE="spreetzitt-backend"
 FRONTEND_SERVICE="spreetzitt-frontend"
 
@@ -103,14 +103,18 @@ ask_domains() {
 
 # Verifica domini in Search Console
 verify_domains() {
+    CURRENT_ACCOUNT=$(gcloud config get-value account)
     log_warning "IMPORTANTE: Prima di continuare, verifica che i domini siano configurati in Google Search Console!"
+    echo ""
+    log_info "Account Google attualmente attivo in gcloud: ${YELLOW}$CURRENT_ACCOUNT${NC}"
+    log_warning "Assicurati di aver effettuato l'accesso a Google Search Console con QUESTO account."
     echo ""
     echo "1. Vai su: https://search.google.com/search-console"
     echo "2. Aggiungi e verifica questi domini:"
     echo "   - $BACKEND_DOMAIN"
     echo "   - $FRONTEND_DOMAIN"
     echo ""
-    read -p "Hai verificato i domini in Search Console? (y/N): " VERIFIED
+    read -p "Hai verificato i domini con l'account corretto ($CURRENT_ACCOUNT)? (y/N): " VERIFIED
     
     if [[ ! $VERIFIED =~ ^[Yy]$ ]]; then
         log_error "Verifica i domini in Search Console prima di continuare"
@@ -138,10 +142,10 @@ create_domain_mappings() {
     
     # Backend domain mapping
     log_info "Configurazione dominio backend: $BACKEND_DOMAIN"
-    if gcloud run domain-mappings describe "$BACKEND_DOMAIN" --region="$REGION" >/dev/null 2>&1; then
+    if gcloud beta run domain-mappings describe "$BACKEND_DOMAIN" --region="$REGION" >/dev/null 2>&1; then
         log_warning "Mapping per $BACKEND_DOMAIN già esistente"
     else
-        gcloud run domain-mappings create \
+        gcloud beta run domain-mappings create \
             --service="$BACKEND_SERVICE" \
             --domain="$BACKEND_DOMAIN" \
             --region="$REGION"
@@ -150,10 +154,10 @@ create_domain_mappings() {
     
     # Frontend domain mapping
     log_info "Configurazione dominio frontend: $FRONTEND_DOMAIN"
-    if gcloud run domain-mappings describe "$FRONTEND_DOMAIN" --region="$REGION" >/dev/null 2>&1; then
+    if gcloud beta run domain-mappings describe "$FRONTEND_DOMAIN" --region="$REGION" >/dev/null 2>&1; then
         log_warning "Mapping per $FRONTEND_DOMAIN già esistente"
     else
-        gcloud run domain-mappings create \
+        gcloud beta run domain-mappings create \
             --service="$FRONTEND_SERVICE" \
             --domain="$FRONTEND_DOMAIN" \
             --region="$REGION"
@@ -168,7 +172,7 @@ show_dns_records() {
     
     # Ottieni record DNS necessari
     log_info "Backend ($BACKEND_DOMAIN):"
-    gcloud run domain-mappings describe "$BACKEND_DOMAIN" --region="$REGION" \
+    gcloud beta run domain-mappings describe "$BACKEND_DOMAIN" --region="$REGION" \
         --format="table(status.resourceRecords[].name,status.resourceRecords[].type,status.resourceRecords[].rrdata)" 2>/dev/null || {
         log_warning "Record DNS non ancora disponibili per $BACKEND_DOMAIN"
         echo "   Tipo: CNAME"
@@ -178,7 +182,7 @@ show_dns_records() {
     
     echo ""
     log_info "Frontend ($FRONTEND_DOMAIN):"
-    gcloud run domain-mappings describe "$FRONTEND_DOMAIN" --region="$REGION" \
+    gcloud beta run domain-mappings describe "$FRONTEND_DOMAIN" --region="$REGION" \
         --format="table(status.resourceRecords[].name,status.resourceRecords[].type,status.resourceRecords[].rrdata)" 2>/dev/null || {
         log_warning "Record DNS non ancora disponibili per $FRONTEND_DOMAIN"
         echo "   Tipo: CNAME"
@@ -195,11 +199,11 @@ check_ssl_status() {
     log_info "Stato SSL certificates:"
     
     # Controlla backend
-    BACKEND_SSL=$(gcloud run domain-mappings describe "$BACKEND_DOMAIN" --region="$REGION" \
+    BACKEND_SSL=$(gcloud beta run domain-mappings describe "$BACKEND_DOMAIN" --region="$REGION" \
         --format="value(status.conditions[0].status)" 2>/dev/null || echo "Unknown")
     
     # Controlla frontend
-    FRONTEND_SSL=$(gcloud run domain-mappings describe "$FRONTEND_DOMAIN" --region="$REGION" \
+    FRONTEND_SSL=$(gcloud beta run domain-mappings describe "$FRONTEND_DOMAIN" --region="$REGION" \
         --format="value(status.conditions[0].status)" 2>/dev/null || echo "Unknown")
     
     echo "   Backend ($BACKEND_DOMAIN): $BACKEND_SSL"
@@ -236,7 +240,7 @@ test_domains() {
 # Lista domini configurati
 list_domains() {
     log_info "Domini attualmente configurati:"
-    gcloud run domain-mappings list --region="$REGION" --format="table(DOMAIN,SERVICE,URL)"
+    gcloud beta run domain-mappings list --region="$REGION" --format="table(DOMAIN,SERVICE,URL)"
 }
 
 # Rimuovi mapping domini
@@ -248,12 +252,12 @@ remove_domain_mappings() {
         log_info "Rimuovo mapping domini..."
         
         if [[ -n "$BACKEND_DOMAIN" ]]; then
-            gcloud run domain-mappings delete "$BACKEND_DOMAIN" --region="$REGION" --quiet
+            gcloud beta run domain-mappings delete "$BACKEND_DOMAIN" --region="$REGION" --quiet
             log_success "Mapping $BACKEND_DOMAIN rimosso"
         fi
         
         if [[ -n "$FRONTEND_DOMAIN" ]]; then
-            gcloud run domain-mappings delete "$FRONTEND_DOMAIN" --region="$REGION" --quiet
+            gcloud beta run domain-mappings delete "$FRONTEND_DOMAIN" --region="$REGION" --quiet
             log_success "Mapping $FRONTEND_DOMAIN rimosso"
         fi
     else
