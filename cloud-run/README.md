@@ -77,4 +77,4 @@ Gli script supportano automaticamente:
 
 ## 📚 Guide Dettagliate
 
-Per una guida completa, vedi: `../swarm/CLOUD_RUN_GUIDE.md`
+Per una guida completa, vedi: `CLOUD_RUN_GUIDE.md`
