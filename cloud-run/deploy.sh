@@ -107,7 +107,7 @@ deploy_frontend() {
         export VITE_API_URL="$BACKEND_URL"
     fi
     
-    # Build e deploy
+    # Build e deploy con le configurazioni semplici ma aggiungiamo health checks dopo
     gcloud run deploy $FRONTEND_SERVICE \
         --source ../frontend \
         --region $REGION \

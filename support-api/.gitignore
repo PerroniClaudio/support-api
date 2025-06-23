@@ -20,3 +20,4 @@ yarn-error.log
 /keys
 /storage/fonts/*
 start.sh
+/cloud-run/config/.env.prod
