@@ -558,7 +558,7 @@ class GeneratePdfReport implements ShouldQueue {
 
                 // Gestore viene inserito nei ticket on-site (sarebbe chi è andato dal cliente)
                 $handler = $ticket['data']['admin_user_id'] != null ? User::find($ticket['data']['admin_user_id']) : null;
-                $handlerFullName = "";
+                $handlerFullName = ""; 
                 if($handler){
                     $handlerFullName = $handler->surname ? $handler->surname . ' ' . strtoupper(substr($handler->name, 0, 1)) . '.' : $handler->name;
                 }
