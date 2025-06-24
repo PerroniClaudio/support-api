@@ -3,12 +3,12 @@
 return [
     'tickets' => [
         'allowed_tenants' => [
-            'spreetziit'
+            'spreetzit',
         ],
     ],
     'hardware' => [
         'allowed_tenants' => [
-            'spreetziit'
+            'spreetzit'
         ],
     ],
 ];
