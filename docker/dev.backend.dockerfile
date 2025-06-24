@@ -45,6 +45,9 @@ COPY ./support-api/ .
 # Nota: questo passo potrebbe fallire se non hai un composer.json valido nella directory del progetto
 RUN composer install
 
+# Forza php-fpm ad ascoltare su 0.0.0.0:9000
+RUN sed -i 's|^listen = .*|listen = 0.0.0.0:9000|' /usr/local/etc/php-fpm.d/www.conf
+
 # Se il comando precedente fallisce, puoi decommentare la seguente riga per ignorare l'errore
 # RUN echo "Composer install failed, but continuing anyway"
 
