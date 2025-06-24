@@ -116,7 +116,6 @@ class TicketMessageController extends Controller
 
             if(
                 !$ticket->admin_user_id 
-                && !Group::where('id', $ticket->group_id)->first()->users()->where('user_id', $ticket->admin_user_id)->first()
             ){
                 $ticket->update(['admin_user_id' => $user->id]);
 

@@ -35,16 +35,6 @@ Route::get('/testmail', function () {
 });
 
 Route::get('/test', function () {
-    $hardwareId = request()->query('hw');
-    $hardware = App\Models\Hardware::find($hardwareId);
-    $brand = $hardware->company->brands()->first();
-    $google_url = $brand->withGUrl()->logo_url;
-
-    echo 'hardwareId: ' . $hardwareId . '<br>';
-    echo 'marca: ' . $brand->make . '<br>';
-    echo 'modello: ' . $brand->model . '<br>';
-    echo $google_url . '<br>';
-    echo '<img src="' . $google_url . '" alt="Brand Logo"><br>';
     return "test";
 });
 

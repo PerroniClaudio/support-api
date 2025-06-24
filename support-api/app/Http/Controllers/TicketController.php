@@ -192,6 +192,55 @@ class TicketController extends Controller {
                 }
             }
 
+            // Richiesta di riapertura ticket. Tutti possono riaprire un ticket, entro 7 giorni dalla chiusura.
+            if($request->reopen_parent_ticket_id) {
+                $reopenedTicket = Ticket::find($request->reopen_parent_ticket_id);
+                if ($reopenedTicket) {
+                    // Se il ticket non è chiuso, non può essere riaperto.
+                    if ($reopenedTicket->status != 5) {
+                        return response([
+                            'message' => 'Il ticket non è chiuso. Impossibile riaprirlo.',
+                        ], 400);
+                    }
+                    // Se il ticket con l'id da inserire in reopen_parent_id è già stato riaperto, non può essere riaperto di nuovo (si dovrebbe riaprire quello successivo).
+                    $existingChildTicket = Ticket::where('reopen_parent_id', $reopenedTicket->id)->first();
+                    if($existingChildTicket){
+                        return response([
+                            'message' => 'Il ticket è già stato riaperto. Impossibile riaprirlo nuovamente. Provare col ticket ' . $existingChildTicket->id,
+                        ], 400);
+                    }
+
+                    // Se il ticket è stato chiuso e sono passati più di 7 giorni dalla chiusura, non può essere riaperto.
+                    $can_reopen = false;
+                    $closingUpdate = $reopenedTicket->statusUpdates()
+                        ->where('type', 'closing')
+                        ->orderBy('created_at', 'desc')
+                        ->first();
+                    if($closingUpdate){
+                        $can_reopen = (time() - strtotime($closingUpdate->created_at)) < (7 * 24 * 60 * 60);
+                    }
+                    if (!$can_reopen) {
+                        return response([
+                            'message' => 'Il ticket è stato chiuso da più di 7 giorni. Impossibile riaprirlo.',
+                        ], 400);
+                    }
+                    
+                    $ticket->reopen_parent_id = $reopenedTicket->id;
+                    $ticket->save();
+
+                    TicketStatusUpdate::create([
+                        'ticket_id' => $ticket->id,
+                        'user_id' => $user->id,
+                        'content' => 'Questo ticket è stato aperto come riapertura del ticket: ' . $reopenedTicket->id,
+                        'type' => 'note',
+                    ]);
+
+                    // Invalida la cache per chi ha creato il ticket e per i referenti.
+                    // Anche se non ci sono modifiche al modello la invalidiamo perchè nella risposta potremmo inserire dati sulla riapertura.
+                    $reopenedTicket->invalidateCache();
+                }
+            }
+
             if ($request->file('file') != null) {
                 $file = $request->file('file');
                 $file_name = time() . '_' . $file->getClientOriginalName();
@@ -396,9 +445,33 @@ class TicketController extends Controller {
         }
 
         // Messo qui perchè altrimenti va in conflitto con gli update 
-        // (il campo child_ticket_id non esiste. viene usato solo per la navigazione nel frontend)
+        // (il campo child_ticket_id non esiste nel modello. Viene usato solo per la navigazione nel frontend)
         $childTicket = Ticket::where('parent_ticket_id', $ticket->id)->first();
         $ticket->child_ticket_id = $childTicket->id ?? null;
+
+        // il campo reopen_child_ticket_id non esiste nel modello. viene usato solo per la navigazione nel frontend
+        $reopenChildTicket = Ticket::where('reopen_parent_id', $ticket->id)->first();
+        $ticket->reopen_child_ticket_id = $reopenChildTicket->id ?? null;
+
+        $ticket->closed_at = null;
+        // Il campo can reopen non esiste nel modello. Viene usato per indicare se il ticket può essere riaperto.
+        $can_reopen = false;
+        $closingUpdate = $ticket->statusUpdates()
+            ->where('type', 'closing')
+            ->orderBy('created_at', 'desc')
+            ->first();
+        if($closingUpdate){
+            // Se il ticket è stato chiuso, non ha un ticket figlio (quindi non è stata usata l'altra funzione che chiude un ticket e ne apre un'altro) 
+            // e sono passati meno di 7 giorni dalla chiusura, si può riaprire.
+            $can_reopen = ($ticket->status == 5 
+                && ((time() - strtotime($closingUpdate->created_at)) < (7 * 24 * 60 * 60))
+                && !$childTicket 
+            );
+
+            // Aggiunge la data di chiusura per facilitare i controlli nel frontend.
+            $ticket->closed_at = $closingUpdate->created_at ?? null;
+        }
+        $ticket->can_reopen = $can_reopen;
 
         return response([
             'ticket' => $ticket,
@@ -491,6 +564,13 @@ class TicketController extends Controller {
                 return response([
                     'message' => 'It\'s not possible to close the ticket from here',
                 ], 400);
+        }
+
+        // Se il ticket è chiuso, lo stato non può essere modificato.
+        if ($ticket->status == $index_status_chiuso) {
+            return response([
+                'message' => 'The ticket is already closed. It cannot be modified.',
+            ], 400);
         }
 
         $ticket->fill([
@@ -795,7 +875,8 @@ class TicketController extends Controller {
             'masterTicketId' => 'int|nullable',
         ]);
 
-        if (!$request->user()->is_admin) {
+        $authUser = $request->user();
+        if (!$authUser->is_admin) {
             return response([
                 'message' => 'Only admins can close tickets.',
             ], 401);
@@ -834,63 +915,83 @@ class TicketController extends Controller {
             }
         }
 
-        $requestUser = $request->user();
+        DB::beginTransaction();
 
-        if (!$ticket->handler) {
+        try {
+            if (!$ticket->handler) {
+                $ticketGroup = $ticket->group;
+                $handlerAdmin = $authUser;
+                if($ticketGroup && !$ticketGroup->users()->where('user_id', $authUser->id)->first()) {
+                    // Non capita mai, ma se l'utente non è nel gruppo, si prende il primo admin del gruppo.
+                    $groupUser = $ticketGroup->users()->where('is_admin', 1)->first();
+                    if ($groupUser) {
+                        $handlerAdmin = $groupUser;
+                    }
+                }
+
+                $ticket->update([
+                    'admin_user_id' => $handlerAdmin->id,
+                ]);
+
+                $update = TicketStatusUpdate::create([
+                    'ticket_id' => $ticket->id,
+                    'user_id' => $authUser->id,
+                    'content' => "Modifica automatica: Ticket assegnato all'utente " . $handlerAdmin->name . " " . ($handlerAdmin->surname ?? ''),
+                    'type' => 'assign',
+                ]);
+            }
+
             $ticket->update([
-                'admin_user_id' => $requestUser->id,
+                'status' => 5, // Si può impostare l'array di stati e prendere l'indice di "Chiuso" da lì
+                'actual_processing_time' => $request->actualProcessingTime,
+                'work_mode' => $request->workMode,
+                'is_rejected' => $request->isRejected,
+                'master_id' => $request->masterTicketId,
             ]);
-
-            $adminUser = User::where('id', $requestUser->id)->first();
 
             $update = TicketStatusUpdate::create([
                 'ticket_id' => $ticket->id,
-                'user_id' => $requestUser->id,
-                'content' => "Modifica automatica: Ticket assegnato all'utente " . $requestUser->name . " " . ($requestUser->surname ?? ''),
-                'type' => 'assign',
+                'user_id' => $authUser->id,
+                'content' => $fields['message'],
+                'type' => 'closing',
+                'show_to_user' => $request->sendMail,
             ]);
+
+            dispatch(new SendUpdateEmail($update));
+
+            // Controllare se si deve inviare la mail (l'invio al data_owner e al cliente sono separati per dare maggiore scelta all'admin)
+            if ($request->sendMail == true) {
+                // Invio mail al cliente
+                // sendMail($dafeultMail, $fields['message']);
+                $brand_url = $ticket->brandUrl();
+                dispatch(new SendCloseTicketEmail($ticket, $fields['message'], $brand_url));
+            }
+
+            // Controllare se si deve inviare la mail al data_owner (l'invio al data_owner e al cliente sono separati per dare maggiore scelta all'admin)
+            if ($request->sendToDataOwner == true && (isset($ticket->company->data_owner_email) && filter_var($ticket->company->data_owner_email, FILTER_VALIDATE_EMAIL))) {
+                // Invio mail al data_owner del cliente
+                // sendMail($dafeultMail, $fields['message']);
+                $brand_url = $ticket->brandUrl();
+                dispatch(new SendCloseTicketEmail($ticket, $fields['message'], $brand_url, true));
+            }
+
+            // Invalida la cache per chi ha creato il ticket e per i referenti.
+            $ticket->invalidateCache();
+
+            DB::commit();
+            
+            return response([
+                'ticket' => $ticket,
+            ], 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Errore durante la chiusura del ticket. Request: ' . json_encode($request->all()) . ' - Errore: ' . $e->getMessage());
+
+            return response([
+                'message' => 'Errore durante la chiusura del ticket: ' . $e->getMessage(),
+            ], 500);
         }
 
-        $ticket->update([
-            'status' => 5, // Si può impostare l'array di stati e prendere l'indice di "Chiuso" da lì
-            'actual_processing_time' => $request->actualProcessingTime,
-            'work_mode' => $request->workMode,
-            'is_rejected' => $request->isRejected,
-            'master_id' => $request->masterTicketId,
-        ]);
-
-        $update = TicketStatusUpdate::create([
-            'ticket_id' => $ticket->id,
-            'user_id' => $requestUser->id,
-            'content' => $fields['message'],
-            'type' => 'closing',
-            'show_to_user' => $request->sendMail,
-        ]);
-
-        dispatch(new SendUpdateEmail($update));
-
-        // Controllare se si deve inviare la mail (l'invio al data_owner e al cliente sono separati per dare maggiore scelta all'admin)
-        if ($request->sendMail == true) {
-            // Invio mail al cliente
-            // sendMail($dafeultMail, $fields['message']);
-            $brand_url = $ticket->brandUrl();
-            dispatch(new SendCloseTicketEmail($ticket, $fields['message'], $brand_url));
-        }
-
-        // Controllare se si deve inviare la mail al data_owner (l'invio al data_owner e al cliente sono separati per dare maggiore scelta all'admin)
-        if ($request->sendToDataOwner == true && (isset($ticket->company->data_owner_email) && filter_var($ticket->company->data_owner_email, FILTER_VALIDATE_EMAIL))) {
-            // Invio mail al data_owner del cliente
-            // sendMail($dafeultMail, $fields['message']);
-            $brand_url = $ticket->brandUrl();
-            dispatch(new SendCloseTicketEmail($ticket, $fields['message'], $brand_url, true));
-        }
-
-        // Invalida la cache per chi ha creato il ticket e per i referenti.
-        $ticket->invalidateCache();
-
-        return response([
-            'ticket' => $ticket,
-        ], 200);
     }
 
 

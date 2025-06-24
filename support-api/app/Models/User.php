@@ -81,8 +81,8 @@ class User extends Authenticatable {
     public function refererTickets() {
         $filteredTickets = $this->company
             ? $this->company->tickets->filter(function ($ticket) {
-                    return $ticket->referer() && ($ticket->referer()->id == $this->id);
-                })
+                return $ticket->referer() && ($ticket->referer()->id == $this->id);
+            })
             :  collect();
         $ids = $filteredTickets->pluck('id')->all();
         $tickets = Ticket::whereIn('id', $ids)->with(['user' => function ($query) {
@@ -166,5 +166,9 @@ class User extends Authenticatable {
 
         // return $otp;
         return true;
+    }
+
+    public function dashboard() {
+        return $this->hasOne(Dashboard::class);
     }
 }

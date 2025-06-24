@@ -38,7 +38,8 @@ class Ticket extends Model {
         'is_rejected',
         'parent_ticket_id',
         'is_billable',
-        'master_id'
+        'master_id',
+        'reopen_parent_id'
     ];
 
     public function toSearchableArray() {
@@ -56,6 +57,11 @@ class Ticket extends Model {
 
     public function user() {
         return $this->belongsTo(User::class);
+    }
+
+    /* get the group */
+    public function group() {
+        return $this->belongsTo(Group::class);
     }
 
     /* get the handler */
@@ -269,6 +275,14 @@ class Ticket extends Model {
 
     public function slaves() {
         return $this->hasMany(Ticket::class, 'master_id');
+    }
+
+    public function reopenedParent() {
+        return $this->belongsTo(Ticket::class, 'reopen_parent_id');
+    }
+    
+    public function reopenedChild() {
+        return $this->hasOne(Ticket::class, 'reopen_parent_id');
     }
 
 }
