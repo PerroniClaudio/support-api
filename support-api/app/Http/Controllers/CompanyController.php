@@ -8,6 +8,7 @@ use App\Models\CustomUserGroup;
 use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class CompanyController extends Controller {
@@ -36,12 +37,16 @@ class CompanyController extends Controller {
     }
 
     public function getMasterTickets(Company $company) {
-        $authUser = auth()->user();
-        if (!$authUser->is_admin && !($authUser->is_company_admin && $authUser->companies()->where('id', $company->id)->exists())) {
+        $authUser = User::find(Auth::user()->id)->get();
+
+        $user_companies = $authUser->companies()->pluck('id')->toArray();
+        // Controlla se l'utente è admin o se è un company admin della compagnia specificata
+        if (!$authUser->is_admin && !($authUser->is_company_admin && in_array($company->id, $user_companies))) {
             return response([
                 'message' => 'Unauthorized',
             ], 401);
         }
+
         $tickets = $company->tickets()
             ->whereHas('ticketType', function ($query) {
                 $query->where('is_master', true);
@@ -113,6 +118,9 @@ class CompanyController extends Controller {
             ], 404);
         }
 
+        /** 
+         * @disregard Intelephense non rileva il metodo temporaryUrl
+         */
         $company->logo_url = $company->logo_url != null ? Storage::disk('gcs')->temporaryUrl($company->logo_url, now()->addMinutes(70)) : '';
 
         return response([

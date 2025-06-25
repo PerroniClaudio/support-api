@@ -192,6 +192,9 @@ class TicketReportPdfExportController extends Controller {
         $fileContent = Storage::disk('gcs')->get($filePath);
         $fileName = $ticketReportPdfExport->file_name;
 
+        /** 
+         * @disregard Intelephense non rileva il metodo mimeType
+         */
         return response($fileContent, 200)
             ->header('Content-Type', Storage::disk('gcs')->mimeType($filePath))
             ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"')
@@ -206,10 +209,9 @@ class TicketReportPdfExportController extends Controller {
 
     private function generatedSignedUrlForFile($path) {
 
-        /**
-         * @disregard P1009 Undefined type
+        /** 
+         * @disregard Intelephense non rileva il metodo mimeType
          */
-
         $url = Storage::disk('gcs')->temporaryUrl(
             $path,
             now()->addMinutes(65)
