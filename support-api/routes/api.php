@@ -26,8 +26,15 @@ use Illuminate\Support\Facades\Log;
 // User Routes
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user', function (Request $request) {
-        return $request->user();
+
+        $user = $request->user();
+        $user->company_id = $user->selectedCompany()->id;
+
+
+        return $user;
     });
+
+
 
     Route::post('/onboarding', [App\Http\Controllers\UserController::class, "onboarding"]);
     Route::patch('/user/profile', [App\Http\Controllers\UserController::class, "updateProfile"]);
@@ -89,6 +96,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 // Company Routes
 Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/companies/allowed', [App\Http\Controllers\UserController::class, "companies"]);
+    Route::post('/companies/set-active', [App\Http\Controllers\UserController::class, "setActiveCompany"]);
+
     Route::get("/companies", [CompanyController::class, "index"]);
     Route::get("/companies/{id}", [CompanyController::class, "show"]);
     Route::post("/companies", [CompanyController::class, "store"]);
@@ -108,6 +118,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post("/companies/{company}/update-reading-delay-warning", [CompanyController::class, "updateDelayWarning"]);
 
     // Gruppi custom
+
 
     Route::get("/companies/{company}/custom-groups", [CompanyController::class, "getCustomUserGroups"]);
     Route::post("/companies/custom-groups", [CompanyController::class, "storeCustomUserGroup"]);

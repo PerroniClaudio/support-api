@@ -287,7 +287,8 @@ class UserController extends Controller {
                 $ticketTypes = $ticketTypes->concat($group->ticketTypes()->with('category')->get());
             }
         } else {
-            $ticketTypes = $user->company->ticketTypes()->where("is_custom_group_exclusive", false)->with('category')->get();
+            $selectedCompany = $user->selectedCompany();
+            $ticketTypes = $selectedCompany ? $selectedCompany->ticketTypes()->where("is_custom_group_exclusive", false)->with('category')->get() : collect();
 
             $customGroups = $user->customUserGroups()->get();
             foreach ($customGroups as $customGroup) {
@@ -400,7 +401,8 @@ class UserController extends Controller {
         $suppliers = Supplier::all()->toArray();
 
         // Prendi tutti i brand dei tipi di ticket associati all'azienda dell'utente
-        $brands = $request->user()->company->brands()->toArray();
+        $selectedCompany = $request->user()->selectedCompany();
+        $brands = $selectedCompany ? $selectedCompany->brands()->toArray() : [];
 
         // Filtra i brand omonimo alle aziende interne ed utilizza quello dell'azienda interna con l'id piu basso
         $sameNameSuppliers = array_filter($suppliers, function ($supplier) use ($brands) {
@@ -530,5 +532,38 @@ class UserController extends Controller {
                 'tickets' => $tickets,
             ], 200);
         }
+    }
+
+    public function companies(Request $request) {
+        $user = $request->user();
+
+        return response([
+            'companies' => $user->companies()->get(),
+        ], 200);
+    }
+
+
+    public function setActiveCompany(Request $request) {
+        $request->validate([
+            'companyId' => 'required|integer|exists:companies,id',
+        ]);
+
+        $user = $request->user();
+
+        $user_companies = $user->companies()->get()->pluck('id')->toArray();
+        // Controlla se l'utente appartiene alla compagnia
+        if (!in_array($request->companyId, $user_companies)) {
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
+        // Salva il company_id nella sessione
+        session(['selected_company_id' => $request->companyId]);
+
+        return response([
+            'success' => true,
+            'selected_company_id' => $request->companyId,
+        ], 200);
     }
 }

@@ -43,11 +43,11 @@ class TicketController extends Controller {
         }
         $tickets = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($user, $withClosed) {
             if ($user["is_company_admin"] == 1) {
-
+                $selectedCompany = $user->selectedCompany();
                 if ($withClosed) {
-                    $ticketsTemp = $user->company->tickets;
+                    $ticketsTemp = $selectedCompany ? $selectedCompany->tickets : collect();
                 } else {
-                    $ticketsTemp = Ticket::where("status", "!=", 5)->where('company_id', $user->company->id)->with('user')->get();
+                    $ticketsTemp = $selectedCompany ? Ticket::where("status", "!=", 5)->where('company_id', $selectedCompany->id)->with('user')->get() : collect();
                 }
 
                 foreach ($ticketsTemp as $ticket) {
@@ -121,12 +121,12 @@ class TicketController extends Controller {
             $group = $ticketType->groups->first();
             $groupId = $group ? $group->id : null;
 
-            if(!$ticketType){
+            if (!$ticketType) {
                 return response([
                     'message' => 'Ticket type not found',
                 ], 404);
             }
-            if($ticketType->is_master && ($user->is_admin != 1)){
+            if ($ticketType->is_master && ($user->is_admin != 1)) {
                 return response([
                     'message' => 'Only support admins can create master tickets.',
                 ], 401);
@@ -155,12 +155,12 @@ class TicketController extends Controller {
                 $parentTicket = Ticket::find($request->parent_ticket_id);
                 if ($parentTicket) {
                     // Se il padre ha già un figlio non può averne un altro.
-                    if(Ticket::where('parent_ticket_id', $parentTicket->id)->exists()){
+                    if (Ticket::where('parent_ticket_id', $parentTicket->id)->exists()) {
                         return response([
                             'message' => 'Il ticket padre ha già un figlio. Impossibile associarne altri.',
                         ], 400);
                     }
-                    
+
                     $ticket->parent_ticket_id = $parentTicket->id;
                     $ticket->save();
 
@@ -193,7 +193,7 @@ class TicketController extends Controller {
             }
 
             // Richiesta di riapertura ticket. Tutti possono riaprire un ticket, entro 7 giorni dalla chiusura.
-            if($request->reopen_parent_ticket_id) {
+            if ($request->reopen_parent_ticket_id) {
                 $reopenedTicket = Ticket::find($request->reopen_parent_ticket_id);
                 if ($reopenedTicket) {
                     // Se il ticket non è chiuso, non può essere riaperto.
@@ -204,7 +204,7 @@ class TicketController extends Controller {
                     }
                     // Se il ticket con l'id da inserire in reopen_parent_id è già stato riaperto, non può essere riaperto di nuovo (si dovrebbe riaprire quello successivo).
                     $existingChildTicket = Ticket::where('reopen_parent_id', $reopenedTicket->id)->first();
-                    if($existingChildTicket){
+                    if ($existingChildTicket) {
                         return response([
                             'message' => 'Il ticket è già stato riaperto. Impossibile riaprirlo nuovamente. Provare col ticket ' . $existingChildTicket->id,
                         ], 400);
@@ -216,7 +216,7 @@ class TicketController extends Controller {
                         ->where('type', 'closing')
                         ->orderBy('created_at', 'desc')
                         ->first();
-                    if($closingUpdate){
+                    if ($closingUpdate) {
                         $can_reopen = (time() - strtotime($closingUpdate->created_at)) < (7 * 24 * 60 * 60);
                     }
                     if (!$can_reopen) {
@@ -224,7 +224,7 @@ class TicketController extends Controller {
                             'message' => 'Il ticket è stato chiuso da più di 7 giorni. Impossibile riaprirlo.',
                         ], 400);
                     }
-                    
+
                     $ticket->reopen_parent_id = $reopenedTicket->id;
                     $ticket->save();
 
@@ -460,12 +460,12 @@ class TicketController extends Controller {
             ->where('type', 'closing')
             ->orderBy('created_at', 'desc')
             ->first();
-        if($closingUpdate){
+        if ($closingUpdate) {
             // Se il ticket è stato chiuso, non ha un ticket figlio (quindi non è stata usata l'altra funzione che chiude un ticket e ne apre un'altro) 
             // e sono passati meno di 7 giorni dalla chiusura, si può riaprire.
-            $can_reopen = ($ticket->status == 5 
+            $can_reopen = ($ticket->status == 5
                 && ((time() - strtotime($closingUpdate->created_at)) < (7 * 24 * 60 * 60))
-                && !$childTicket 
+                && !$childTicket
             );
 
             // Aggiunge la data di chiusura per facilitare i controlli nel frontend.
@@ -561,9 +561,9 @@ class TicketController extends Controller {
         // si può chiudere solo usando l'apposita funzione di chiusura, che fa i controlli e richiede le informazioni necessarie.
         $index_status_chiuso = array_search("Chiuso", $ticketStages); // dovrebbe essere 5
         if ($request->status == $index_status_chiuso) {
-                return response([
-                    'message' => 'It\'s not possible to close the ticket from here',
-                ], 400);
+            return response([
+                'message' => 'It\'s not possible to close the ticket from here',
+            ], 400);
         }
 
         // Se il ticket è chiuso, lo stato non può essere modificato.
@@ -670,7 +670,7 @@ class TicketController extends Controller {
             'ticket' => $ticket,
         ], 200);
     }
-    
+
     public function updateTicketIsBillable(Ticket $ticket, Request $request) {
         $fields = $request->validate([
             'is_billable' => 'required|boolean',
@@ -695,7 +695,7 @@ class TicketController extends Controller {
                 'content' => "Ticket impostato come: " . ($fields['is_billable'] ? 'Fatturabile' : 'Non fatturabile'),
                 'type' => 'billing',
             ]);
-    
+
             dispatch(new SendUpdateEmail($update));
         }
 
@@ -786,9 +786,9 @@ class TicketController extends Controller {
         }
 
         // Se il valore è diverso da quello già esistente, lo aggiorna
-        if($ticket->actual_processing_time != $fields['actual_processing_time']){
+        if ($ticket->actual_processing_time != $fields['actual_processing_time']) {
             // Controlli vari sul tempo e poi aggiornamento dati e registrazione modifica.
-            
+
             // Il tempo deve essere maggiore di 0, un multiplo di 10 minuti e almeno uguale al tempo atteso, se impostato.
             if ($fields['actual_processing_time'] <= 0) {
                 return response([
@@ -811,7 +811,7 @@ class TicketController extends Controller {
                 'actual_processing_time' => $fields['actual_processing_time'],
             ]);
 
-            $editMessage = 'Tempo di lavorazione effettivo modificato a ' . 
+            $editMessage = 'Tempo di lavorazione effettivo modificato a ' .
                 str_pad(intval($fields['actual_processing_time'] / 60), 2, '0', STR_PAD_LEFT) . ':' . str_pad($fields['actual_processing_time'] % 60, 2, '0', STR_PAD_LEFT);
 
             $update = TicketStatusUpdate::create([
@@ -828,7 +828,7 @@ class TicketController extends Controller {
             'ticket' => $ticket,
         ], 200);
     }
-    
+
     public function updateTicketWorkMode(Ticket $ticket, Request $request) {
         $workModes = config('app.work_modes');
 
@@ -843,7 +843,7 @@ class TicketController extends Controller {
         }
 
         // Se il valore è diverso da quello già esistente, lo aggiorna
-        if($ticket->work_mode != $fields['work_mode']){
+        if ($ticket->work_mode != $fields['work_mode']) {
             // Controlli vari sul tempo e poi aggiornamento dati e registrazione modifica.
             $ticket->update([
                 'work_mode' => $fields['work_mode'],
@@ -883,13 +883,13 @@ class TicketController extends Controller {
         }
 
         $ticketType = $ticket->ticketType;
-        if($fields["actualProcessingTime"] <= 0 || ($fields["actualProcessingTime"] < ($ticketType->expected_processing_time ?? 0)) ){
+        if ($fields["actualProcessingTime"] <= 0 || ($fields["actualProcessingTime"] < ($ticketType->expected_processing_time ?? 0))) {
             return response([
                 'message' => 'Actual processing time must be set and greater than or equal to the minimum processing time for this ticket type.',
             ], 400);
         }
 
-        if($fields["actualProcessingTime"] % 10 != 0){
+        if ($fields["actualProcessingTime"] % 10 != 0) {
             return response([
                 'message' => 'Actual processing time must be a multiple of 10 minutes.',
             ], 400);
@@ -897,8 +897,8 @@ class TicketController extends Controller {
 
         // Se viene indicato un master_id si controlla che questo ticket non sia master 
         // e che il ticket con l'id indicato esista e sia master. quindi non può essere nemmeno l'id del ticket stesso.
-        if($request->masterTicketId){
-            if($ticket->ticketType->is_master){
+        if ($request->masterTicketId) {
+            if ($ticket->ticketType->is_master) {
                 return response([
                     'message' => 'This is a master ticket. Master ticket cannot be slave.',
                 ], 400);
@@ -921,7 +921,7 @@ class TicketController extends Controller {
             if (!$ticket->handler) {
                 $ticketGroup = $ticket->group;
                 $handlerAdmin = $authUser;
-                if($ticketGroup && !$ticketGroup->users()->where('user_id', $authUser->id)->first()) {
+                if ($ticketGroup && !$ticketGroup->users()->where('user_id', $authUser->id)->first()) {
                     // Non capita mai, ma se l'utente non è nel gruppo, si prende il primo admin del gruppo.
                     $groupUser = $ticketGroup->users()->where('is_admin', 1)->first();
                     if ($groupUser) {
@@ -979,7 +979,7 @@ class TicketController extends Controller {
             $ticket->invalidateCache();
 
             DB::commit();
-            
+
             return response([
                 'ticket' => $ticket,
             ], 200);
@@ -991,7 +991,6 @@ class TicketController extends Controller {
                 'message' => 'Errore durante la chiusura del ticket: ' . $e->getMessage(),
             ], 500);
         }
-
     }
 
 
@@ -1347,7 +1346,7 @@ class TicketController extends Controller {
             'tickets' => $tickets,
         ], 200);
     }
-    
+
     /**
      * Show only the tickets belonging to the authenticated admin groups.
      */
@@ -1368,14 +1367,14 @@ class TicketController extends Controller {
 
         if ($withClosed) {
             // $tickets = Ticket::whereIn('group_id', $groups->pluck('id'))->where('is_billable', null)->get();
-            if($withSet){
+            if ($withSet) {
                 $tickets = Ticket::whereIn('group_id', $groups->pluck('id'))->get();
             } else {
                 $tickets = Ticket::whereIn('group_id', $groups->pluck('id'))->where('is_billable', null)->get();
             }
         } else {
             // $tickets = Ticket::where("status", "!=", 5)->whereIn('group_id', $groups->pluck('id'))->where('is_billable', null)->get();
-            if($withSet){
+            if ($withSet) {
                 $tickets = Ticket::where("status", "!=", 5)->whereIn('group_id', $groups->pluck('id'))->get();
             } else {
                 $tickets = Ticket::where("status", "!=", 5)->whereIn('group_id', $groups->pluck('id'))->where('is_billable', null)->get();
@@ -1424,23 +1423,32 @@ class TicketController extends Controller {
 
         foreach ($slaveTickets as $slaveTicket) {
             $slaveTicket->setVisible([
-                "id", "company_id", "status", "description", "group_id", "created_at", "type_id", "source", "parent_ticket_id", "master_id"
+                "id",
+                "company_id",
+                "status",
+                "description",
+                "group_id",
+                "created_at",
+                "type_id",
+                "source",
+                "parent_ticket_id",
+                "master_id"
             ]);
-            $slaveTicket->user_full_name = 
+            $slaveTicket->user_full_name =
                 $slaveTicket->user->is_admin == 1
-                    ? ("Supporto" . ($user["is_admin"] != 1 ? " - " . $slaveTicket->user->id : ""))
-                    : ($slaveTicket->user->surname 
-                        ? $slaveTicket->user->surname . " " . strtoupper(substr($slaveTicket->user->name, 0, 1)) . "."
-                        : $slaveTicket->user->name
-                    );
+                ? ("Supporto" . ($user["is_admin"] != 1 ? " - " . $slaveTicket->user->id : ""))
+                : ($slaveTicket->user->surname
+                    ? $slaveTicket->user->surname . " " . strtoupper(substr($slaveTicket->user->name, 0, 1)) . "."
+                    : $slaveTicket->user->name
+                );
             $slaveTicket->makeVisible(['user_full_name']);
 
             $referer = $slaveTicket->referer();
-            if ($referer){
-                $slaveTicket->referer_full_name = 
-                    $referer->surname 
-                        ? $referer->surname . " " . strtoupper(substr($referer->name, 0, 1)) . "."
-                        : $referer->name;
+            if ($referer) {
+                $slaveTicket->referer_full_name =
+                    $referer->surname
+                    ? $referer->surname . " " . strtoupper(substr($referer->name, 0, 1)) . "."
+                    : $referer->name;
                 $slaveTicket->makeVisible(['referer_full_name']);
             }
         }
@@ -1463,7 +1471,11 @@ class TicketController extends Controller {
         $webform_data = json_decode($ticket->messages()->first()->message);
 
         if (isset($webform_data->office)) {
-            $office = $ticket->company->offices()->where('id', $webform_data->office)->first();
+            $selectedCompany = $ticket->company;
+            if (method_exists($user, 'selectedCompany')) {
+                $selectedCompany = $user->selectedCompany();
+            }
+            $office = $selectedCompany ? $selectedCompany->offices()->where('id', $webform_data->office)->first() : null;
             $webform_data->office = $office ? $office->name : null;
         } else {
             $webform_data->office = null;
@@ -1479,11 +1491,11 @@ class TicketController extends Controller {
             $webform_data->referer_it = $referer_it ? $referer_it->name . " " . $referer_it->surname : null;
         }
 
-        $hardwareFields = $ticket->ticketType->typeFormField()->where('field_type', 'hardware')->pluck('field_label')->map(function($field) {
+        $hardwareFields = $ticket->ticketType->typeFormField()->where('field_type', 'hardware')->pluck('field_label')->map(function ($field) {
             return strtolower($field);
         })->toArray();
 
-        if(isset($webform_data)){
+        if (isset($webform_data)) {
             foreach ($webform_data as $key => $value) {
                 if (in_array(strtolower($key), $hardwareFields)) {
                     // value è un array di id
@@ -1491,8 +1503,8 @@ class TicketController extends Controller {
                         // Non è detto che l'hardware esista ancora. Se esiste si aggiungono gli altri valori
                         $hardware = $ticket->hardware()->where('hardware_id', $hardware_id)->first();
                         if ($hardware) {
-                            $webform_data->$key[$index] = $hardware->id . " (" . $hardware->make . " " 
-                                . $hardware->model . " " . $hardware->serial_number 
+                            $webform_data->$key[$index] = $hardware->id . " (" . $hardware->make . " "
+                                . $hardware->model . " " . $hardware->serial_number
                                 . ($hardware->company_asset_number ? " " . $hardware->company_asset_number : "")
                                 . ($hardware->support_label ? " " . $hardware->support_label : "")
                                 . ")";
@@ -1660,11 +1672,11 @@ class TicketController extends Controller {
                     $webform_data->referer_it = $referer_it ? $referer_it->name . " " . $referer_it->surname : null;
                 }
 
-                $hardwareFields = $ticket->ticketType->typeFormField()->where('field_type', 'hardware')->pluck('field_label')->map(function($field) {
+                $hardwareFields = $ticket->ticketType->typeFormField()->where('field_type', 'hardware')->pluck('field_label')->map(function ($field) {
                     return strtolower($field);
                 })->toArray();
-        
-                if(isset($webform_data)){
+
+                if (isset($webform_data)) {
                     foreach ($webform_data as $key => $value) {
                         if (in_array(strtolower($key), $hardwareFields)) {
                             // value è un array di id
@@ -1672,8 +1684,8 @@ class TicketController extends Controller {
                                 // Non è detto che l'hardware esista ancora. Se esiste si aggiungono gli altri valori
                                 $hardware = $ticket->hardware()->where('hardware_id', $hardware_id)->first();
                                 if ($hardware) {
-                                    $webform_data->$key[$index] = $hardware->id . " (" . $hardware->make . " " 
-                                        . $hardware->model . " " . $hardware->serial_number 
+                                    $webform_data->$key[$index] = $hardware->id . " (" . $hardware->make . " "
+                                        . $hardware->model . " " . $hardware->serial_number
                                         . ($hardware->company_asset_number ? " " . $hardware->company_asset_number : "")
                                         . ($hardware->support_label ? " " . $hardware->support_label : "")
                                         . ")";
@@ -1807,6 +1819,7 @@ class TicketController extends Controller {
 
         return response()->json($tickets);
     }
+}
 
     // public function hardware(Request $request, Ticket $ticket) {
     //     $authUser = $request->user();
@@ -1832,5 +1845,3 @@ class TicketController extends Controller {
 
     //     return response()->json($tickets);
     // }
-
-}

@@ -61,8 +61,8 @@ class User extends Authenticatable {
      * Get the company that owns the user.
      */
 
-    public function company() {
-        return $this->belongsTo(Company::class);
+    public function companies() {
+        return $this->belongsToMany(Company::class, 'company_user');
     }
 
     /**
@@ -170,5 +170,26 @@ class User extends Authenticatable {
 
     public function dashboard() {
         return $this->hasOne(Dashboard::class);
+    }
+
+    public function selectedCompany() {
+        $selectedCompanyId = session('selected_company_id');
+        $company = null;
+
+        if ($selectedCompanyId) {
+            // Cerca la company selezionata nella sessione
+            $company = $this->companies()->find($selectedCompanyId);
+        }
+
+        if (!$company) {
+            // Prendi la prima company associata
+            $company = $this->companies()->first();
+            if ($company) {
+                // Aggiorna la sessione
+                session(['selected_company_id' => $company->id]);
+            }
+        }
+
+        return $company;
     }
 }
