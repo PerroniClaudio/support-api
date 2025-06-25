@@ -26,11 +26,8 @@ use Illuminate\Support\Facades\Log;
 // User Routes
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user', function (Request $request) {
-
         $user = $request->user();
-        $user->company_id = $user->selectedCompany()->id;
-
-
+        $user->company_id = $user->selectedCompany() ? $user->selectedCompany()->id : null;
         return $user;
     });
 

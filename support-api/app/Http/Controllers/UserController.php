@@ -79,7 +79,7 @@ class UserController extends Controller {
     public function show($id, Request $request) {
         $authUser = $request->user();
 
-        $user = User::where('id', $id)->with(['company'])->first();
+        $user = User::where('id', $id)->with(['companies'])->first();
 
         // Se non è l'utente stesso, un admin o company_admin e della stessa compagnia allora non è autorizzato
         if (!($authUser["is_admin"] == 1 || ($authUser["id"] == $id) || ($user && ($user["company_id"] == $authUser["company_id"]) && ($authUser["is_company_admin"] == 1)))) {
