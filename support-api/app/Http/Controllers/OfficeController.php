@@ -59,8 +59,8 @@ class OfficeController extends Controller {
      */
     public function show(Request $request, Office $office) {
         $user = $request->user();
-        
-        if ($user["is_admin"] != 1 && ($user["company_id"] != $office["company_id"]) && ($office->company->data_owner_email != $request->user()->email)) {
+
+        if ($user["is_admin"] != 1 && !$user->companies()->where('companies.id', $office["company_id"])->exists() && ($office->company->data_owner_email != $request->user()->email)) {
             return response([
                 'message' => 'Unauthorized',
             ], 401);

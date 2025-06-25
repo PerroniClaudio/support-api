@@ -38,15 +38,17 @@ class HardwareController extends Controller {
         }
 
         if ($authUser->is_company_admin) {
-            $hardwareList = Hardware::where('company_id', $authUser->company_id)->with(['hardwareType', 'company'])->get();
+            $selectedCompany = $authUser->selectedCompany();
+            $hardwareList = $selectedCompany ? Hardware::where('company_id', $selectedCompany->id)->with(['hardwareType', 'company'])->get() : collect();
             return response([
                 'hardwareList' => $hardwareList,
             ], 200);
         }
 
-        $hardwareList = Hardware::where('company_id', $authUser->company_id)->whereHas('users', function ($query) use ($authUser) {
+        $selectedCompany = $authUser->selectedCompany();
+        $hardwareList = $selectedCompany ? Hardware::where('company_id', $selectedCompany->id)->whereHas('users', function ($query) use ($authUser) {
             $query->where('user_id', $authUser->id);
-        })->with(['hardwareType', 'company'])->get();
+        })->with(['hardwareType', 'company'])->get() : collect();
 
         return response([
             'hardwareList' => $hardwareList,
@@ -55,7 +57,7 @@ class HardwareController extends Controller {
 
     public function companyHardwareList(Request $request, Company $company) {
         $authUser = $request->user();
-        if (!$authUser->is_admin && !($authUser->is_company_admin && ($company->id == $authUser->company_id))) {
+        if (!$authUser->is_admin && !($authUser->is_company_admin && $authUser->companies()->where('companies.id', $company->id)->exists())) {
             return response([
                 'message' => 'You are not allowed to view this hardware',
             ], 403);
@@ -65,8 +67,8 @@ class HardwareController extends Controller {
             ->with(['hardwareType', 'company'])
             ->get()
             ->map(function ($hardware) {
-            $hardware->users = $hardware->users()->pluck('user_id')->toArray();
-            return $hardware;
+                $hardware->users = $hardware->users()->pluck('user_id')->toArray();
+                return $hardware;
             });
         return response([
             'hardwareList' => $hardwareList,
@@ -83,7 +85,7 @@ class HardwareController extends Controller {
         }
 
         $company = $typeFormField->ticketType->company;
-        if (!$authUser->is_admin && !(!!$company && ($company->id == $authUser->company_id))) {
+        if (!$authUser->is_admin && !(!!$company && $authUser->companies()->where('companies.id', $company->id)->exists())) {
             return response([
                 'message' => 'You are not allowed to view this hardware',
             ], 403);
@@ -196,7 +198,7 @@ class HardwareController extends Controller {
             'notes' => 'nullable|string',
             'users' => 'nullable|array',
         ]);
-        
+
         // Controlla cha almeno uno dei due sia impostato
         $request->validate([
             'company_asset_number' => 'nullable|string',
@@ -271,7 +273,7 @@ class HardwareController extends Controller {
 
         if (
             !$authUser->is_admin
-            && !($authUser->is_company_admin && ($hardware->company_id == $authUser->company_id))
+            && !($authUser->is_company_admin && $authUser->companies()->where('companies.id', $hardware->company_id)->exists())
             && !(in_array($authUser->id, $hardware->users->pluck('id')->toArray()))
         ) {
             return response([
@@ -362,7 +364,7 @@ class HardwareController extends Controller {
             }
         }
 
-        if(!$hardware->is_exclusive_use && $data['is_exclusive_use'] && count($data['users']) > 1) {
+        if (!$hardware->is_exclusive_use && $data['is_exclusive_use'] && count($data['users']) > 1) {
             return response([
                 'message' => 'Exclusive use hardware can be associated to no more than one user. Hardware not updated.',
             ], 400);
@@ -523,7 +525,7 @@ class HardwareController extends Controller {
         }
 
         $authUser = $request->user();
-        if (!($authUser->is_company_admin && ($hardware->company_id == $authUser->company_id)) && !$authUser->is_admin) {
+        if (!($authUser->is_company_admin && $authUser->companies()->where('companies.id', $hardware->company_id)->exists()) && !$authUser->is_admin) {
             return response([
                 'message' => 'You are not allowed to update hardware users',
             ], 403);
@@ -562,15 +564,16 @@ class HardwareController extends Controller {
         $usersToAdd = collect($data['users'])->diff($hardware->users->pluck('id'));
 
         // Solo l'admin può rimuovere associazioni hardware-user
-        if(!$authUser->is_admin && count($usersToRemove) > 0){
+        if (!$authUser->is_admin && count($usersToRemove) > 0) {
             return response([
                 'message' => 'You are not allowed to remove users from hardware',
             ], 403);
         }
 
         // L'hardware ad uso sclusivo può essere associato a un solo utente
-        if($hardware->is_exclusive_use && 
-            (count($usersToAdd) > 0 && 
+        if (
+            $hardware->is_exclusive_use &&
+            (count($usersToAdd) > 0 &&
                 // Qui forse basterebbe $request->users->count() > 1
                 (($hardware->users->count() - count($usersToRemove) + count($usersToAdd)) > 1)
             )
@@ -608,7 +611,7 @@ class HardwareController extends Controller {
         }
 
         $authUser = $request->user();
-        if (!($authUser->is_company_admin && ($user->company_id == $authUser->company_id)) && !$authUser->is_admin) {
+        if (!($authUser->is_company_admin && $authUser->companies()->where('companies.id', $user->company_id)->exists()) && !$authUser->is_admin) {
             return response([
                 'message' => 'You are not allowed to update hardware users',
             ], 403);
@@ -646,16 +649,16 @@ class HardwareController extends Controller {
         $hardwareToAdd = collect($data['hardware'])->diff($user->hardware->pluck('id'));
 
         // Solo l'admin può rimuovere associazioni hardware-user
-        if(!$authUser->is_admin && count($hardwareToRemove) > 0){
+        if (!$authUser->is_admin && count($hardwareToRemove) > 0) {
             return response([
                 'message' => 'You are not allowed to remove hardware from user',
             ], 403);
         }
 
-        if(count($hardwareToAdd) > 0) {
+        if (count($hardwareToAdd) > 0) {
             foreach ($hardwareToAdd as $hardwareId) {
                 $hwToAdd = Hardware::find($hardwareId);
-                if($hwToAdd->is_exclusive_use && ($hwToAdd->users->count() >= 1)) {
+                if ($hwToAdd->is_exclusive_use && ($hwToAdd->users->count() >= 1)) {
                     return response([
                         'message' => 'A selected hardware (' . $hwToAdd->id . ') can only be associated to one user and has already been associated.',
                     ], 400);
@@ -716,7 +719,7 @@ class HardwareController extends Controller {
 
     public function userHardwareList(Request $request, User $user) {
         $authUser = $request->user();
-        if (!$authUser->is_admin && !($authUser->company_id != $user->company_id) && !($authUser->id == $user->id)) {
+        if (!$authUser->is_admin && !$authUser->companies()->where('companies.id', $user->company_id)->exists() && !($authUser->id == $user->id)) {
             return response([
                 'message' => 'You are not allowed to view this user hardware',
             ], 403);
@@ -779,7 +782,7 @@ class HardwareController extends Controller {
         $authUser = $request->user();
         if (
             !$authUser->is_admin
-            && !($authUser->is_company_admin && ($hardware->company_id == $authUser->company_id))
+            && !($authUser->is_company_admin && $authUser->companies()->where('companies.id', $hardware->company_id)->exists())
             && !($hardware->users->contains($authUser))
         ) {
             return response([
@@ -823,7 +826,7 @@ class HardwareController extends Controller {
                     $ticket->user->email = "Supporto";
                 }
             }
-            
+
             return response([
                 'tickets' => $tickets,
             ], 200);
@@ -874,12 +877,12 @@ class HardwareController extends Controller {
         $name = 'hardware_import_template_' . time() . '.xlsx';
         return Excel::download(new HardwareTemplateExport(), $name);
     }
-    
+
     public function exportAssignationTemplate() {
         $name = 'hardware_assignation_template_' . time() . '.xlsx';
         return Excel::download(new HardwareAssignationTemplateExport(), $name);
     }
-    
+
     public function exportDeletionTemplate() {
         $name = 'hardware_assignation_template_' . time() . '.xlsx';
         return Excel::download(new HardwareDeletionTemplateExport(), $name);
@@ -923,7 +926,7 @@ class HardwareController extends Controller {
             'message' => "Success",
         ], 200);
     }
-    
+
     public function importHardwareAssignations(Request $request) {
 
         $authUser = $request->user();
@@ -962,7 +965,7 @@ class HardwareController extends Controller {
             'message' => "Success",
         ], 200);
     }
-    
+
     public function importHardwareDeletions(Request $request) {
 
         $authUser = $request->user();
@@ -1049,7 +1052,7 @@ class HardwareController extends Controller {
         return $pdf->download($name);
     }
 
-    public function getHardwareLog ($hardwareId, Request $request){
+    public function getHardwareLog($hardwareId, Request $request) {
         $authUser = $request->user();
         // if (!$authUser->is_admin && !($authUser->is_company_admin && ($hardware->company_id == $authUser->company_id))) {
         if (!$authUser->is_admin) {
@@ -1057,13 +1060,13 @@ class HardwareController extends Controller {
                 'message' => 'You are not allowed to view this hardware log',
             ], 403);
         }
-        
+
         $logs = HardwareAuditLog::where('hardware_id', $hardwareId)->orWhere(function ($query) use ($hardwareId) {
             $query->whereJsonContains('old_data->id', $hardwareId)
-                  ->orWhereJsonContains('new_data->id', $hardwareId);
+                ->orWhereJsonContains('new_data->id', $hardwareId);
         })
-        ->with('author')
-        ->get();
+            ->with('author')
+            ->get();
 
         return response([
             'logs' => $logs,
@@ -1071,7 +1074,7 @@ class HardwareController extends Controller {
     }
 
     public function hardwareLogsExport($hardwareId) {
-        $name = 'hardware_' . $hardwareId .'_logs_' . time() . '.xlsx';
+        $name = 'hardware_' . $hardwareId . '_logs_' . time() . '.xlsx';
         return Excel::download(new HardwareLogsExport($hardwareId), $name);
     }
 }

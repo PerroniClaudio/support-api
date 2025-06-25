@@ -26,9 +26,8 @@ class CompanyController extends Controller {
                 $companies = [];
             }
         } else {
-            $companies = [
-                $authUser->is_admin ? $authUser->company : $authUser->company->only(['id', 'name']),
-            ];
+            // Per utenti non admin, restituisci tutte le aziende collegate tramite la relazione companies()
+            $companies = $authUser->companies()->get(["id", "name"]);
         }
 
         return response([
@@ -38,14 +37,14 @@ class CompanyController extends Controller {
 
     public function getMasterTickets(Company $company) {
         $authUser = auth()->user();
-        if(!$authUser->is_admin && !($authUser->is_company_admin && ($authUser->company_id == $company->id))) {
+        if (!$authUser->is_admin && !($authUser->is_company_admin && $authUser->companies()->where('id', $company->id)->exists())) {
             return response([
                 'message' => 'Unauthorized',
             ], 401);
         }
         $tickets = $company->tickets()
             ->whereHas('ticketType', function ($query) {
-            $query->where('is_master', true);
+                $query->where('is_master', true);
             })
             ->with(['ticketType'])
             ->orderBy('created_at', 'desc')
@@ -100,7 +99,7 @@ class CompanyController extends Controller {
     public function show($id, Request $request) {
         $user = $request->user();
 
-        if ($user["is_admin"] != 1 && $user["company_id"] != $id) {
+        if ($user["is_admin"] != 1 && !$user->companies()->where('companies.id', $id)->exists()) {
             return response([
                 'message' => 'Unauthorized',
             ], 401);
@@ -222,8 +221,8 @@ class CompanyController extends Controller {
     public function allusers(Company $company, Request $request) {
         $user = $request->user();
 
-        // Se non è admin o non è della compagnia e company_admin allora non è autorizzato
-        if (!($user["is_admin"] == 1 || ($user["company_id"] == $company["id"]))) {
+        // Se non è admin o non è della compagnia allora non è autorizzato
+        if (!($user["is_admin"] == 1 || $user->companies()->where('companies.id', $company["id"])->exists())) {
             return response([
                 'message' => 'Unauthorized',
             ], 401);
@@ -308,7 +307,7 @@ class CompanyController extends Controller {
 
     public function tickets(Company $company, Request $request) {
         $user = $request->user();
-        if ($user["is_admin"] != 1 && $user["company_id"] != $company["id"]) {
+        if ($user["is_admin"] != 1 && !$user->companies()->where('companies.id', $company["id"])->exists()) {
             return response([
                 'message' => 'Unauthorized',
             ], 401);
@@ -638,7 +637,7 @@ class CompanyController extends Controller {
             'group' => $customUserGroup,
         ], 200);
     }
-    
+
     public function updateDelayWarning(Company $company, Request $request) {
         $user = $request->user();
 
@@ -655,7 +654,7 @@ class CompanyController extends Controller {
             'reading_delay_start' => $request->reading_delay_start,
             'reading_delay_notice' => $request->reading_delay_notice,
         ]);
-        
+
         return response([
             'company' => $company,
             'reading_delay_start' => $company->reading_delay_start,

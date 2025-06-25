@@ -9,12 +9,11 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
-class TicketStatsController extends Controller
-{
+class TicketStatsController extends Controller {
 
     public function latestStats(Request $request) {
         $user = $request->user();
-        if($user["is_admin"] != 1){
+        if ($user["is_admin"] != 1) {
             return response([
                 'message' => 'Unauthorized',
             ], 401);
@@ -32,13 +31,13 @@ class TicketStatsController extends Controller
 
     public function statsForCompany(Request $request) {
         $user = $request->user();
-        if($user["is_company_admin"] != 1){
+        if ($user["is_company_admin"] != 1) {
             return response([
                 'message' => 'Unauthorized',
             ], 401);
         }
 
-        $company = Company::find($user->company_id);
+        $company = $user->selectedCompany();
 
         $cacheKey = 'tickets_stats_' . $company->id . '_' . $request->start_date . '_' . $request->end_date;
 
@@ -58,11 +57,11 @@ class TicketStatsController extends Controller
 
         $ticketPerUser = [];
 
-        foreach($tickets as $ticket) {
+        foreach ($tickets as $ticket) {
 
-            if(!isset($ticketPerUser[$ticket->user->id])) {
+            if (!isset($ticketPerUser[$ticket->user->id])) {
 
-                if($ticket->user->is_admin == 1) {
+                if ($ticket->user->is_admin == 1) {
                     $ticketPerUser[$ticket->user->id] = [
                         'user' => "Supporto iFortech",
                         'tickets' => 0,
@@ -74,13 +73,12 @@ class TicketStatsController extends Controller
                         'tickets' => 0,
                     ];
                 }
-
             }
 
             $ticketPerUser[$ticket->user->id]['tickets']++;
         }
 
-        usort($ticketPerUser, function($a, $b) {
+        usort($ticketPerUser, function ($a, $b) {
             return $b['tickets'] - $a['tickets'];
         });
 
@@ -89,9 +87,9 @@ class TicketStatsController extends Controller
 
         $ticketsPerType = [];
 
-        foreach($tickets as $ticket) {
+        foreach ($tickets as $ticket) {
 
-            if(!isset($ticketsPerType[$ticket->ticketType->id])) {
+            if (!isset($ticketsPerType[$ticket->ticketType->id])) {
                 $ticketsPerType[$ticket->ticketType->id] = [
                     'type' => $ticket->ticketType->name,
                     'tickets' => 0,
@@ -101,17 +99,19 @@ class TicketStatsController extends Controller
             $ticketsPerType[$ticket->ticketType->id]['tickets']++;
         }
 
-        usort($ticketsPerType, function($a, $b) {
+        usort($ticketsPerType, function ($a, $b) {
             return $b['tickets'] - $a['tickets'];
         });
 
-        return response([
-            'stats' => [
-                'users_count' => $usersCount,
-                'ticket_per_user' => $ticketPerUser,
-                'ticket_per_type' => $ticketsPerType,
-            ]]
-        , 200);
-       
+        return response(
+            [
+                'stats' => [
+                    'users_count' => $usersCount,
+                    'ticket_per_user' => $ticketPerUser,
+                    'ticket_per_type' => $ticketsPerType,
+                ]
+            ],
+            200
+        );
     }
 }

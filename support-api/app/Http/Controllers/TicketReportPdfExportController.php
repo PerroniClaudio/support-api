@@ -43,19 +43,19 @@ class TicketReportPdfExportController extends Controller {
     /**
      * Lista approvati per azienda singola
      */
-    
+
     public function approvedPdfCompany(Company $company, Request $request) {
         $user = $request->user();
-        if ($user["is_admin"] != 1 && ($user["is_company_admin"] != 1 || ($user->company_id != $company->id))) {
+        if ($user["is_admin"] != 1 && ($user["is_company_admin"] != 1 || !$user->companies()->where('companies.id', $company->id)->exists())) {
             return response([
                 'message' => 'Unauthorized',
             ], 401);
         }
 
         $reports = TicketReportPdfExport::where([
-                'company_id' => $company->id,
-                'is_approved_billing' => true,
-            ])
+            'company_id' => $company->id,
+            'is_approved_billing' => true,
+        ])
             ->orderBy('created_at', 'DESC')
             ->get();
 
@@ -84,7 +84,7 @@ class TicketReportPdfExportController extends Controller {
                     ], 401);
                 }
                 // è company admin
-                if ($user["company_id"] != $request->company_id) {
+                if (!$user->companies()->where('companies.id', $request->company_id)->exists()) {
                     return response([
                         'message' => 'You can only request reports for your company.',
                     ], 401);
@@ -138,9 +138,12 @@ class TicketReportPdfExportController extends Controller {
                 ], 401);
             }
             // è company admin
-            if ($user["company_id"] != $ticketReportPdfExport->company_id) {
+
+            $user_companies = $user->companies()->pluck('id')->toArray();
+            // Controllo se l'utente appartiene alla company del report
+            if (!in_array($ticketReportPdfExport->company_id, $user_companies)) {
                 return response([
-                    'message' => 'You can\'t download this report.',
+                    'message' => 'You can only preview reports for your company.',
                 ], 401);
             }
         }
@@ -171,9 +174,11 @@ class TicketReportPdfExportController extends Controller {
                 ], 401);
             }
             // è company admin
-            if ($user["company_id"] != $ticketReportPdfExport->company_id) {
+            $user_companies = $user->companies()->pluck('id')->toArray();
+            // Controllo se l'utente appartiene alla company del report
+            if (!in_array($ticketReportPdfExport->company_id, $user_companies)) {
                 return response([
-                    'message' => 'You can\'t download this report.',
+                    'message' => 'You can only preview reports for your company.',
                 ], 401);
             }
         }
