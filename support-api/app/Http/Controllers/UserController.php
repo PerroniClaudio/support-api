@@ -6,6 +6,7 @@ use App\Exports\UserTemplateExport;
 use App\Imports\UsersImport;
 use App\Models\ActivationToken;
 use App\Jobs\SendWelcomeEmail;
+use App\Models\Company;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\Supplier;
@@ -564,6 +565,90 @@ class UserController extends Controller {
         return response([
             'success' => true,
             'selected_company_id' => $request->companyId,
+        ], 200);
+    }
+
+    public function companiesForUser($id, Request $request) {
+        $authUser = $request->user();
+
+        // Se non è admin o company_admin allora non è autorizzato
+        if (!($authUser["is_admin"] == 1 || ($authUser["id"] == $id) || ($authUser["is_company_admin"] == 1))) {
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
+        $user = User::where('id', $id)->with(['companies'])->first();
+
+        if (!$user) {
+            return response([
+                'message' => 'User not found',
+            ], 404);
+        }
+
+        return response([
+            'companies' => $user->companies,
+        ], 200);
+    }
+
+    public function addCompaniesForUser($id, Request $request) {
+        $authUser = $request->user();
+
+
+        if (!$authUser["is_admin"]) {
+            // Se non è admin o company_admin allora non è autorizzato
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
+        $user = User::where('id', $id)->first();
+
+        if (!$user) {
+            return response([
+                'message' => 'User not found',
+            ], 404);
+        }
+
+        $fields = $request->validate([
+            'company_id' => 'required|integer|exists:companies,id',
+        ]);
+
+        $user->companies()->syncWithoutDetaching($fields['company_id']);
+
+        return response([
+            'message' => 'Companies added successfully',
+            'success' => true,
+            'companies' => $user->companies()->get(),
+        ], 200);
+    }
+
+    public function deleteCompaniesForUser($id, Company $company, Request $request) {
+        $authUser = $request->user();
+
+        if (!$authUser["is_admin"]) {
+            // Se non è admin o company_admin allora non è autorizzato
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
+        }
+
+        $user = User::where('id', $id)->first();
+
+        if (!$user) {
+            return response([
+                'message' => 'User not found',
+            ], 404);
+        }
+
+
+
+        $user->companies()->detach($company->id);
+
+        return response([
+            'message' => 'Companies deleted successfully',
+            'success' => true,
+            'companies' => $user->companies()->get(),
         ], 200);
     }
 }

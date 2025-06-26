@@ -30,8 +30,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         $user->company_id = $user->selectedCompany() ? $user->selectedCompany()->id : null;
         return $user;
     });
-
-
+    Route::post('/user/{id}/companies', [App\Http\Controllers\UserController::class, "addCompaniesForUser"]);
 
     Route::post('/onboarding', [App\Http\Controllers\UserController::class, "onboarding"]);
     Route::patch('/user/profile', [App\Http\Controllers\UserController::class, "updateProfile"]);
@@ -49,6 +48,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post('/user/import', [App\Http\Controllers\UserController::class, "importUsers"]);
     Route::get('/user-test', [App\Http\Controllers\UserController::class, "ticketTypes"]);
     Route::get('/user-tickets/{id}', [App\Http\Controllers\UserController::class, "userTickets"]);
+    Route::get('/user/{id}/companies', [App\Http\Controllers\UserController::class, "companiesForUser"]);
+    Route::delete('/user/{id}/companies/{company}', [App\Http\Controllers\UserController::class, "deleteCompaniesForUser"]);
     Route::get('/user/{id}', [App\Http\Controllers\UserController::class, "show"]);
 });
 

@@ -36,16 +36,22 @@ class CompanyController extends Controller {
         ], 200);
     }
 
-    public function getMasterTickets(Company $company) {
-        $authUser = User::find(Auth::user()->id)->get();
+    public function getMasterTickets(Company $company, Request $request) {
+        $authUser = $request->user();
+        $isAdminRequest = $authUser["is_admin"] == 1;
 
-        $user_companies = $authUser->companies()->pluck('id')->toArray();
-        // Controlla se l'utente è admin o se è un company admin della compagnia specificata
-        if (!$authUser->is_admin && !($authUser->is_company_admin && in_array($company->id, $user_companies))) {
-            return response([
-                'message' => 'Unauthorized',
-            ], 401);
+        if (!$isAdminRequest) {
+            $user_companies = $authUser->companies()->get()->pluck('id')->toArray();
+
+            // Controlla se l'utente è admin o se è un company admin della compagnia specificata
+            if (!($authUser->is_company_admin && in_array($company->id, $user_companies))) {
+                return response([
+                    'message' => 'Unauthorized',
+                ], 401);
+            }
         }
+
+        // Recupera i ticket di tipo master associati alla compagnia
 
         $tickets = $company->tickets()
             ->whereHas('ticketType', function ($query) {
