@@ -18,6 +18,9 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# Copia la configurazione PHP per produzione
+COPY ./php/php.prod.ini /usr/local/etc/php/php.ini
+
 # Installa nginx e supervisor
 RUN apk add --no-cache nginx supervisor
 
