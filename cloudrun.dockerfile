@@ -34,7 +34,7 @@ COPY ./php/supervisord.cloudrun.conf /etc/supervisor/conf.d/supervisord.conf
 WORKDIR /app
 
 # Copia i file dell'applicazione
-COPY . .
+COPY ./support-api/ .
 
 # Imposta i permessi corretti per Laravel
 RUN mkdir -p /app/storage/logs /app/storage/framework/cache /app/storage/framework/sessions /app/storage/framework/views /app/bootstrap/cache \
