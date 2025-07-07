@@ -62,7 +62,11 @@ class User extends Authenticatable {
      */
 
     public function companies() {
-        return $this->belongsToMany(Company::class, 'company_user');
+        return $this->belongsToMany(Company::class, 'company_user', 'user_id', 'company_id');
+    }
+
+    public function hasCompany($companyId) {
+        return $this->companies()->where('company_id', $companyId)->exists();
     }
 
     /**
@@ -70,9 +74,12 @@ class User extends Authenticatable {
      */
 
     public function tickets() {
-        return $this->hasMany(Ticket::class)->with(['user' => function ($query) {
-            $query->select(['id', 'name', 'surname', 'is_admin', 'company_id', 'is_company_admin', 'is_deleted']); // Specify the columns you want to include
-        }]);
+        return $this->hasMany(Ticket::class)->with([
+            'user' => function ($query) {
+                $query->select(['id', 'name', 'surname', 'is_admin', 'is_company_admin', 'is_deleted']); // Specify the columns you want to include
+            },
+            'user.companies:id,name'
+        ]);
     }
 
     /**
@@ -85,9 +92,12 @@ class User extends Authenticatable {
             })
             :  collect();
         $ids = $filteredTickets->pluck('id')->all();
-        $tickets = Ticket::whereIn('id', $ids)->with(['user' => function ($query) {
-            $query->select(['id', 'name', 'surname', 'is_admin', 'company_id', 'is_company_admin', 'is_deleted']); // Specify the columns you want to include
-        }])->get();
+        $tickets = Ticket::whereIn('id', $ids)->with([
+            'user' => function ($query) {
+                $query->select(['id', 'name', 'surname', 'is_admin', 'is_company_admin', 'is_deleted']); // Specify the columns you want to include
+            },
+            'user.companies:id,name'
+        ])->get();
         return $tickets;
     }
 

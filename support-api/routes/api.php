@@ -23,15 +23,18 @@ use Illuminate\Support\Facades\Log;
 |
 */
 
-// User Routes
-Route::middleware(['auth:sanctum'])->group(function () {
+// AUTHENTICATION ROUTES 
+
+Route::middleware(['auth:sanctum', 'admin.or.company'])->group(function () {
+    
+    // User Routes
+
     Route::get('/user', function (Request $request) {
         $user = $request->user();
         $user->company_id = $user->selectedCompany() ? $user->selectedCompany()->id : null;
         return $user;
     });
     Route::post('/user/{id}/companies', [App\Http\Controllers\UserController::class, "addCompaniesForUser"]);
-
     Route::post('/onboarding', [App\Http\Controllers\UserController::class, "onboarding"]);
     Route::patch('/user/profile', [App\Http\Controllers\UserController::class, "updateProfile"]);
     Route::patch('/user/password', [App\Http\Controllers\UserController::class, "passwordUpdate"]);
@@ -51,10 +54,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/user/{id}/companies', [App\Http\Controllers\UserController::class, "companiesForUser"]);
     Route::delete('/user/{id}/companies/{company}', [App\Http\Controllers\UserController::class, "deleteCompaniesForUser"]);
     Route::get('/user/{id}', [App\Http\Controllers\UserController::class, "show"]);
-});
 
-// Ticket Routes
-Route::middleware(['auth:sanctum'])->group(function () {
+
+    // Ticket Routes
+
     Route::post("/ticket/{ticket_id}/message", [TicketMessageController::class, "store"]);
     Route::get("/ticket/{ticket_id}/messages", [TicketMessageController::class, "index"]);
     Route::post("/ticket/{ticket_id}/status-updates", [TicketStatusUpdateController::class, "store"]);
@@ -90,13 +93,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/ticket-report/batch", [App\Http\Controllers\TicketController::class, "batchReport"]);
     Route::get("/ticket-types", [App\Http\Controllers\UserController::class, "ticketTypes"]);
     Route::get("/ticket/{ticket}/slave-tickets", [App\Http\Controllers\TicketController::class, "getSlaveTickets"]);
-});
+    
 
-// Company Routes
-Route::middleware(['auth:sanctum'])->group(function () {
+    // Company Routes
+
     Route::get('/companies/allowed', [App\Http\Controllers\UserController::class, "companies"]);
     Route::post('/companies/set-active', [App\Http\Controllers\UserController::class, "setActiveCompany"]);
-
+    Route::post('/companies/reset-active', [App\Http\Controllers\UserController::class, "resetActiveCompany"]);
     Route::get("/companies", [CompanyController::class, "index"]);
     Route::get("/companies/{id}", [CompanyController::class, "show"]);
     Route::post("/companies", [CompanyController::class, "store"]);
@@ -115,70 +118,63 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post("/companies/{company}/logo", [CompanyController::class, "uploadLogo"]);
     Route::post("/companies/{company}/update-reading-delay-warning", [CompanyController::class, "updateDelayWarning"]);
 
+    
     // Gruppi custom
-
 
     Route::get("/companies/{company}/custom-groups", [CompanyController::class, "getCustomUserGroups"]);
     Route::post("/companies/custom-groups", [CompanyController::class, "storeCustomUserGroup"]);
     Route::get("/custom-groups/{customUserGroup}", [CompanyController::class, "getCustomUserGroup"]);
-
-
-
     Route::get("/custom-groups/{customUserGroup}/users", [CompanyController::class, "getUsersForGroup"]);
     Route::get("/custom-groups/{customUserGroup}/ticket-types", [CompanyController::class, "getCustomUserGroupTicketTypes"]);
     Route::get("/custom-groups/{customUserGroup}/available-users", [CompanyController::class, "getAvailableUsers"]);
     Route::get("/custom-groups/{customUserGroup}/available-ticket-types", [CompanyController::class, "getAvailableTicketTypes"]);
-
     Route::post("/custom-groups/users", [CompanyController::class, "addUsersToGroup"]);
     Route::post("/custom-groups/ticket-types", [CompanyController::class, "addTicketTypesToGroup"]);
-
     Route::delete("/custom-groups/users", [CompanyController::class, "removeUsersFromGroup"]);
     Route::delete("/custom-groups/ticket-types", [CompanyController::class, "removeTicketTypesFromGroup"]);
-
     Route::post("/custom-groups/{customUserGroup}", [CompanyController::class, "updateCustomUserGroup"]);
-});
+    
 
-// Office Routes
-Route::middleware(['auth:sanctum'])->group(function () {
+    // Office Routes
+
     Route::resource('offices', App\Http\Controllers\OfficeController::class);
-});
+    
 
-// Attendance Routes
-Route::middleware(['auth:sanctum'])->group(function () {
+    // Attendance Routes
+
     Route::resource('attendance', App\Http\Controllers\AttendanceController::class);
     Route::get('presenze-type', [App\Http\Controllers\AttendanceController::class, "types"]);
-});
+    
 
-// Time Off Request Routes
-Route::middleware(['auth:sanctum'])->group(function () {
+    // Time Off Request Routes
+
     Route::post('time-off-request/batch', [App\Http\Controllers\TimeOffRequestController::class, "storeBatch"]);
     Route::patch('time-off-request/batch', [App\Http\Controllers\TimeOffRequestController::class, "updateBatch"]);
     Route::resource('time-off-request', App\Http\Controllers\TimeOffRequestController::class);
     Route::get('time-off-type', [App\Http\Controllers\TimeOffRequestController::class, "types"]);
-});
 
-// Business Trip Routes
-Route::middleware(['auth:sanctum'])->group(function () {
+
+    // Business Trip Routes
+    
     Route::resource('business-trip', App\Http\Controllers\BusinessTripController::class);
     Route::get('business-trip/{business_trip}/expense', [App\Http\Controllers\BusinessTripController::class, "getExpenses"]);
     Route::post('business-trip/{business_trip}/expense', [App\Http\Controllers\BusinessTripController::class, "storeExpense"]);
     Route::get('business-trip/{business_trip}/transfer', [App\Http\Controllers\BusinessTripController::class, "getTransfers"]);
     Route::post('business-trip/{business_trip}/transfer', [App\Http\Controllers\BusinessTripController::class, "storeTransfer"]);
-});
+    
 
-// Brand Routes
-Route::middleware(['auth:sanctum'])->group(function () {
+    // Brand Routes
+    
     Route::get("/brands", [BrandController::class, "index"]);
     Route::get("/brands/{brand}", [BrandController::class, "show"]);
     Route::post("/brands", [BrandController::class, "store"]);
     Route::patch("/brands/{brand}", [BrandController::class, "update"]);
     Route::delete("/brands/{brand}", [BrandController::class, "destroy"]);
     Route::post("/brands/{brand}/logo", [BrandController::class, "uploadLogo"]);
-});
-Route::get("/brand/{brand}/logo", [BrandController::class, "getLogo"]);
+    
 
-// Supplier Routes
-Route::middleware(['auth:sanctum'])->group(function () {
+    // Supplier Routes
+
     Route::get("/suppliers", [App\Http\Controllers\SupplierController::class, "index"]);
     Route::get("/suppliers/{supplier}", [App\Http\Controllers\SupplierController::class, "show"]);
     Route::post("/suppliers", [App\Http\Controllers\SupplierController::class, "store"]);
@@ -186,10 +182,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete("/suppliers/{supplier}", [App\Http\Controllers\SupplierController::class, "destroy"]);
     Route::post("/suppliers/{supplier}/logo", [App\Http\Controllers\SupplierController::class, "uploadLogo"]);
     Route::get("/suppliers/{supplier}/brands", [App\Http\Controllers\SupplierController::class, "brands"]);
-});
+    
 
-// Group Routes
-Route::middleware(['auth:sanctum'])->group(function () {
+    // Group Routes
+
     Route::get("/groups", [GroupController::class, "index"]);
     Route::get("/groups/{group}", [GroupController::class, "show"]);
     Route::patch("/groups/{group}", [GroupController::class, "update"]);
@@ -198,10 +194,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post("/groups", [GroupController::class, "store"]);
     Route::post("/groups-users", [GroupController::class, "updateUsers"]);
     Route::post("/groups-types", [GroupController::class, "updateTypes"]);
-});
+    
 
-// Ticket Type Routes
-Route::middleware(['auth:sanctum'])->group(function () {
+    // Ticket Type Routes
+
     Route::get("/ticket-type/all", [App\Http\Controllers\TicketTypeController::class, "index"]);
     Route::get("/ticket-type/{ticketType}", [App\Http\Controllers\TicketTypeController::class, "show"]);
     Route::delete("/ticket-type/{ticketType}/delete", [App\Http\Controllers\TicketTypeController::class, "destroy"]);
@@ -223,18 +219,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post("/ticket-type/duplicate", [App\Http\Controllers\TicketTypeController::class, "duplicateTicketType"]);
 
     // Custom groups
+    
     Route::get("/ticket-type/{ticketType}/custom-groups", [App\Http\Controllers\TicketTypeController::class, "getCustomGroups"]);
     Route::post("/ticket-type/custom-groups", [App\Http\Controllers\TicketTypeController::class, "addCustomGroup"]);
     Route::delete("/ticket-type/custom-groups", [App\Http\Controllers\TicketTypeController::class, "removeCustomGroup"]);
     Route::get("/ticket-type/{ticketType}/available-custom-groups", [App\Http\Controllers\TicketTypeController::class, "getAvailableCustomGroups"]);
     Route::post("/ticket-type/{ticketType}/custom-group-exclusive", [App\Http\Controllers\TicketTypeController::class, "setCustomGroupExclusive"]);
-});
+    
 
-// File Upload Routes
-Route::post("/upload-file", [App\Http\Controllers\FileUploadController::class, "uploadFileToCloud"]);
-
-// Ticket Report Routes
-Route::middleware(['auth:sanctum'])->group(function () {
+    // Ticket Report Routes
+    
     Route::get("/ticket-report/pdf/batch", [App\Http\Controllers\TicketReportExportController::class, "exportBatch"]);
     Route::get("/ticket-report/pdf/{ticket}", [App\Http\Controllers\TicketReportExportController::class, "exportpdf"]);
     Route::get("/ticket-report/list/{company}", [App\Http\Controllers\TicketReportExportController::class, "company"]);
@@ -256,10 +250,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/approved-ticket-pdf-report/list/{company}", [App\Http\Controllers\TicketReportPdfExportController::class, "approvedPdfCompany"]);
     Route::get("/ticket-pdf-report/preview/{ticketReportPdfExport}", [App\Http\Controllers\TicketReportPdfExportController::class, "pdfPreview"]);
     Route::get("/ticket-pdf-report/download/{ticketReportPdfExport}", [App\Http\Controllers\TicketReportPdfExportController::class, "pdfDownload"]);
-});
+    
 
-// Hardware Routes
-Route::middleware(['auth:sanctum'])->group(function () {
+    // Hardware Routes
+
     Route::get("/hardware-types", [App\Http\Controllers\HardwareTypeController::class, "index"]);
     Route::post("/hardware-types", [App\Http\Controllers\HardwareTypeController::class, "store"]);
     Route::patch("/hardware-types/{hardwareType}", [App\Http\Controllers\HardwareTypeController::class, "update"]);
@@ -290,22 +284,31 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::post("/delete-hardware-user", [App\Http\Controllers\HardwareController::class, "deleteHardwareUser"]); //rimuovi un'associazione utente-hardware
     Route::get("/hardware-logs/{hardware}/export", [App\Http\Controllers\HardwareController::class, "hardwareLogsExport"]);
     Route::get("/hardware-logs/{hardware}", [App\Http\Controllers\HardwareController::class, "getHardwareLog"]);
-});
 
-// Documentation Routes
-Route::middleware(['auth:sanctum'])->group(function () {
+
+    // Documentation Routes
+    
     Route::get('/files/public/search', [App\Http\Controllers\WikiObjectController::class, "searchPublic"]);
     Route::get("/files/public/{folder}", [App\Http\Controllers\WikiObjectController::class, "public"]);
     Route::get('/wiki-files/{wikiObject}', [App\Http\Controllers\WikiObjectController::class, "downloadFile"]);
     Route::get('/files/search', [App\Http\Controllers\WikiObjectController::class, "search"]);
     Route::get("/files/{folder}", [App\Http\Controllers\WikiObjectController::class, "index"]);
     Route::post("/files", [App\Http\Controllers\WikiObjectController::class, "store"]);
-});
+    
+    // Stats Routes
 
-Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/stats", [App\Http\Controllers\TicketStatsController::class, "latestStats"]);
 });
 
+// PUBLIC ROUTES
+
+// Brand Routes
+Route::get("/brand/{brand}/logo", [BrandController::class, "getLogo"]);
+
+// File Upload Routes
+Route::post("/upload-file", [App\Http\Controllers\FileUploadController::class, "uploadFileToCloud"]);
+
+// Feature Flags Routes
 Route::get('/features', function () {
 
     $user = auth()->user();

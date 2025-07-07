@@ -37,10 +37,11 @@ class TicketController extends Controller {
         $withClosed = $request->query('with-closed') == 'true' ? true : false;
 
         if ($withClosed) {
-            $cacheKey = 'user_' . $user->id . '_tickets_with_closed';
+            $cacheKey = 'user_' . $user->id . '_' . $user->selectedCompany()->id . '_tickets_with_closed';
         } else {
-            $cacheKey = 'user_' . $user->id . '_tickets';
+            $cacheKey = 'user_' . $user->id . '_' . $user->selectedCompany()->id . '_tickets';
         }
+
         $tickets = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($user, $withClosed) {
             if ($user["is_company_admin"] == 1) {
                 $selectedCompany = $user->selectedCompany();
@@ -67,6 +68,24 @@ class TicketController extends Controller {
                 }
                 return $ticketsTemp;
             } else {
+                $selectedCompany = $user->selectedCompany();
+
+                $userRefererTickets = $selectedCompany 
+                    ? $user->refererTickets()->where('company_id', $selectedCompany->id)
+                    : collect();
+
+                if ($withClosed) {
+                    // $ticketsTemp = $selectedCompany ? $selectedCompany->tickets : collect();
+                    $ticketsTemp = $selectedCompany 
+                        ? $user->tickets()->where('company_id', $selectedCompany->id)->get()->merge($userRefererTickets)
+                        : collect();
+                } else {
+                    // $ticketsTemp = $selectedCompany ? Ticket::where("status", "!=", 5)->where('company_id', $selectedCompany->id)->with('user')->get() : collect();
+                    $ticketsTemp = $selectedCompany 
+                        ? $user->tickets()->where("status", "!=", 5)->where('company_id', $selectedCompany->id)->get()->merge($userRefererTickets->where("status", "!=", 5))
+                        : collect();
+                }
+
                 $ticketsTemp = $user->tickets->merge($user->refererTickets());
                 foreach ($ticketsTemp as $ticket) {
                     $ticket->referer = $ticket->referer();
@@ -132,13 +151,20 @@ class TicketController extends Controller {
                 ], 401);
             }
 
+            // Admin o con ticketType.company_id tra le sue aziende
+            if (!$user->is_admin && ($user->selectedCompany()->id != $ticketType->company_id)) {
+                return response([
+                    'message' => 'Unauthorized',
+                ], 401);
+            }
+
             $ticket = Ticket::create([
                 'description' => $fields['description'],
                 'type_id' => $fields['type_id'],
                 'group_id' => $groupId,
                 'user_id' => $user->id,
                 'status' => '0',
-                'company_id' => isset($request['company']) && $user["is_admin"] == 1 ? $request['company'] : $user->company_id,
+                'company_id' => isset($request['company']) && $user["is_admin"] == 1 ? $request['company'] : $ticketType->company_id,
                 'file' => null,
                 'duration' => 0,
                 'sla_take' => $ticketType['default_sla_take'],
@@ -411,10 +437,11 @@ class TicketController extends Controller {
         // della stessa azienda del ticket ed il creatore del ticket o se è l'utente interessato (referer), (non necessariamente company_admin).
         // titolare del dato dell'azienda del ticket.
         $authorized = false;
+        // $isCompanyInUsersCompanies = in_array($ticket->company_id, $user->companies()->pluck('companies.id')->toArray());
         if (
             ($user["is_admin"] == 1 && $groupIdExists) ||
-            ($ticket->company_id == $user->company_id && $user["is_company_admin"] == 1) ||
-            ($ticket->company_id == $user->company_id && $ticket->user_id == $user->id) ||
+            (($ticket->company_id == $user->selectedCompany()->id) && $user["is_company_admin"] == 1) ||
+            (($ticket->company_id == $user->selectedCompany()->id) && $ticket->user_id == $user->id) ||
             (($ticket->referer() ? $ticket->referer()->id == $user->id : false)) ||
             ($ticket->company->data_owner_email == $user->email)
         ) {
@@ -1177,6 +1204,14 @@ class TicketController extends Controller {
 
     public function storeFiles($id, Request $request) {
 
+        $authUser = $request->user();
+        $ticket = Ticket::find($id);
+        if(!$authUser->is_admin && ($authUser->selectedCompany()->id != $ticket->company_id)) {
+            return response([
+                'message' => 'Unauthorized.',
+            ], 401);
+        }
+
         if ($request->hasFile('files')) {
             $files = $request->file('files');
             $storedFiles = [];
@@ -1392,7 +1427,7 @@ class TicketController extends Controller {
 
         $user = $request->user();
 
-        if ($user["is_admin"] != 1 && $ticket->company_id != $user->company_id) {
+        if ($user["is_admin"] != 1 && ($user->selectedCompany()->id != $ticket->company_id)) {
             return response([
                 'message' => 'Unauthorized',
             ], 401);
@@ -1412,7 +1447,7 @@ class TicketController extends Controller {
 
         $user = $request->user();
 
-        if ($user["is_admin"] != 1 && !($user["is_company_admin"] == 1 && $ticket->company_id == $user->company_id)) {
+        if ($user["is_admin"] != 1 && !($user["is_company_admin"] == 1 && $ticket->company_id == $user->selectedCompany()->id)) {
             return response([
                 'message' => 'Unauthorized',
             ], 401);
@@ -1460,7 +1495,7 @@ class TicketController extends Controller {
 
     public function report(Ticket $ticket, Request $request) {
         $user = $request->user();
-        if ($user["is_admin"] != 1 && ($user["is_company_admin"] != 1 || $ticket->company_id != $user->company_id)) {
+        if ($user["is_admin"] != 1 && ($user["is_company_admin"] != 1 || $ticket->company_id != $user->selectedCompany()->id)) {
             return response([
                 'message' => 'The user must be an admin.',
             ], 401);
@@ -1819,28 +1854,3 @@ class TicketController extends Controller {
         return response()->json($tickets);
     }
 }
-
-    // public function hardware(Request $request, Ticket $ticket) {
-    //     $authUser = $request->user();
-
-    //     $authorized = false;
-    //     if (
-    //         $authUser->is_admin ||
-    //         ($ticket->company_id == $authUser->company_id && $authUser["is_company_admin"] == 1) ||
-    //         ($ticket->company_id == $authUser->company_id && $ticket->user_id == $authUser->id) ||
-    //         (($ticket->referer() ? $ticket->referer()->id == $authUser->id : false)) ||
-    //         ($ticket->company->data_owner_email == $authUser->email)
-    //     ) {
-    //         $authorized = true;
-    //     }
-
-    //     if (!$authorized) {
-    //         return response([
-    //             'message' => 'Unauthorized',
-    //         ], 401);
-    //     }
-
-    //     $hardware = $ticket->hardware;
-
-    //     return response()->json($tickets);
-    // }

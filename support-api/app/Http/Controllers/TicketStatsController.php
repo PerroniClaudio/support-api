@@ -43,7 +43,9 @@ class TicketStatsController extends Controller {
 
         //? Quanti utenti sono stati creati in un determinato periodo
 
-        $usersCount = User::where('company_id', $company->id)
+        $usersCount = User::whereHas('companies', function ($query) use ($company) {
+                $query->where('companies.id', $company->id);
+            })
             ->whereBetween('created_at', [$request->start_date, $request->end_date])
             ->count();
 

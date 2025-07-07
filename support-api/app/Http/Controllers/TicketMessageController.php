@@ -30,11 +30,12 @@ class TicketMessageController extends Controller
 
         // $tickemessages = TicketMessage::where('ticket_id', $ticket_id)->with(['user'])->get();
         // Prendere dagli utenti solo i dati che si possono mostrare
-        $tickemessages = TicketMessage::where('ticket_id', $ticket_id)->with(
-            ['user' => function ($query) {$query->select(
-                ['id', 'name', 'surname', 'is_admin', 'company_id', 'is_company_admin', 'is_deleted']
-            );}]
-        )->get();
+        $tickemessages = TicketMessage::where('ticket_id', $ticket_id)->with([
+            'user' => function ($query) {$query->select(
+                ['id', 'name', 'surname', 'is_admin', 'is_company_admin', 'is_deleted']
+            );},
+            'user.companies:id,name'
+        ])->get();
         
         // Se la richiesta è di un utente nascondere i dati degli admin
         if(!$request->user()->is_admin) {

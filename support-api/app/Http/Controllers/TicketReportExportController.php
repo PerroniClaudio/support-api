@@ -73,7 +73,7 @@ class TicketReportExportController extends Controller {
     public function user(Request $request) {
         $user = $request->user();
 
-        $reports = TicketReportExport::where('company_id', $user->company_id)
+        $reports = TicketReportExport::where('company_id', $user->selectedCompany()->id)
             ->where('is_user_generated', true)
             ->orderBy('created_at', 'DESC')
             ->get();
@@ -91,7 +91,7 @@ class TicketReportExportController extends Controller {
                 'message' => 'The user must be at least company admin.',
             ], 401);
         }
-        if($user["is_company_admin"] == 1 && $user["company_id"] != $ticketReportExport->company_id) {
+        if($user["is_company_admin"] == 1 && $user->selectedCompany()->id != $ticketReportExport->company_id) {
             return response([
                 'message' => 'You can\'t download this report.',
             ], 401);
@@ -1416,9 +1416,9 @@ class TicketReportExportController extends Controller {
         $name = time() . '_'  . $name_file . '.xlsx';
 
         $report = TicketReportExport::create([
-            'company_id' => $user->company_id,
+            'company_id' => $user->selectedCompany()->id,
             'file_name' => $name,
-            'file_path' => 'exports/' . $user->company_id . '/' . $name,
+            'file_path' => 'exports/' . $user->selectedCompany()->id . '/' . $name,
             'start_date' => $request->start_date,
             'end_date' => $request->end_date,
             'optional_parameters' => json_encode(["type" => $request->type]),

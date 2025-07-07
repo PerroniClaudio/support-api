@@ -161,7 +161,14 @@ class HardwareImport implements ToCollection
                     if($row[11] == null) {
                         throw new \Exception('ID Azienda mancante per l\'hardware con seriale ' . $row[2]);
                     }
-                    $isCorrect = User::where('company_id', $row[11])->whereIn('id', explode(',', $row[12]))->count() == count(explode(',', $row[12]));
+                    $userIds = explode(',', $row[12]);
+                    $usersCount = count($userIds);
+                    $isCorrect = User::whereIn('id', $userIds)
+                        ->get()
+                        ->filter(function ($user) use ($row) {
+                            return $user->hasCompany($row[11]);
+                        })
+                        ->count() == $usersCount;
                     if(!$isCorrect) {
                         throw new \Exception('ID utenti errati per l\'hardware con seriale ' . $row[2]);
                     }

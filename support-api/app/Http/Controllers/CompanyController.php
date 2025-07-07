@@ -28,7 +28,7 @@ class CompanyController extends Controller {
             }
         } else {
             // Per utenti non admin, restituisci tutte le aziende collegate tramite la relazione companies()
-            $companies = $authUser->companies()->get(["id", "name"]);
+            $companies = $authUser->companies()->get(["companies.id", "companies.name"]);
         }
 
         return response([
@@ -242,7 +242,7 @@ class CompanyController extends Controller {
             ], 401);
         }
         // Esclude gli utenti disabilitati
-        $users = $company->users()->where('is_deleted', false)->get();
+        $users = $company->users()->where('users.is_deleted', false)->get();
         $users->makeHidden('microsoft_token');
 
         return response([

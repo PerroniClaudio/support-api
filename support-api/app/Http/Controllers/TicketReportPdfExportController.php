@@ -139,11 +139,10 @@ class TicketReportPdfExportController extends Controller {
             }
             // è company admin
 
-            $user_companies = $user->companies()->pluck('id')->toArray();
             // Controllo se l'utente appartiene alla company del report
-            if (!in_array($ticketReportPdfExport->company_id, $user_companies)) {
+            if ($user->selectedCompany()->id != $ticketReportPdfExport->company_id) {
                 return response([
-                    'message' => 'You can only preview reports for your company.',
+                    'message' => 'You can only preview reports for your selected company.',
                 ], 401);
             }
         }
@@ -174,11 +173,10 @@ class TicketReportPdfExportController extends Controller {
                 ], 401);
             }
             // è company admin
-            $user_companies = $user->companies()->pluck('id')->toArray();
             // Controllo se l'utente appartiene alla company del report
-            if (!in_array($ticketReportPdfExport->company_id, $user_companies)) {
+            if ($user->selectedCompany()->id != $ticketReportPdfExport->company_id) {
                 return response([
-                    'message' => 'You can only preview reports for your company.',
+                    'message' => 'You can only preview reports for your selected company.',
                 ], 401);
             }
         }

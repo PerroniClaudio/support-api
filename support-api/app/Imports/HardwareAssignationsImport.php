@@ -88,7 +88,7 @@ class HardwareAssignationsImport implements ToCollection
                     if($CompanyToRemove){
                         // Toglie tutti gli utenti assegnati
                         $hardware->users()->each(function($user) use ($hardware, $CompanyToRemove){
-                            if ($user->company_id == $CompanyToRemove->id) {
+                            if ($user->hasCompany($CompanyToRemove->id)) {
                                 $hardware->users()->detach($user->id);
                                 $removedUsers[] = $user->id;
                             }
@@ -132,14 +132,22 @@ class HardwareAssignationsImport implements ToCollection
                         }
                         foreach ($usersToAdd as $userToAdd) {
                             $user = User::find($userToAdd);
-                            if ($user && ($user->company_id != $hardware->company_id)) {
+                            if ($user && !$user->hasCompany($hardware->company_id)) {
                                 throw new \Exception('L\'utente con ID ' . $userToAdd . ' non è assegnato alla stessa azienda dell\'hardware con ID ' . $row[0]);
                             }
                             if($user && !$hardware->users->contains($user->id)){
-                                if($row[5] && !User::where(['id' => $row[5], 'company_id' => $hardware->company_id, 'is_company_admin' => true])
-                                    ->orWhere(['id' => $row[5], 'is_admin' => true])
-                                    ->exists()){
-                                    throw new \Exception('L\'utente con ID ' . $row[5] . ' non può essere impostato come responsabile in quanto non è un amministratore dell\'azienda indicata o un del supporto.');
+                                // if($row[5] && !User::where(['id' => $row[5], 'company_id' => $hardware->company_id, 'is_company_admin' => true])
+                                if ($row[5]) {
+                                    $responsibleUser = User::find($row[5]);
+                                    if (
+                                        !$responsibleUser ||
+                                        (
+                                            !$responsibleUser->hasCompany($hardware->company_id) ||
+                                            (!$responsibleUser->is_company_admin && !$responsibleUser->is_admin)
+                                        )
+                                    ) {
+                                        throw new \Exception('L\'utente con ID ' . $row[5] . ' non può essere impostato come responsabile in quanto non è un amministratore dell\'azienda indicata o del supporto.');
+                                    }
                                 }
                                 // Non usiamo il sync perchè non eseguirebbe la funzione di boot del modello personalizzato HardwareUser
                                 $hardware->users()->attach($user->id, ['created_by' => $this->authUser->id ?? null, "responsible_user_id" => $row[5] ?? $this->authUser->id ?? null]);

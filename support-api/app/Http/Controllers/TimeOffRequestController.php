@@ -122,7 +122,7 @@ class TimeOffRequestController extends Controller
             ];
 
             $fields['user_id'] = $user->id;
-            $fields['company_id'] = $user->company_id;
+            $fields['company_id'] = $user->selectedCompany()->id;
             $fields['batch_id'] = $batch_id;
 
             $existingRequest = TimeOffRequest::where('user_id', $user->id)

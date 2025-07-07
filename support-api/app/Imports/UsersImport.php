@@ -41,13 +41,17 @@ class UsersImport implements ToModel
             'surname' => $row[1],
             'email' => $row[2],
             'is_company_admin' => strtolower($row[3]) == "amministratore",
-            'company_id' => $row[4],
+            // 'company_id' => $row[4],
             'phone' => $row[5] ?? null,
             'city' => $row[6] ?? null,
             'zip_code' => $row[7] ?? null,
             'address' => $row[8] ?? null,
             'password' => Hash::make(Str::password()),
         ]);
+
+        if(isset($row[4]) && Company::where('id', $row[4])->exists()) {
+            $newUser->companies()->attach($row[4]);
+        }
 
         $activation_token = ActivationToken::create([
             // 'token' => Hash::make(Str::random(32)),

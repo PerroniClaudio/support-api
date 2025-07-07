@@ -29,24 +29,30 @@ class UserController extends Controller {
     }
 
     public function store(Request $request) {
+        $requestUser = $request->user();
+
         $fields = $request->validate([
-            'company_id' => 'required|int',
+            'company_id' => $requestUser["is_admin"] == 1 ? 'required|int' : 'nullable|int',
             'name' => 'required|string',
             'email' => 'required|string',
             'surname' => 'required|string',
         ]);
 
-        $requestUser = $request->user();
-
-        if (!($requestUser["is_admin"] == 1 || ($requestUser["company_id"] == $fields["company_id"] && $requestUser["is_company_admin"] == 1))) {
+        $userCompanyIds = $requestUser->companies()->pluck('companies.id')->toArray();
+        // if (!($requestUser["is_admin"] == 1 || (in_array($fields["company_id"], $userCompanyIds) && $requestUser["is_company_admin"] == 1))) {
+        if (!($requestUser["is_admin"] == 1 || ($requestUser["is_company_admin"] == 1))) {
             return response([
-                'message' => 'Unauthorized',
+            'message' => 'Unauthorized',
             ], 401);
         }
 
+        if($requestUser['is_admin'] != 1) {
+            $fields['company_id'] = $requestUser->selectedCompany();
+        }
+        
         // Se si modifica qualcosa da questo punto in poi bisogna modificare anche in UsersImport.php
         $newUser = User::create([
-            'company_id' => $fields['company_id'],
+            // 'company_id' => $fields['company_id'],
             'name' => $fields['name'],
             'email' => $fields['email'],
             'password' => Hash::make(Str::password()),
@@ -57,6 +63,8 @@ class UserController extends Controller {
             'address' => $request['address'] ?? null,
             'is_company_admin' => $request['is_company_admin'] ?? 0,
         ]);
+
+        $newUser->companies()->attach($fields['company_id']);
 
         $activation_token = ActivationToken::create([
             // 'token' => Hash::make(Str::random(32)),
@@ -83,7 +91,10 @@ class UserController extends Controller {
         $user = User::where('id', $id)->with(['companies'])->first();
 
         // Se non è l'utente stesso, un admin o company_admin e della stessa compagnia allora non è autorizzato
-        if (!($authUser["is_admin"] == 1 || ($authUser["id"] == $id) || ($user && ($user["company_id"] == $authUser["company_id"]) && ($authUser["is_company_admin"] == 1)))) {
+        if (!($authUser["is_admin"] == 1 || ($authUser["id"] == $id) || ($user && (
+                // $user["company_id"] == $authUser["company_id"]
+                $authUser->selectedCompany() && $user->hasCompany($authUser->selectedCompany()->id)
+            ) && ($authUser["is_company_admin"] == 1)))) {
             return response([
                 'message' => 'Unauthorized',
             ], 401);
@@ -173,7 +184,7 @@ class UserController extends Controller {
     public function update(Request $request) {
         $fields = $request->validate([
             'id' => 'required|int|exists:users,id', // TODO: 'id' => 'required|int|exists:users,id
-            'company_id' => 'required|int',
+            // 'company_id' => 'required|int',
             'name' => 'required|string',
             'email' => 'required|string',
             'surname' => 'required|string',
@@ -181,19 +192,19 @@ class UserController extends Controller {
 
         $req_user = $request->user();
 
-        // Se non è admin o non è della compagnia e company_admin allora non è autorizzato
-        if (!($req_user["is_admin"] == 1 || ($req_user["company_id"] == $fields["company_id"] && $req_user["is_company_admin"] == 1))) {
-            return response([
-                'message' => 'Unauthorized',
-            ], 401);
-        }
-
         $user = User::where('id', $request['id'])->first();
 
         if (!$user) {
             return response([
                 'message' => 'User not found',
             ], 404);
+        }
+
+        // Se non è admin o non è della compagnia e company_admin allora non è autorizzato
+        if (!($req_user["is_admin"] == 1 || ($user->companies()->where('companies.id', $req_user->selectedCompany()->id)->exists() && $req_user["is_company_admin"] == 1))) {
+            return response([
+                'message' => 'Unauthorized',
+            ], 401);
         }
 
         $updatedFields = [];
@@ -208,7 +219,7 @@ class UserController extends Controller {
 
         $user->update([
             'is_company_admin' => $updatedFields['is_company_admin'],
-            'company_id' => $updatedFields['company_id'],
+            // 'company_id' => $updatedFields['company_id'],
             'name' => $updatedFields['name'],
             'surname' => $updatedFields['surname'],
             'email' => $updatedFields['email'],
@@ -370,7 +381,7 @@ class UserController extends Controller {
     public function allUsers(Request $request) {
         $isAdminRequest = $request->user()["is_admin"] == 1;
         if ($isAdminRequest) {
-            $users = User::all();
+            $users = User::with(['companies:id,name'])->get();
             $users->makeHidden(['microsoft_token']);
             if (!$users) {
                 $users = [];
@@ -385,9 +396,15 @@ class UserController extends Controller {
     }
 
     public function getName($id, Request $request) {
+        $authUser = $request->user();
         $user = User::where('id', $id)->first();
 
-        if (!$request->user()["is_admin"] && ($user["company_id"] != $request->user()["company_id"]) && $user->company->data_owner_email != $request->user()->email) {
+        $authUserSelectedCompanyId = $authUser->selectedCompany()->id ?? null;
+        $company = Company::find($authUserSelectedCompanyId);
+
+        if (!$request->user()["is_admin"] 
+            && !$user->hasCompany($authUserSelectedCompanyId)
+            && !$user->companies()->where('data_owner_email', $authUser->email)->exists()) {
             return response([
                 'message' => 'Unauthorized',
             ], 401);
@@ -491,7 +508,7 @@ class UserController extends Controller {
         $user = User::where('id', $userId)->first();
         if (
             !$authUser->is_admin
-            && !($authUser->is_company_admin && ($user->company_id == $authUser->company_id))
+            && !($authUser->is_company_admin && ($user->companies()->whereIn('companies.id', $authUser->selectedCompany()->id)->exists()))
             && !($user->id == $authUser)
         ) {
             return response([
@@ -559,12 +576,38 @@ class UserController extends Controller {
             ], 401);
         }
 
+        // Elimina tutte le cache che contengono 'user_' . $user->id . '_'
+        $redis = \Cache::getRedis();
+        foreach ($redis->keys('*user_' . $user->id . '_*') as $key) {
+            $redis->del($key);
+        }
+
         // Salva il company_id nella sessione
         session(['selected_company_id' => $request->companyId]);
+
+
 
         return response([
             'success' => true,
             'selected_company_id' => $request->companyId,
+        ], 200);
+    }
+    
+    public function resetActiveCompany(Request $request) {
+        $user = $request->user();
+
+        // Elimina tutte le cache che contengono 'user_' . $user->id . '_'
+        $redis = \Cache::getRedis();
+        foreach ($redis->keys('*user_' . $user->id . '_*') as $key) {
+            $redis->del($key);
+        }
+
+        // Salva il company_id nella sessione
+        session(['selected_company_id' => null]);
+
+        return response([
+            'success' => true,
+            'selected_company_id' => null,
         ], 200);
     }
 
@@ -640,8 +683,6 @@ class UserController extends Controller {
                 'message' => 'User not found',
             ], 404);
         }
-
-
 
         $user->companies()->detach($company->id);
 

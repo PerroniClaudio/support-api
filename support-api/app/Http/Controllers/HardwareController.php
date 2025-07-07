@@ -139,26 +139,6 @@ class HardwareController extends Controller {
         return response([
             'hardwareList' => $hardwareList,
         ], 200);
-
-        // Se servisse anche per gli utenti 
-        // if ($authUser->is_admin) {
-        //     $hardwareList = Hardware::withTrashed()->with(['hardwareType', 'company'])->get();
-        //     return response([
-        //         'hardwareList' => $hardwareList,
-        //     ], 200);
-        // }
-        // if($authUser->is_company_admin) {
-        //     $hardwareList = Hardware::withTrashed()->where('company_id', $authUser->company_id)->with(['hardwareType', 'company'])->get();
-        //     return response([
-        //         'hardwareList' => $hardwareList,
-        //     ], 200);
-        // }
-
-        // $hardwareList = Hardware::withTrashed()->where('company_id', $authUser->company_id)->where('user_id', $authUser->id)->with(['hardwareType', 'company'])->get();
-
-        return response([
-            'hardwareList' => $hardwareList,
-        ], 200);
     }
 
     /**
@@ -215,7 +195,12 @@ class HardwareController extends Controller {
 
         // Aggiungere le associazioni utenti
         if (isset($data['company_id']) && !empty($data['users'])) {
-            $isFail = User::whereIn('id', $data['users'])->where('company_id', '!=', $data['company_id'])->exists();
+            // $isFail = User::whereIn('id', $data['users'])->where('company_id', '!=', $data['company_id'])->exists();
+            $isFail = User::whereIn('id', $data['users'])
+                ->whereDoesntHave('companies', function ($query) use ($data) {
+                    $query->where('companies.id', $data['company_id']);
+                })
+                ->exists();
             if ($isFail) {
                 return response([
                     'message' => 'One or more users do not belong to the specified company',
@@ -356,7 +341,12 @@ class HardwareController extends Controller {
 
         // controllare le associazioni utenti
         if (isset($data['company_id']) && !empty($data['users'])) {
-            $isFail = User::whereIn('id', $data['users'])->where('company_id', '!=', $data['company_id'])->exists();
+            // $isFail = User::whereIn('id', $data['users'])->where('company_id', '!=', $data['company_id'])->exists();
+            $isFail = User::whereIn('id', $data['users'])
+                ->whereDoesntHave('companies', function ($query) use ($data) {
+                    $query->where('companies.id', $data['company_id']);
+                })
+                ->exists();
             if ($isFail) {
                 return response([
                     'message' => 'One or more selected users do not belong to the specified company',
@@ -545,7 +535,12 @@ class HardwareController extends Controller {
         }
 
         if ($company && !isEmpty($data['users'])) {
-            $isFail = User::whereIn('id', $data['users'])->where('company_id', '!=', $company->id)->exists();
+            // $isFail = User::whereIn('id', $data['users'])->where('company_id', '!=', $company->id)->exists();
+            $isFail = User::whereIn('id', $data['users'])
+                ->whereDoesntHave('companies', function ($query) use ($data) {
+                    $query->where('companies.id', $data['company_id']);
+                })
+                ->exists();
             if ($isFail) {
                 return response([
                     'message' => 'One or more selected users do not belong to the specified company',
@@ -611,9 +606,15 @@ class HardwareController extends Controller {
         }
 
         $authUser = $request->user();
-        if (!($authUser->is_company_admin && $authUser->companies()->where('companies.id', $user->company_id)->exists()) && !$authUser->is_admin) {
+        if (
+            !$authUser->is_admin &&
+            !(
+                $authUser->is_company_admin &&
+                $user->companies()->whereIn('companies.id', $authUser->companies()->pluck('companies.id'))->exists()
+            )
+        ) {
             return response([
-                'message' => 'You are not allowed to update hardware users',
+            'message' => 'You are not allowed to update hardware users',
             ], 403);
         }
 
@@ -621,16 +622,19 @@ class HardwareController extends Controller {
             'hardware' => 'nullable|array',
         ]);
 
-        $company = $user->company;
+        $userHasAtLeastOneCompany = $user->companies()->exists();
 
-        if (!isEmpty($data['hardware']) && !$company) {
+        if (!isEmpty($data['hardware']) && !$userHasAtLeastOneCompany) {
             return response([
                 'message' => 'User must be associated with a company to add hardware',
             ], 404);
         }
 
-        if ($company && !isEmpty($data['hardware'])) {
-            $isFail = Hardware::whereIn('id', $data['hardware'])->where('company_id', '!=', $company->id)->exists();
+        if ($userHasAtLeastOneCompany && !isEmpty($data['hardware'])) {
+            // $isFail = Hardware::whereIn('id', $data['hardware'])->where('company_id', '!=', $company->id)->exists();
+            $isFail = Hardware::whereIn('id', $data['hardware'])
+                ->whereNotIn('company_id', $user->companies()->pluck('companies.id'))
+                ->exists();
             if ($isFail) {
                 return response([
                     'message' => 'One or more selected hardware do not belong to the user\'s company',
@@ -645,7 +649,13 @@ class HardwareController extends Controller {
             ], 404);
         }
 
-        $hardwareToRemove = $user->hardware->pluck('id')->diff($data['hardware']);
+        // Se è admin hardware to remove va preso tutto, altrimenti dovrebbe essere filtrato con selectedCompany()
+        if($authUser->is_admin) {
+            $hardwareToRemove = $user->hardware->pluck('id')->diff($data['hardware']);
+        } else {
+            $hardwareToRemove = $user->hardware()->where('company_id', $authUser->selectedCompany()->id)->pluck('id')->diff($data['hardware']);
+        }
+
         $hardwareToAdd = collect($data['hardware'])->diff($user->hardware->pluck('id'));
 
         // Solo l'admin può rimuovere associazioni hardware-user
@@ -699,7 +709,6 @@ class HardwareController extends Controller {
 
         $authUser = $request->user();
         // Adesso può farlo solo l'admin
-        // if (!$authUser->is_admin && !($authUser->is_company_admin && ($hardware->company_id == $authUser->company_id))) {
         if (!$authUser->is_admin) {
             return response([
                 'message' => 'You are not allowed to delete hardware-user associations.',
@@ -719,13 +728,26 @@ class HardwareController extends Controller {
 
     public function userHardwareList(Request $request, User $user) {
         $authUser = $request->user();
-        if (!$authUser->is_admin && !$authUser->companies()->where('companies.id', $user->company_id)->exists() && !($authUser->id == $user->id)) {
+        if (!$authUser->is_admin 
+            // && !($user->companies()->whereIn('companies.id', $authUser->companies()->pluck('companies.id'))->exists() && $authUser->is_company_admin)
+            && !$user->companies()->whereIn('companies.id', $authUser->companies()->pluck('companies.id'))->exists() //per ora non è limitato al company_admin
+            && !($authUser->id == $user->id)
+        ) {
             return response([
                 'message' => 'You are not allowed to view this user hardware',
             ], 403);
         }
 
-        $hardwareList = $user->hardware()->with(['hardwareType', 'company'])->get();
+        // lato admin si vede tutto e lato utente si deve vedere solo quello della sua azienda
+        if ($authUser->is_admin) {
+            $hardwareList = $user->hardware()->with(['hardwareType', 'company'])->get();
+        } else {
+            $hardwareList = $user->hardware()
+                ->where('company_id', $authUser->selectedCompany()->id)
+                ->with(['hardwareType', 'company'])
+                ->get();
+        }
+
         return response([
             'hardwareList' => $hardwareList,
         ], 200);
@@ -795,7 +817,8 @@ class HardwareController extends Controller {
                 'ticketType',
                 'company',
                 'user' => function ($query) {
-                    $query->select('id', 'name', 'surname', 'email', 'is_admin', 'is_company_admin', 'company_id', 'is_deleted');
+                    $query->select('id', 'name', 'surname', 'email', 'is_admin', 'is_company_admin', 'is_deleted')
+                          ->with('companies:id');
                 }
             ])->get();
             return response([
@@ -809,11 +832,15 @@ class HardwareController extends Controller {
                 'ticketType',
                 'company',
                 'user' => function ($query) {
-                    $query->select('id', 'name', 'surname', 'email', 'is_admin', 'is_company_admin', 'company_id', 'is_deleted');
+                    $query->select('id', 'name', 'surname', 'email', 'is_admin', 'is_company_admin', 'is_deleted')
+                          ->with('companies:id');
                 }
             ])->get();
 
+
+
             foreach ($tickets as $ticket) {
+                // Aggiungere il referer se esiste
                 $ticket->referer = $ticket->referer();
                 if ($ticket->referer) {
                     $ticket->referer->makeHidden(['email_verified_at', 'microsoft_token', 'created_at', 'updated_at', 'phone', 'city', 'zip_code', 'address']);
@@ -839,7 +866,8 @@ class HardwareController extends Controller {
                     'ticketType',
                     'company',
                     'user' => function ($query) {
-                        $query->select('id', 'name', 'surname', 'email', 'is_admin', 'is_company_admin', 'company_id', 'is_deleted');
+                        $query->select('id', 'name', 'surname', 'email', 'is_admin', 'is_company_admin', 'is_deleted')
+                          ->with('companies:id');
                     }
                 ])->get();
 
@@ -848,6 +876,7 @@ class HardwareController extends Controller {
             });
 
             foreach ($tickets as $ticket) {
+                // Aggiungere il referer se esiste
                 $ticket->referer = $ticket->referer();
                 if ($ticket->referer) {
                     $ticket->referer->makeHidden(['email_verified_at', 'microsoft_token', 'created_at', 'updated_at', 'phone', 'city', 'zip_code', 'address']);
@@ -1007,7 +1036,11 @@ class HardwareController extends Controller {
 
     public function downloadUserAssignmentPdf(Hardware $hardware, User $user, Request $request) {
         $authUser = $request->user();
-        if (!$authUser->is_admin && !($authUser->is_company_admin && ($hardware->company_id == $authUser->company_id))) {
+        if (!$authUser->is_admin 
+            && !($authUser->is_company_admin 
+                && (isset($hardware->company_id) && $hardware->company_id == ($authUser->selectedCompany()->id ?? null))
+            )
+        ) {
             return response([
                 'message' => 'You are not allowed to download this document',
             ], 403);
@@ -1054,7 +1087,6 @@ class HardwareController extends Controller {
 
     public function getHardwareLog($hardwareId, Request $request) {
         $authUser = $request->user();
-        // if (!$authUser->is_admin && !($authUser->is_company_admin && ($hardware->company_id == $authUser->company_id))) {
         if (!$authUser->is_admin) {
             return response([
                 'message' => 'You are not allowed to view this hardware log',

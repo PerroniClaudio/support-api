@@ -43,7 +43,7 @@ class Company extends Model {
     ];
 
     public function users() {
-        return $this->belongsToMany(User::class, 'company_user');
+        return $this->belongsToMany(User::class, 'company_user', 'company_id', 'user_id');
     }
 
     // public function ticketTypes() {
@@ -55,9 +55,12 @@ class Company extends Model {
     }
 
     public function tickets() {
-        return $this->hasMany(Ticket::class)->with(['user' => function ($query) {
-            $query->select(['id', 'name', 'surname', 'is_admin', 'company_id', 'is_company_admin', 'is_deleted']); // Specify the columns you want to include
-        }]);
+        return $this->hasMany(Ticket::class)->with([
+            'user' => function ($query) {
+                $query->select(['id', 'name', 'surname', 'is_admin', 'is_company_admin', 'is_deleted']); // Specify the columns you want to include
+            },
+            'user.companies:id,name'
+        ]);
     }
 
     public function offices() {
