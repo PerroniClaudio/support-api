@@ -47,7 +47,7 @@ services:
     platform: linux/amd64
   redis:
     image: redis:alpine
-    container_name: redis
+    container_name: ift_redis
     restart: unless-stopped
     volumes:
       - redis_data:/data
@@ -58,7 +58,7 @@ services:
     platform: linux/amd64
   meilisearch:
     image: getmeili/meilisearch:latest
-    container_name: meilisearch
+    container_name: ift_meilisearch
     restart: unless-stopped
     environment:
       - MEILI_MASTER_KEY=${MEILISEARCH_KEY}

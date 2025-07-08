@@ -4,6 +4,7 @@ return [
     'tickets' => [
         'allowed_tenants' => [
             'spreetzit',
+            'domustart',
         ],
     ],
     'hardware' => [
