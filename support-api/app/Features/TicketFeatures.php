@@ -18,7 +18,8 @@ class TicketFeatures {
             'types',
             'billing',
             'search',
-            'search_erp'
+            'search_erp',
+            'show_visibility_fields'
         ];
     }
 
@@ -31,6 +32,7 @@ class TicketFeatures {
             'billing' => $this->canBilling(),
             'search' => $this->canSearch(),
             'search_erp' => $this->canSearchErp(),
+            'show_visibility_fields' => $this->canShowVisibilityFields(),
             default => false,
         };
     }
@@ -63,9 +65,24 @@ class TicketFeatures {
         return config('app.tenant') === 'spreetzit';
     }
 
+    private function canShowVisibilityFields() {
+        return $this->isTenantAllowed() && $this->isExclusiveFeatureEnabled('show_visibility_fields');
+    }
+
     private function isTenantAllowed(): bool {
         $current_tenant = config('app.tenant');
         $allowedTenants = config('features-tenants.tickets.allowed_tenants', []);
         return in_array($current_tenant, $allowedTenants, true);
+    }
+
+    private function isExclusiveFeatureEnabled(string $feature): bool {
+        $current_tenant = config('app.tenant');
+        $exclusiveFeatures = config('features-tenants.tickets.exclusive_features', []);
+
+        if (isset($exclusiveFeatures[$feature])) {
+            return in_array($current_tenant, $exclusiveFeatures[$feature], true);
+        }
+
+        return false;
     }
 }
