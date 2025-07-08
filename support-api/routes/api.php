@@ -26,7 +26,7 @@ use Illuminate\Support\Facades\Log;
 // AUTHENTICATION ROUTES 
 
 Route::middleware(['auth:sanctum', 'admin.or.company'])->group(function () {
-    
+
     // User Routes
 
     Route::get('/user', function (Request $request) {
@@ -93,7 +93,7 @@ Route::middleware(['auth:sanctum', 'admin.or.company'])->group(function () {
     Route::get("/ticket-report/batch", [App\Http\Controllers\TicketController::class, "batchReport"]);
     Route::get("/ticket-types", [App\Http\Controllers\UserController::class, "ticketTypes"]);
     Route::get("/ticket/{ticket}/slave-tickets", [App\Http\Controllers\TicketController::class, "getSlaveTickets"]);
-    
+
 
     // Company Routes
 
@@ -118,7 +118,7 @@ Route::middleware(['auth:sanctum', 'admin.or.company'])->group(function () {
     Route::post("/companies/{company}/logo", [CompanyController::class, "uploadLogo"]);
     Route::post("/companies/{company}/update-reading-delay-warning", [CompanyController::class, "updateDelayWarning"]);
 
-    
+
     // Gruppi custom
 
     Route::get("/companies/{company}/custom-groups", [CompanyController::class, "getCustomUserGroups"]);
@@ -133,18 +133,18 @@ Route::middleware(['auth:sanctum', 'admin.or.company'])->group(function () {
     Route::delete("/custom-groups/users", [CompanyController::class, "removeUsersFromGroup"]);
     Route::delete("/custom-groups/ticket-types", [CompanyController::class, "removeTicketTypesFromGroup"]);
     Route::post("/custom-groups/{customUserGroup}", [CompanyController::class, "updateCustomUserGroup"]);
-    
+
 
     // Office Routes
 
     Route::resource('offices', App\Http\Controllers\OfficeController::class);
-    
+
 
     // Attendance Routes
 
     Route::resource('attendance', App\Http\Controllers\AttendanceController::class);
     Route::get('presenze-type', [App\Http\Controllers\AttendanceController::class, "types"]);
-    
+
 
     // Time Off Request Routes
 
@@ -155,23 +155,23 @@ Route::middleware(['auth:sanctum', 'admin.or.company'])->group(function () {
 
 
     // Business Trip Routes
-    
+
     Route::resource('business-trip', App\Http\Controllers\BusinessTripController::class);
     Route::get('business-trip/{business_trip}/expense', [App\Http\Controllers\BusinessTripController::class, "getExpenses"]);
     Route::post('business-trip/{business_trip}/expense', [App\Http\Controllers\BusinessTripController::class, "storeExpense"]);
     Route::get('business-trip/{business_trip}/transfer', [App\Http\Controllers\BusinessTripController::class, "getTransfers"]);
     Route::post('business-trip/{business_trip}/transfer', [App\Http\Controllers\BusinessTripController::class, "storeTransfer"]);
-    
+
 
     // Brand Routes
-    
+
     Route::get("/brands", [BrandController::class, "index"]);
     Route::get("/brands/{brand}", [BrandController::class, "show"]);
     Route::post("/brands", [BrandController::class, "store"]);
     Route::patch("/brands/{brand}", [BrandController::class, "update"]);
     Route::delete("/brands/{brand}", [BrandController::class, "destroy"]);
     Route::post("/brands/{brand}/logo", [BrandController::class, "uploadLogo"]);
-    
+
 
     // Supplier Routes
 
@@ -182,7 +182,7 @@ Route::middleware(['auth:sanctum', 'admin.or.company'])->group(function () {
     Route::delete("/suppliers/{supplier}", [App\Http\Controllers\SupplierController::class, "destroy"]);
     Route::post("/suppliers/{supplier}/logo", [App\Http\Controllers\SupplierController::class, "uploadLogo"]);
     Route::get("/suppliers/{supplier}/brands", [App\Http\Controllers\SupplierController::class, "brands"]);
-    
+
 
     // Group Routes
 
@@ -194,7 +194,7 @@ Route::middleware(['auth:sanctum', 'admin.or.company'])->group(function () {
     Route::post("/groups", [GroupController::class, "store"]);
     Route::post("/groups-users", [GroupController::class, "updateUsers"]);
     Route::post("/groups-types", [GroupController::class, "updateTypes"]);
-    
+
 
     // Ticket Type Routes
 
@@ -219,16 +219,16 @@ Route::middleware(['auth:sanctum', 'admin.or.company'])->group(function () {
     Route::post("/ticket-type/duplicate", [App\Http\Controllers\TicketTypeController::class, "duplicateTicketType"]);
 
     // Custom groups
-    
+
     Route::get("/ticket-type/{ticketType}/custom-groups", [App\Http\Controllers\TicketTypeController::class, "getCustomGroups"]);
     Route::post("/ticket-type/custom-groups", [App\Http\Controllers\TicketTypeController::class, "addCustomGroup"]);
     Route::delete("/ticket-type/custom-groups", [App\Http\Controllers\TicketTypeController::class, "removeCustomGroup"]);
     Route::get("/ticket-type/{ticketType}/available-custom-groups", [App\Http\Controllers\TicketTypeController::class, "getAvailableCustomGroups"]);
     Route::post("/ticket-type/{ticketType}/custom-group-exclusive", [App\Http\Controllers\TicketTypeController::class, "setCustomGroupExclusive"]);
-    
+
 
     // Ticket Report Routes
-    
+
     Route::get("/ticket-report/pdf/batch", [App\Http\Controllers\TicketReportExportController::class, "exportBatch"]);
     Route::get("/ticket-report/pdf/{ticket}", [App\Http\Controllers\TicketReportExportController::class, "exportpdf"]);
     Route::get("/ticket-report/list/{company}", [App\Http\Controllers\TicketReportExportController::class, "company"]);
@@ -250,7 +250,7 @@ Route::middleware(['auth:sanctum', 'admin.or.company'])->group(function () {
     Route::get("/approved-ticket-pdf-report/list/{company}", [App\Http\Controllers\TicketReportPdfExportController::class, "approvedPdfCompany"]);
     Route::get("/ticket-pdf-report/preview/{ticketReportPdfExport}", [App\Http\Controllers\TicketReportPdfExportController::class, "pdfPreview"]);
     Route::get("/ticket-pdf-report/download/{ticketReportPdfExport}", [App\Http\Controllers\TicketReportPdfExportController::class, "pdfDownload"]);
-    
+
 
     // Hardware Routes
 
@@ -287,14 +287,14 @@ Route::middleware(['auth:sanctum', 'admin.or.company'])->group(function () {
 
 
     // Documentation Routes
-    
+
     Route::get('/files/public/search', [App\Http\Controllers\WikiObjectController::class, "searchPublic"]);
     Route::get("/files/public/{folder}", [App\Http\Controllers\WikiObjectController::class, "public"]);
     Route::get('/wiki-files/{wikiObject}', [App\Http\Controllers\WikiObjectController::class, "downloadFile"]);
     Route::get('/files/search', [App\Http\Controllers\WikiObjectController::class, "search"]);
     Route::get("/files/{folder}", [App\Http\Controllers\WikiObjectController::class, "index"]);
     Route::post("/files", [App\Http\Controllers\WikiObjectController::class, "store"]);
-    
+
     // Stats Routes
 
     Route::get("/stats", [App\Http\Controllers\TicketStatsController::class, "latestStats"]);
@@ -309,46 +309,5 @@ Route::get("/brand/{brand}/logo", [BrandController::class, "getLogo"]);
 Route::post("/upload-file", [App\Http\Controllers\FileUploadController::class, "uploadFileToCloud"]);
 
 // Feature Flags Routes
-Route::get('/features', function () {
-
-    $user = auth()->user();
-
-
-    // Usa il tenant corrente come scope per le feature flags
-    $currentTenant = config('app.tenant');
-
-    return response()->json([
-        "success" => true,
-        "message" => "Feature flags retrieved successfully",
-        "features" => [
-            "tickets_list" =>  Feature::for($currentTenant)->active('ticket.list'),
-            "tickets_create" => Feature::for($currentTenant)->active('ticket.create'),
-            "tickets_massive_generation" => Feature::for($currentTenant)->active('ticket.massive_generation'),
-            "ticket_types" =>  Feature::for($currentTenant)->active('ticket.types'),
-            "tickets_billing" => Feature::for($currentTenant)->active('ticket.billing'),
-            "ticket_search" => Feature::for($currentTenant)->active('ticket.search'),
-            "ticket_search_erp" => Feature::for($currentTenant)->active('ticket.search_erp'),
-            "hardware_list" => Feature::for($currentTenant)->active('hardware.list'),
-            "hardware_massive_generation" => Feature::for($currentTenant)->active('hardware.massive_generation'),
-            "hardware_assign_massive" => Feature::for($currentTenant)->active('hardware.assign_massive'),
-            "hardware_delete_massive" => Feature::for($currentTenant)->active('hardware.hardware_delete_massive'),
-            "users_management" => true,
-            "companies_management" => true,
-            "groups_management" => true,
-            "suppliers_management" => true,
-            "brand_management" => true,
-            "reports" => true,
-            "documentation" => true
-        ],
-        "user_role" => "admin",
-        "permissions" => [
-            "view_tickets",
-            "create_tickets",
-            "manage_hardware",
-            "manage_users",
-            "manage_companies",
-            "view_reports"
-        ],
-        "last_updated" => "2025-06-13T10:30:00Z"
-    ]);
-});
+Route::get('/features', [App\Http\Controllers\FeatureFlagController::class, "getFeatures"]);
+Route::post('/features/flush', [App\Http\Controllers\FeatureFlagController::class, "flushFeatureFlags"]);

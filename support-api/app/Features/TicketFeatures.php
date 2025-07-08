@@ -60,6 +60,12 @@ class TicketFeatures {
     }
 
     private function canSearchErp() {
-        return true;
+        return config('app.tenant') === 'spreetzit';
+    }
+
+    private function isTenantAllowed(): bool {
+        $current_tenant = config('app.tenant');
+        $allowedTenants = config('features-tenants.tickets.allowed_tenants', []);
+        return in_array($current_tenant, $allowedTenants, true);
     }
 }
