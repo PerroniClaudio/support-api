@@ -6,6 +6,7 @@ use App\Imports\TicketsImport;
 use App\Jobs\SendOpenTicketEmail;
 use App\Jobs\SendCloseTicketEmail;
 use App\Jobs\SendUpdateEmail;
+use App\Models\Domustart\DomustartTicket;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\TicketStatusUpdate;
@@ -23,7 +24,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Log;
-
+use Laravel\Pennant\Feature;
 
 class TicketController extends Controller {
     /**
@@ -70,18 +71,18 @@ class TicketController extends Controller {
             } else {
                 $selectedCompany = $user->selectedCompany();
 
-                $userRefererTickets = $selectedCompany 
+                $userRefererTickets = $selectedCompany
                     ? $user->refererTickets()->where('company_id', $selectedCompany->id)
                     : collect();
 
                 if ($withClosed) {
                     // $ticketsTemp = $selectedCompany ? $selectedCompany->tickets : collect();
-                    $ticketsTemp = $selectedCompany 
+                    $ticketsTemp = $selectedCompany
                         ? $user->tickets()->where('company_id', $selectedCompany->id)->get()->merge($userRefererTickets)
                         : collect();
                 } else {
                     // $ticketsTemp = $selectedCompany ? Ticket::where("status", "!=", 5)->where('company_id', $selectedCompany->id)->with('user')->get() : collect();
-                    $ticketsTemp = $selectedCompany 
+                    $ticketsTemp = $selectedCompany
                         ? $user->tickets()->where("status", "!=", 5)->where('company_id', $selectedCompany->id)->get()->merge($userRefererTickets->where("status", "!=", 5))
                         : collect();
                 }
@@ -125,6 +126,7 @@ class TicketController extends Controller {
      * Store a newly created resource in storage.
      */
     public function store(Request $request) {
+
 
         $user = $request->user();
 
@@ -176,6 +178,14 @@ class TicketController extends Controller {
                 'is_user_error' => 1, // is_user_error viene usato per la responsabilità del dato e di default è assegnata al cliente.
                 'is_billable' => $ticketType['expected_is_billable'],
             ]);
+
+            if (Feature::for(config('app.tenant'))->active('ticket.show_visibility_fields')) {
+                $domustartTicket = DomustartTicket::firstOrNew(['id' => $ticket->id]);
+                $domustartTicket->is_visible_all_users = $request->is_visible_all_users ? 1 : 0;
+                $domustartTicket->is_visible_admin = $request->is_visible_admin ? 1 : 0;
+                $domustartTicket->save();
+            }
+
 
             if ($request->parent_ticket_id) {
                 $parentTicket = Ticket::find($request->parent_ticket_id);
@@ -1206,7 +1216,7 @@ class TicketController extends Controller {
 
         $authUser = $request->user();
         $ticket = Ticket::find($id);
-        if(!$authUser->is_admin && ($authUser->selectedCompany()->id != $ticket->company_id)) {
+        if (!$authUser->is_admin && ($authUser->selectedCompany()->id != $ticket->company_id)) {
             return response([
                 'message' => 'Unauthorized.',
             ], 401);
