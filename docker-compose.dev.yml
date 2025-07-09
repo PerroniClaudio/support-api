@@ -57,14 +57,16 @@ services:
       - "6379:6379"
     platform: linux/amd64
   meilisearch:
-    image: getmeili/meilisearch:latest
+    image: getmeili/meilisearch:v1.15.2
     container_name: ift_meilisearch
     restart: unless-stopped
     environment:
       - MEILI_MASTER_KEY=${MEILISEARCH_KEY}
       - MEILI_HTTP_ADDR=0.0.0.0:7700
+      - MEILI_NO_ANALYTICS=true
+      - MEILI_ENV=development
     volumes:
-      - meilisearch_data:/data.ms
+      - meilisearch_data:/meili_data
     ports:
       - "7700:7700"
     networks:
