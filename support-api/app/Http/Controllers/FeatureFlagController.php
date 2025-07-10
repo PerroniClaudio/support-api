@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use \Laravel\Pennant\Feature;
 use App\Features\TicketFeatures;
 use App\Features\HardwareFeatures;
+use App\Features\PropertyFeatures;
 
 class FeatureFlagController extends Controller {
     public function flushFeatureFlags() {
@@ -22,11 +23,9 @@ class FeatureFlagController extends Controller {
 
         // Formato gerarchico semplice
         $features = [
-            // Scope tickets con array delle feature abilitate
             "tickets" => $this->getEnabledFeaturesForScope($currentTenant, 'ticket', TicketFeatures::getFeatures()),
-
-            // Scope hardware con array delle feature abilitate  
             "hardware" => $this->getEnabledFeaturesForScope($currentTenant, 'hardware', HardwareFeatures::getFeatures()),
+            "properties" => $this->getEnabledFeaturesForScope($currentTenant, 'hardware', PropertyFeatures::getFeatures()),
 
             // Feature legacy mantenute per compatibilità (solo ticket_types per ora)
             "ticket_types" => Feature::for($currentTenant)->active('ticket.types'),

@@ -12,3 +12,4 @@ data.ms
 start.sh
 stop.sh
 /support-api/storage/fonts/installed-fonts.json
+/.vscode

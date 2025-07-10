@@ -69,6 +69,10 @@ class User extends Authenticatable {
         return $this->companies()->where('company_id', $companyId)->exists();
     }
 
+    public function properties() {
+        return $this->belongsToMany(Property::class, 'properties_users', 'user_id', 'property_id');
+    }
+
     /**
      * get user's tickets
      */

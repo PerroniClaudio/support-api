@@ -103,4 +103,8 @@ class Company extends Model {
     public function customUserGroups() {
         return $this->hasMany(CustomUserGroup::class);
     }
+
+    public function properties() {
+        return $this->hasMany(Property::class);
+    }
 }
