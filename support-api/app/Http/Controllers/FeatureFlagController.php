@@ -25,7 +25,7 @@ class FeatureFlagController extends Controller {
         $features = [
             "tickets" => $this->getEnabledFeaturesForScope($currentTenant, 'ticket', TicketFeatures::getFeatures()),
             "hardware" => $this->getEnabledFeaturesForScope($currentTenant, 'hardware', HardwareFeatures::getFeatures()),
-            "properties" => $this->getEnabledFeaturesForScope($currentTenant, 'hardware', PropertyFeatures::getFeatures()),
+            "properties" => $this->getEnabledFeaturesForScope($currentTenant, 'property', PropertyFeatures::getFeatures()),
 
             // Feature legacy mantenute per compatibilità (solo ticket_types per ora)
             "ticket_types" => Feature::for($currentTenant)->active('ticket.types'),
