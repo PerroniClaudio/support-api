@@ -17,4 +17,9 @@ return [
             'spreetzit'
         ],
     ],
+    'properties' => [
+        'allowed_tenants' => [
+            'domustart',
+        ],
+    ],
 ];
