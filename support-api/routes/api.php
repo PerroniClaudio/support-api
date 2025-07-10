@@ -285,6 +285,12 @@ Route::middleware(['auth:sanctum', 'admin.or.company'])->group(function () {
     Route::get("/hardware-logs/{hardware}/export", [App\Http\Controllers\HardwareController::class, "hardwareLogsExport"]);
     Route::get("/hardware-logs/{hardware}", [App\Http\Controllers\HardwareController::class, "getHardwareLog"]);
 
+    // Property Routes
+    Route::get("/properties", [App\Http\Controllers\PropertyController::class, "index"]);
+    Route::get("/properties/{property}", [App\Http\Controllers\PropertyController::class, "show"]);
+    Route::post("/properties", [App\Http\Controllers\PropertyController::class, "store"]);
+    Route::patch("/properties/{property}", [App\Http\Controllers\PropertyController::class, "update"]);
+    Route::delete("/properties/{property}", [App\Http\Controllers\PropertyController::class, "destroy"]);
 
     // Documentation Routes
 

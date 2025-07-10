@@ -10,6 +10,7 @@ use Opcodes\LogViewer\Facades\LogViewer;
 use Laravel\Pennant\Feature;
 use App\Features\TicketFeatures;
 use App\Features\HardwareFeatures;
+use App\Features\PropertyFeatures;
 
 class AppServiceProvider extends ServiceProvider {
     /**
@@ -50,6 +51,7 @@ class AppServiceProvider extends ServiceProvider {
     private function registerFeatures(): void {
         $this->registerFeaturesFromClass('ticket', TicketFeatures::class);
         $this->registerFeaturesFromClass('hardware', HardwareFeatures::class);
+        $this->registerFeaturesFromClass('property', PropertyFeatures::class);
         // Qui potrai aggiungere altre classi come:
         // $this->registerFeaturesFromClass('hardware', HardwareFeatures::class);
         // $this->registerFeaturesFromClass('user', UserFeatures::class);

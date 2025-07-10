@@ -14,7 +14,7 @@ class PropertyFeatures {
             'list',
             'massive_generation',
             'assign_massive',
-            'hardware_delete_massive',
+            'property_delete_massive',
         ];
     }
 
@@ -23,7 +23,7 @@ class PropertyFeatures {
             'list' => $this->canListProperty(),
             'massive_generation' => $this->canMassiveGeneration(),
             'assign_massive' => $this->canAssignMassive(),
-            'hardware_delete_massive' => $this->canPropertyDeleteMassive(),
+            'property_delete_massive' => $this->canPropertyDeleteMassive(),
             default => false,
         };
     }
