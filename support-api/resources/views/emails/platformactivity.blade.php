@@ -4,7 +4,7 @@
 
 ## Problemi
 @component('mail::table')
-|Azienda|Tipologia|Aperto il|Stato|Visita|
+|{{ \App\Models\TenantTerm::getCurrentTenantTerm('azienda', 'Azienda') }}|Tipologia|Aperto il|Stato|Visita|
 |:--|:--|:--|:--|--:|
 @foreach ($tickets as $ticket)
     @if($ticket->ticketType->category->is_problem)
@@ -16,7 +16,7 @@
 ## Richieste
 
 @component('mail::table')
-|Azienda|Tipologia|Aperto il|Stato|Visita|
+|{{ \App\Models\TenantTerm::getCurrentTenantTerm('azienda', 'Azienda') }}|Tipologia|Aperto il|Stato|Visita|
 |:--|:--|:--|:--|--:|
 @foreach ($tickets as $ticket)
     @if($ticket->ticketType->category->is_request)

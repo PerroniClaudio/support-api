@@ -55,6 +55,18 @@ class TenantTermSeeder extends Seeder
                 'value' => 'Caposcala',
                 'description' => 'Termine per indicare il referente IT/responsabile per Domustart',
                 'category' => 'terminology'
+            ],
+            [
+                'key' => 'azienda',
+                'value' => 'Condominio',
+                'description' => 'Termine singolare per indicare l\'azienda/condominio per Domustart',
+                'category' => 'terminology'
+            ],
+            [
+                'key' => 'aziende',
+                'value' => 'Condomini',
+                'description' => 'Termine plurale per indicare le aziende/condomini per Domustart',
+                'category' => 'terminology'
             ]
         ];
 
@@ -109,6 +121,18 @@ class TenantTermSeeder extends Seeder
                 'key' => 'referente_it',
                 'value' => 'Referente IT',
                 'description' => 'Termine per indicare il referente IT/responsabile per Spreetzit',
+                'category' => 'terminology'
+            ],
+            [
+                'key' => 'azienda',
+                'value' => 'Azienda',
+                'description' => 'Termine singolare per indicare l\'azienda per Spreetzit',
+                'category' => 'terminology'
+            ],
+            [
+                'key' => 'aziende',
+                'value' => 'Aziende',
+                'description' => 'Termine plurale per indicare le aziende per Spreetzit',
                 'category' => 'terminology'
             ]
         ];

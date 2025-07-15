@@ -135,7 +135,7 @@ class TicketTypeController extends Controller {
         // controllo ticket della compagnia precedente. se non ce ne sono si può modificare la compagnia, altrimenti no.
         if ($ticketType['company_id'] && $ticketType['company_id'] != $request['company_id'] && $ticketType->countRelatedTickets() > 0) {
             return response([
-                'message' => 'Nessuna modifica effettuata. Non è possibile modificare l\'azienda perché ci sono ticket associati con l\'attuale azienda',
+                'message' => 'Nessuna modifica effettuata. Non è possibile modificare ' . strtolower(\App\Models\TenantTerm::getCurrentTenantTerm('azienda', 'l\'azienda')) . ' perché ci sono ticket associati con l\'attuale ' . strtolower(\App\Models\TenantTerm::getCurrentTenantTerm('azienda', 'azienda')),
             ], 400);
         }
         // if ($ticketType->company_id != $request['company_id'] && $ticketType->countRelatedTickets()) {

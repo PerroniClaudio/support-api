@@ -5,7 +5,7 @@
 <!-- da {{ $user->name }} -->
 
 {{ $category->is_problem ? 'Incident' : 'Request' }} n° {{ $ticket->id }} <br>
-Azienda: {{ $company->name }} <br>
+{{ \App\Models\TenantTerm::getCurrentTenantTerm('azienda', 'Azienda') }}: {{ $company->name }} <br>
 Categoria: {{ $category->name }} <br>
 Tipo: {{ $ticketType->name }} <br><br>
 <!-- Update: {{ $update->content }} <br><br> -->
