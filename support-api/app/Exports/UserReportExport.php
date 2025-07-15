@@ -5,6 +5,7 @@ namespace App\Exports;
 use App\Models\Office;
 use App\Models\Ticket;
 use App\Models\TicketReportExport;
+use App\Models\TenantTerm;
 use App\Models\User;
 use Maatwebsite\Excel\Concerns\FromArray;
 
@@ -24,7 +25,7 @@ class UserReportExport implements FromArray
             "ID",
             "Utente",
             "Utente interessato", // referer
-            "Referente IT",
+            \App\Models\TenantTerm::getCurrentTenantTerm('referente_it', 'Referente IT'),
             "Problema/Richiesta",
             "Categoria",
             "Tipologia",

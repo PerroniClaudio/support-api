@@ -65,7 +65,7 @@ class SendOpenMassiveTicketEmail implements ShouldQueue {
         Mail::to($referer->email)->send(new OpenMassiveTicketEmail($this->ticketsInfo, $company, $ticketType, $category, $this->brand_url, "referer"));
       }
 
-      // Se il referente IT è impostato ed è diverso dall'utente e dall'utente interessato (referer), gli invia la mail.
+      // Se il {{ strtolower(\App\Models\TenantTerm::getCurrentTenantTerm('referente_it', 'referente IT')) }} è impostato ed è diverso dall'utente e dall'utente interessato (referer), gli invia la mail.
       if($refererIT && ($referer ? $refererIT->id !== $referer->id : true) && $refererIT->id !== $ticketUser->id && $refererIT->email){
         Mail::to($refererIT->email)->send(new OpenMassiveTicketEmail($this->ticketsInfo, $company, $ticketType, $category, $this->brand_url, "referer_it"));
       }

@@ -955,7 +955,7 @@
                                             @break
 
                                             @case('referer_it')
-                                                <span><b>Referente IT</b><br> {{ $value }}</span> <br>
+                                                <span><b>{{ \App\Models\TenantTerm::getCurrentTenantTerm('referente_it', 'Referente IT') }}</b><br> {{ $value }}</span> <br>
                                             @break
 
                                             @case('office')
@@ -1173,7 +1173,7 @@
                                             @break
 
                                             @case('referer_it')
-                                                <span><b>Referente IT</b><br> {{ $value }}</span> <br>
+                                                <span><b>{{ \App\Models\TenantTerm::getCurrentTenantTerm('referente_it', 'Referente IT') }}</b><br> {{ $value }}</span> <br>
                                             @break
 
                                             @case('office')

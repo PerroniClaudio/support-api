@@ -62,7 +62,7 @@ class OpenMassiveTicketEmail extends Mailable
         }
         if(isset($data['referer_it'])){
             $refererIT = User::find($data['referer_it']);
-            $data["Referente IT"] = $refererIT
+            $data[\App\Models\TenantTerm::getCurrentTenantTerm('referente_it', 'Referente IT')] = $refererIT
                 ? $refererIT->name . ' ' . $refererIT->surname ?? ''
                 : $data['referer_it'];
             unset($data['referer_it']);
