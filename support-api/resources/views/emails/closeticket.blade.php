@@ -14,7 +14,7 @@
 Buongiorno,
 
 @if ($sendToDataOwner == true)
-questa mail ti è stata inviata in quanto titolare del dato per l'azienda {{ $ticket->company->name }}. Condividiamo la chiusura di questo ticket e il link per accedere al dettaglio.
+questa mail ti è stata inviata in quanto titolare del dato per {{ strtolower(\App\Models\TenantTerm::getCurrentTenantTerm('azienda', 'l\'azienda')) }} {{ $ticket->company->name }}. Condividiamo la chiusura di questo ticket e il link per accedere al dettaglio.
 @endif
 
 {{ $category->is_problem ? 'L\'Incident ' : 'La Request ' }} n° {{ $ticket->id }} {{ $category->is_problem ? ' è stato chiuso ' : ' è stata chiusa ' }} col messaggio seguente:<br>

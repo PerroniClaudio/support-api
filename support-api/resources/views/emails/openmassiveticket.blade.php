@@ -23,7 +23,7 @@ Sei stato indicato come {{ strtolower(\App\Models\TenantTerm::getCurrentTenantTe
 
 {{ $category->is_problem ? 'Incident' : 'Request' }}<br>
 @if($mailType == "admin") 
-Azienda: {{ $company->name }} <br>
+{{ \App\Models\TenantTerm::getCurrentTenantTerm('azienda', 'Azienda') }}: {{ $company->name }} <br>
 Utente: {{ $user->is_admin ? 'Supporto' : $user->name . ' ' . $user->surname ?? '' }} <br>
 @endif
 Categoria: {{ $category->name }} <br>

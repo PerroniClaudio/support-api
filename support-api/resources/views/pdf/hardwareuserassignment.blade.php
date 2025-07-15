@@ -30,7 +30,7 @@
     <hr>
 
     <div class="box" style="margin-bottom: 8px; border-color: #44403c;">
-      <p class="box-heading"><b>Azienda</b></p>
+      <p class="box-heading"><b>{{ \App\Models\TenantTerm::getCurrentTenantTerm('azienda', 'Azienda') }}</b></p>
       <div>
         {{-- <p style="font-size: 14px;"><b>ID:</b> {{ $hardware->company->id }}</p> --}}
         <p style="font-size: 14px;"><b>Denominazione:</b> {{ $hardware->company->name }}</p>
