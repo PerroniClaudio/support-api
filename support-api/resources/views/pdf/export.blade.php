@@ -34,7 +34,7 @@
                             @break
 
                             @case('referer_it')
-                                <p><b>Referente IT</b><br> {{ $value }}</p>
+                                <p><b>{{ \App\Models\TenantTerm::getCurrentTenantTerm('referente_it', 'Referente IT') }}</b><br> {{ $value }}</p>
                             @break
 
                             @case('office')

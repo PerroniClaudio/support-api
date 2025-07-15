@@ -49,6 +49,12 @@ class TenantTermSeeder extends Seeder
                 'value' => 'Dashboard Immobiliare',
                 'description' => 'Titolo della dashboard per Domustart',
                 'category' => 'ui'
+            ],
+            [
+                'key' => 'referente_it',
+                'value' => 'Caposcala',
+                'description' => 'Termine per indicare il referente IT/responsabile per Domustart',
+                'category' => 'terminology'
             ]
         ];
 
@@ -98,6 +104,12 @@ class TenantTermSeeder extends Seeder
                 'value' => 'Dashboard Tecnica',
                 'description' => 'Titolo della dashboard per Spreetzit',
                 'category' => 'ui'
+            ],
+            [
+                'key' => 'referente_it',
+                'value' => 'Referente IT',
+                'description' => 'Termine per indicare il referente IT/responsabile per Spreetzit',
+                'category' => 'terminology'
             ]
         ];
 

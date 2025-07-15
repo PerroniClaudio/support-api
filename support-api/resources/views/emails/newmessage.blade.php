@@ -22,13 +22,13 @@ Buongiorno, <br><br>
 Questa mail ti è stata inviata perchè sei indicato come utente interessato nel relativo ticket. <br><br>
 @elseif($mailType == "referer_it")
 Buongiorno, <br><br>
-Questa mail ti è stata inviata perchè sei il referente IT per il relativo ticket. <br><br>
+Questa mail ti è stata inviata perchè sei il {{ strtolower(\App\Models\TenantTerm::getCurrentTenantTerm('referente_it', 'referente IT')) }} per il relativo ticket. <br><br>
 @endif
 {{ $category->is_problem ? 'Incident' : 'Request' }} n° {{ $ticket->id }} - {{ $ticketType->name }}<br>
 @if($sender->is_admin)
 @if($mailType == "admin" || $mailType == "support")
 Aperto da: {{$opener->name . ' ' . ($opener->surname ?? '')}}<br>
-Referente IT: {{$refererIT ? ($refererIT->name . ' ' . ($refererIT->surname ?? '')) : 'Nessuno'}}<br>
+{{ \App\Models\TenantTerm::getCurrentTenantTerm('referente_it', 'Referente IT') }}: {{$refererIT ? ($refererIT->name . ' ' . ($refererIT->surname ?? '')) : 'Nessuno'}}<br>
 Utente interessato: {{$referer ? ($referer->name . ' ' . ($referer->surname ?? '')) : 'Nessuno'}}<br>
 @endif
 @endif

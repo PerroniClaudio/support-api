@@ -55,14 +55,14 @@ class SendCloseTicketEmail implements ShouldQueue {
           }
         }
         
-        // Inviare la mail di chiusura al referente IT
+        // Inviare la mail di chiusura al {{ strtolower(\App\Models\TenantTerm::getCurrentTenantTerm('referente_it', 'referente IT')) }}
         if($refererIT && $refererIT->email){
           if(filter_var($refererIT->email, FILTER_VALIDATE_EMAIL)) {
             Mail::to($refererIT->email)->send(new CloseTicketEmail($this->ticket, $this->message, $userLink, $this->brand_url));
           }
         } 
   
-        // Inviare la mail di chiusura al referente in sede, se è diverso dal referente IT
+        // Inviare la mail di chiusura al referente in sede, se è diverso dal {{ strtolower(\App\Models\TenantTerm::getCurrentTenantTerm('referente_it', 'referente IT')) }}
         if($referer && ($refererIT ? $refererIT->id !== $referer->id : true) && $referer->email){
           if(filter_var($referer->email, FILTER_VALIDATE_EMAIL)) {
             Mail::to($referer->email)->send(new CloseTicketEmail($this->ticket, $this->message, $userLink, $this->brand_url));

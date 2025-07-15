@@ -18,7 +18,7 @@ Di seguito la sintesi del ticket che hai aperto. <br><br>
 @elseif($mailType == "referer")
 Sei stato indicato come utente interessato {{ $category->is_problem ? 'nel seguente Incident' : 'nella seguente Request' }}. <br><br>
 @elseif($mailType == "referer_it")
-Sei stato indicato come referente IT per {{ $category->is_problem ? 'il seguente Incident' : 'la seguente Request' }}. <br><br>
+Sei stato indicato come {{ strtolower(\App\Models\TenantTerm::getCurrentTenantTerm('referente_it', 'referente IT')) }} per {{ $category->is_problem ? 'il seguente Incident' : 'la seguente Request' }}. <br><br>
 @endif
 
 {{ $category->is_problem ? 'Incident' : 'Request' }} n° {{ $ticket->id }} <br>

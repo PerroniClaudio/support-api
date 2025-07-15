@@ -63,12 +63,12 @@ class SendNewMessageEmail implements ShouldQueue {
         Mail::to($handler->email)->send(new NewMessageEmail('admin', $this->ticket, $this->message, $link_admin, $this->brand_url, $adminLogoRedirectUrl, $this->user));
       }
 
-      // Inviarlo all'utente interessato (referer) se non l'ha inviato lui e se è diverso dal referente IT
+      // Inviarlo all'utente interessato (referer) se non l'ha inviato lui e se è diverso dal {{ strtolower(\App\Models\TenantTerm::getCurrentTenantTerm('referente_it', 'referente IT')) }}
       if($referer && $referer->id !== $this->user->id && ($refererIT ? $refererIT->id !== $referer->id : true) && $referer->email){
         Mail::to($referer->email)->send(new NewMessageEmail("referer", $this->ticket, $this->message, $link_user, $this->brand_url, $userLogoRedirectUrl, $this->user));
       }
 
-      // Inviarlo al referente IT se non l'ha inviato lui
+      // Inviarlo al {{ strtolower(\App\Models\TenantTerm::getCurrentTenantTerm('referente_it', 'referente IT')) }} se non l'ha inviato lui
       if($refererIT && $refererIT->id !== $this->user->id && $refererIT->email){
         Mail::to($refererIT->email)->send(new NewMessageEmail("referer_it", $this->ticket, $this->message, $link_user, $this->brand_url, $userLogoRedirectUrl, $this->user));
       }

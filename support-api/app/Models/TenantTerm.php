@@ -61,4 +61,13 @@ class TenantTerm extends Model
             ]
         );
     }
+
+    /**
+     * Get a term for the current tenant from environment
+     */
+    public static function getCurrentTenantTerm(string $key, $default = null)
+    {
+        $tenant = config('app.tenant', env('TENANT', 'default'));
+        return self::getTermForTenant($tenant, $key, $default);
+    }
 }

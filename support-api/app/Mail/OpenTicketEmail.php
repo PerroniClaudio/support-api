@@ -44,7 +44,7 @@ class OpenTicketEmail extends Mailable
         if(isset($data['referer_it'])){
             if($data['referer_it'] != 0){
                 $refererIT = User::find($data['referer_it']);
-                $data["Referente IT"] = $refererIT
+                $data[\App\Models\TenantTerm::getCurrentTenantTerm('referente_it', 'Referente IT')] = $refererIT
                     ? $refererIT->name . ' ' . $refererIT->surname ?? ''
                     : $data['referer_it'];
             }
