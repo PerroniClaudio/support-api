@@ -23,6 +23,12 @@ use Illuminate\Support\Facades\Log;
 |
 */
 
+// Tenant Terms Routes (Public) - Moved outside auth middleware
+Route::get('/tenant-terms/public', [App\Http\Controllers\TenantTermController::class, "index"]);
+Route::get('/tenant-terms/public/{key}', [App\Http\Controllers\TenantTermController::class, "show"]);
+Route::get('/tenant-terms/public/category/{category}', [App\Http\Controllers\TenantTermController::class, "byCategory"]);
+
+
 // AUTHENTICATION ROUTES 
 
 Route::middleware(['auth:sanctum', 'admin.or.company'])->group(function () {
@@ -304,6 +310,15 @@ Route::middleware(['auth:sanctum', 'admin.or.company'])->group(function () {
     // Stats Routes
 
     Route::get("/stats", [App\Http\Controllers\TicketStatsController::class, "latestStats"]);
+
+    // Tenant Terms Routes (Authenticated)
+
+    Route::get("/tenant-terms", [App\Http\Controllers\TenantTermController::class, "index"]);
+    Route::get("/tenant-terms/category/{category}", [App\Http\Controllers\TenantTermController::class, "byCategory"]);
+    Route::post("/tenant-terms", [App\Http\Controllers\TenantTermController::class, "store"]);
+    Route::put("/tenant-terms/{key}", [App\Http\Controllers\TenantTermController::class, "update"]);
+    Route::delete("/tenant-terms/{key}", [App\Http\Controllers\TenantTermController::class, "destroy"]);
+    Route::get("/tenant-terms/{key}", [App\Http\Controllers\TenantTermController::class, "show"]);
 });
 
 // PUBLIC ROUTES
@@ -317,3 +332,4 @@ Route::post("/upload-file", [App\Http\Controllers\FileUploadController::class, "
 // Feature Flags Routes
 Route::get('/features', [App\Http\Controllers\FeatureFlagController::class, "getFeatures"]);
 Route::post('/features/flush', [App\Http\Controllers\FeatureFlagController::class, "flushFeatureFlags"]);
+
