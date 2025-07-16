@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Property;
+use App\Models\TypeFormFields;
 use Illuminate\Http\Request;
 
 class PropertyController extends Controller {
@@ -186,6 +187,56 @@ class PropertyController extends Controller {
         return response([
             'message' => 'User associated with property successfully.',
             'property' => $property->load(['users', 'company']),
+        ], 200);
+    }
+
+    public function formFieldPropertyList(Request $request, TypeFormFields $typeFormField) {
+        $authUser = $request->user();
+
+        if (!$typeFormField) {
+            return response([
+                'message' => 'Type form field not found',
+            ], 404);
+        }
+
+        $company = $typeFormField->ticketType->company;
+        if (!$authUser->is_admin && !(!!$company && $authUser->companies()->where('companies.id', $company->id)->exists())) {
+            return response([
+                'message' => 'You are not allowed to view these properties',
+            ], 403);
+        }
+
+        // Costruisci la query di base
+        if ($authUser->is_admin || $authUser->is_company_admin) {
+            $query = Property::where('company_id', $company->id);
+        } else {
+            $query = $authUser->properties()->where('company_id', $company->id);
+        }
+        
+        // Aggiungi le relazioni
+        $query->with(['users', 'company']);
+        
+        // Se necessario rimuove gli immobili che non hanno il tipo associato
+        if (!$typeFormField->include_no_type_property) {
+            $query->whereNotNull('activity_type');
+        }
+        
+        // Se necessario limitare a determinati tipi di immobile
+        if (!empty($typeFormField->property_types)) {
+            $propertyTypeIds = $typeFormField->property_types;
+            $query->where(function ($query) use ($propertyTypeIds, $typeFormField) {
+                $query->whereIn('activity_type', $propertyTypeIds);
+                if ($typeFormField->include_no_type_property) {
+                    $query->orWhereNull('activity_type');
+                }
+            });
+        }
+
+        // Esegui la query
+        $propertyList = $query->get();
+
+        return response([
+            'propertyList' => $propertyList,
         ], 200);
     }
 }

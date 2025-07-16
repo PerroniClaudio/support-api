@@ -25,6 +25,9 @@ class TypeFormFields extends Model
         'order',
         'hardware_limit',
         'include_no_type_hardware',
+        'property_limit',
+        'include_no_type_property',
+        'property_types_list',
     ];
 
     public function ticketType() {
@@ -34,6 +37,24 @@ class TypeFormFields extends Model
     public function hardwareTypes()
     {
         return $this->belongsToMany(HardwareType::class, 'type_form_field_hardware_type', 'type_form_field_id', 'hardware_type_id');
+    }
+
+    // Property types are stored as comma-separated values since they are fixed (1-5)
+    public function getPropertyTypesAttribute()
+    {
+        if (!$this->property_types_list) {
+            return [];
+        }
+        return explode(',', $this->property_types_list);
+    }
+
+    public function setPropertyTypesAttribute($value)
+    {
+        if (is_array($value)) {
+            $this->attributes['property_types_list'] = implode(',', $value);
+        } else {
+            $this->attributes['property_types_list'] = $value;
+        }
     }
 
 }

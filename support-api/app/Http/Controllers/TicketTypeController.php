@@ -337,6 +337,9 @@ class TicketTypeController extends Controller {
             'hardware_limit' => 'required_if:field_type,hardware|integer',
             'include_no_type_hardware' => 'required_if:field_type,hardware|boolean',
             'hardware_types' => 'array|exists:hardware_types,id|nullable',
+            'property_limit' => 'required_if:field_type,property|integer',
+            'include_no_type_property' => 'required_if:field_type,property|boolean',
+            'property_types' => 'array|nullable',
         ]);
 
         $fillableFields = array_merge(
@@ -348,6 +351,14 @@ class TicketTypeController extends Controller {
         if ($request['field_type'] == 'hardware') {
             $formField->hardwareTypes()->sync($validated['hardware_types']);
             // $formField->load('hardwareTypes');
+        }
+
+        if ($request['field_type'] == 'property') {
+            // Property types are stored as comma-separated values since they are fixed (1-5)
+            if (isset($validated['property_types']) && is_array($validated['property_types'])) {
+                $formField->property_types = $validated['property_types'];
+                $formField->save();
+            }
         }
 
         return response([
@@ -426,6 +437,11 @@ class TicketTypeController extends Controller {
             // Deve duplicare anche le associazioni coi tipi di hardware degli eventuali campi di tipo hardware
             if ($formField->field_type == 'hardware') {
                 $newFormField->hardwareTypes()->sync($formField->hardwareTypes()->get());
+            }
+            // Deve duplicare anche i tipi di immobile degli eventuali campi di tipo property
+            if ($formField->field_type == 'property') {
+                $newFormField->property_types = $formField->property_types;
+                $newFormField->save();
             }
         });
 
