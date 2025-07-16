@@ -295,7 +295,8 @@ Route::middleware(['auth:sanctum', 'admin.or.company'])->group(function () {
     Route::get("/properties", [App\Http\Controllers\PropertyController::class, "index"]);
     Route::get("/properties/{property}", [App\Http\Controllers\PropertyController::class, "show"]);
     Route::post("/properties", [App\Http\Controllers\PropertyController::class, "store"]);
-    Route::patch("/properties/{property}", [App\Http\Controllers\PropertyController::class, "update"]);
+    Route::post("/properties/{property}/users", [App\Http\Controllers\PropertyController::class, "addUser"]);
+    Route::post("/properties/{property}", [App\Http\Controllers\PropertyController::class, "update"]);
     Route::delete("/properties/{property}", [App\Http\Controllers\PropertyController::class, "destroy"]);
 
     // Documentation Routes
@@ -332,4 +333,3 @@ Route::post("/upload-file", [App\Http\Controllers\FileUploadController::class, "
 // Feature Flags Routes
 Route::get('/features', [App\Http\Controllers\FeatureFlagController::class, "getFeatures"]);
 Route::post('/features/flush', [App\Http\Controllers\FeatureFlagController::class, "flushFeatureFlags"]);
-

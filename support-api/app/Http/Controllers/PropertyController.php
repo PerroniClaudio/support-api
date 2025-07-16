@@ -167,4 +167,25 @@ class PropertyController extends Controller {
             'property' => $property->load(['users', 'company']),
         ], 200);
     }
+
+    public function addUser(Request $request, Property $property) {
+        $authUser = $request->user();
+
+        if (!$authUser->is_admin) {
+            return response([
+                'message' => 'You are not allowed to associate a user with this property.',
+            ], 403);
+        }
+
+        $data = $request->validate([
+            'user_id' => 'required|exists:users,id',
+        ]);
+
+        $property->users()->attach($data['user_id']);
+
+        return response([
+            'message' => 'User associated with property successfully.',
+            'property' => $property->load(['users', 'company']),
+        ], 200);
+    }
 }
