@@ -39,7 +39,8 @@ class Ticket extends Model {
         'parent_ticket_id',
         'is_billable',
         'master_id',
-        'reopen_parent_id'
+        'reopen_parent_id',
+        'no_user_response',
     ];
 
     public function toSearchableArray() {

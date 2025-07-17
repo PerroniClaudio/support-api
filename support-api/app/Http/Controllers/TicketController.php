@@ -910,6 +910,7 @@ class TicketController extends Controller {
             'workMode' => 'required|string',
             'isRejected' => 'required|boolean',
             'masterTicketId' => 'int|nullable',
+            'no_user_response' => 'boolean',
         ]);
 
         $authUser = $request->user();
@@ -984,6 +985,7 @@ class TicketController extends Controller {
                 'work_mode' => $request->workMode,
                 'is_rejected' => $request->isRejected,
                 'master_id' => $request->masterTicketId,
+                'no_user_response' => $fields['no_user_response'] ?? false,
             ]);
 
             $update = TicketStatusUpdate::create([
