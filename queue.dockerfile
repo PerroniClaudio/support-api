@@ -70,7 +70,7 @@ startretries=0\n\
 \n\
 [program:laravel-queue]\n\
 process_name=%(program_name)s_%(process_num)02d\n\
-command=php /app/artisan queue:work --tries=3 --backoff=3 --sleep=3 --max-time=3600 --timeout=300\n\
+command=php /app/artisan queue:work --tries=${QUEUE_TRIES} --backoff=${QUEUE_BACKOFF} --sleep=${QUEUE_SLEEP} --max-time=${QUEUE_MAX_TIME} --timeout=${QUEUE_TIMEOUT}\n\
 autostart=true\n\
 autorestart=true\n\
 stopasgroup=true\n\
@@ -88,6 +88,7 @@ WORKDIR /app
 
 # Copia i file dell'applicazione
 COPY ./support-api/ .
+
 
 # Crea un semplice health check endpoint
 RUN mkdir -p /app/public
