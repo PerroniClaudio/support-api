@@ -24,71 +24,20 @@ COPY ./php/php.prod.ini /usr/local/etc/php/php.ini
 # Installa nginx per il health check endpoint
 RUN apk add --no-cache nginx
 
-# Configura nginx per il health check
-RUN echo 'server { \
-    listen 8080; \
-    root /app/public; \
-    index index.php; \
-    location / { \
-        try_files $uri $uri/ /index.php?$query_string; \
-    } \
-    location ~ \.php$ { \
-        fastcgi_pass 127.0.0.1:9000; \
-        fastcgi_index index.php; \
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; \
-        include fastcgi_params; \
-    } \
-}' > /etc/nginx/http.d/default.conf
+# Copia la configurazione Nginx
+COPY ./nginx/default.queue.conf /etc/nginx/http.d/default.conf
 
 # Crea le directory necessarie per nginx
 RUN mkdir -p /run/nginx /var/log/nginx
 
-# Configura supervisord per gestire sia nginx che il queue worker
-RUN echo '[supervisord]\n\
-nodaemon=true\n\
-user=root\n\
-logfile=/var/log/supervisord.log\n\
-pidfile=/var/run/supervisord.pid\n\
-\n\
-[program:php-fpm]\n\
-command=php-fpm -F\n\
-stdout_logfile=/dev/stdout\n\
-stdout_logfile_maxbytes=0\n\
-stderr_logfile=/dev/stderr\n\
-stderr_logfile_maxbytes=0\n\
-autorestart=true\n\
-startretries=0\n\
-\n\
-[program:nginx]\n\
-command=nginx -g "daemon off;"\n\
-stdout_logfile=/dev/stdout\n\
-stdout_logfile_maxbytes=0\n\
-stderr_logfile=/dev/stderr\n\
-stderr_logfile_maxbytes=0\n\
-autorestart=true\n\
-startretries=0\n\
-\n\
-[program:laravel-queue]\n\
-process_name=%(program_name)s_%(process_num)02d\n\
-command=php /app/artisan queue:work --tries=${QUEUE_TRIES} --backoff=${QUEUE_BACKOFF} --sleep=${QUEUE_SLEEP} --max-time=${QUEUE_MAX_TIME} --timeout=${QUEUE_TIMEOUT}\n\
-autostart=true\n\
-autorestart=true\n\
-stopasgroup=true\n\
-killasgroup=true\n\
-user=www-data\n\
-numprocs=2\n\
-redirect_stderr=true\n\
-stdout_logfile=/dev/stdout\n\
-stdout_logfile_maxbytes=0\n\
-stopwaitsecs=3600\n\
-' > /etc/supervisor/conf.d/supervisord.conf
+# Copia la configurazione Supervisord
+COPY ./php/supervisord.queue.conf /etc/supervisor/conf.d/supervisord.conf
 
 # Imposta la directory di lavoro
 WORKDIR /app
 
 # Copia i file dell'applicazione
 COPY ./support-api/ .
-
 
 # Crea un semplice health check endpoint
 RUN mkdir -p /app/public
