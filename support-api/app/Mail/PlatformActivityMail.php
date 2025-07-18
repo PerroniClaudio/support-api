@@ -14,21 +14,14 @@ class PlatformActivityMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $stages = [
-        "Nuovo", 
-        "Assegnato", 
-        "Gestione", 
-        "Attesa", 
-        "Risolto", 
-        "Chiuso"
-    ];
+    public $stages;
 
     /**
      * Create a new message instance.
      */
     public function __construct(public iterable $tickets)
     {
-        //
+        $this->stages = config('app.ticket_stages');
     }
 
     /**

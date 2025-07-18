@@ -15,14 +15,7 @@ class AssignToUserEmail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $stages = [
-      "Nuovo", 
-      "Assegnato", 
-      "In corso", 
-      "In attesa", 
-      "Risolto", 
-      "Chiuso"
-    ];
+    public $stages;
 
     public $previewText;
     
@@ -31,7 +24,7 @@ class AssignToUserEmail extends Mailable
      */
     public function __construct(public Ticket $ticket, public $company, public $ticketType, public $category, public $link, public $update, public $user)
     {
-        //
+        $this->stages = config('app.ticket_stages');
         $this->previewText = $this->ticket->description;
     }
 
