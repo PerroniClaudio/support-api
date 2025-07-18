@@ -323,6 +323,12 @@ Route::middleware(['auth:sanctum', 'admin.or.company'])->group(function () {
     Route::put("/tenant-terms/{key}", [App\Http\Controllers\TenantTermController::class, "update"]);
     Route::delete("/tenant-terms/{key}", [App\Http\Controllers\TenantTermController::class, "destroy"]);
     Route::get("/tenant-terms/{key}", [App\Http\Controllers\TenantTermController::class, "show"]);
+
+    // Dashboard 
+
+    Route::get('/admin/dashboard/card-config', [ App\Http\Controllers\DashboardController::class,"index"]);
+    Route::put('/admin/dashboard/card-config', [ App\Http\Controllers\DashboardController::class,"updateCardConfig"]);
+
 });
 
 // PUBLIC ROUTES
