@@ -1445,7 +1445,7 @@ class TicketController extends Controller {
             ], 401);
         }
 
-        $closingUpdates = TicketStatusUpdate::where('ticket_id', $ticket->id)->where('type', 'closing')->where('show_to_user', true)->get();
+        $closingUpdates = TicketStatusUpdate::where('ticket_id', $ticket->id)->where('type', 'closing')->get();
 
         return response([
             'closing_messages' => $closingUpdates,
