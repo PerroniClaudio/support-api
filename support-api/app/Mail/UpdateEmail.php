@@ -14,14 +14,16 @@ class UpdateEmail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $stages = [
-      "Nuovo", 
-      "Assegnato", 
-      "In corso", 
-      "In attesa", 
-      "Risolto", 
-      "Chiuso"
-    ];
+    public $stages;
+    // public $stages = [
+    //   "Nuovo", 
+    //   "Assegnato", 
+    //   "In corso", 
+    //   "In attesa", 
+    //   "Risolto", 
+    //   "Chiuso",
+    //   "Attesa feedback cliente"
+    // ];
 
     public $updateTypes;
     // public $updateTypes = config('app.update_types');
@@ -44,6 +46,7 @@ class UpdateEmail extends Mailable
     {
         //
         $this->updateTypes = config('app.update_types');
+        $this->stages = config('app.ticket_stages');
 
         $this->previewText = $this->company->name . ' - ' . $this->updateTypes[$this->update->type] . " - " . $this->update->content;
     }
