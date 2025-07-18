@@ -37,7 +37,7 @@ class FeatureFlagController extends Controller {
             "suppliers_management" => true,
             "brand_management" => true,
             "reports" => true,
-            "documentation" => true
+            "help" => true
         ];
 
         return response()->json([

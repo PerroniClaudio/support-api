@@ -302,7 +302,7 @@ Route::middleware(['auth:sanctum', 'admin.or.company'])->group(function () {
     Route::post("/properties/{property}", [App\Http\Controllers\PropertyController::class, "update"]);
     Route::delete("/properties/{property}", [App\Http\Controllers\PropertyController::class, "destroy"]);
 
-    // Documentation Routes
+    // Help Routes
 
     Route::get('/files/public/search', [App\Http\Controllers\WikiObjectController::class, "searchPublic"]);
     Route::get("/files/public/{folder}", [App\Http\Controllers\WikiObjectController::class, "public"]);

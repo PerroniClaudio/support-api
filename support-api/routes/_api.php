@@ -576,7 +576,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get("/hardware-tickets/{hardware}", [App\Http\Controllers\HardwareController::class, "hardwareTickets"]);
 });
 
-/** documentazione */
+/** Help (guide) */
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/files/public/search', [App\Http\Controllers\WikiObjectController::class, "searchPublic"]);
