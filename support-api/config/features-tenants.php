@@ -22,4 +22,12 @@ return [
             'domustart',
         ],
     ],
+    'documents' => [
+        'allowed_tenants' => [
+            'domustart',
+        ],
+        'excluded_tenants' => [
+            'spreetzit',
+        ],
+    ],
 ];
