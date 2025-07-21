@@ -36,3 +36,8 @@ require __DIR__ . '/webhook.php';
 Route::middleware(['throttle:5,1', 'auth:sanctum'])->group(function () {
     Route::post('/two-factor-authentication-challenge', [App\Http\Controllers\UserController::class, 'twoFactorChallenge'])->name('two-factor-challenge-user');
 });
+
+
+Route::get('/test', function () {
+    return response()->json(['message' => 'Test route is working']);
+});

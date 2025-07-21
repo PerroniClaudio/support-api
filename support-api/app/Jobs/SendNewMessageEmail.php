@@ -38,8 +38,8 @@ class SendNewMessageEmail implements ShouldQueue {
     public function handle(): void {
       $ticketUser = $this->ticket->user;
       $handler = $this->ticket->handler;
-      $referer = $this->ticket->referer();
-      $refererIT = $this->ticket->refererIT();
+      $referer = $this->ticket->referer;
+      $refererIT = $this->ticket->refererIt;
       $link_user = env('FRONTEND_URL') . '/support/user/ticket/' . $this->ticket->id;
       $link_admin = env('FRONTEND_URL') . '/support/admin/ticket/' . $this->ticket->id;
       $userLogoRedirectUrl = config('app.frontend_url');

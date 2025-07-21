@@ -36,8 +36,8 @@ class NewMessageEmail extends Mailable
         //
         $this->ticketType = TicketType::find($this->ticket->type_id);
         $this->opener = User::find($this->ticket->user_id);
-        $this->refererIT = $this->ticket->refererIT();
-        $this->referer = $this->ticket->referer();
+        $this->refererIT = $this->ticket->refererIt;
+        $this->referer = $this->ticket->referer;
         $this->category = TicketTypeCategory::find($this->ticketType->ticket_type_category_id);
         $this->company = Company::find($ticket->company_id);
         if($mailType != "admin" && $mailType != "support"){
