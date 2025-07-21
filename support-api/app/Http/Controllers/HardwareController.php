@@ -815,7 +815,9 @@ class HardwareController extends Controller {
         if ($authUser->is_admin) {
             $tickets = $hardware->tickets()->with([
                 'ticketType',
-                'company',
+                'company' => function ($query) {
+                    $query->select('id', 'name', 'logo_url');
+                },
                 'user' => function ($query) {
                     $query->select('id', 'name', 'surname', 'email', 'is_admin', 'is_company_admin', 'is_deleted')
                           ->with('companies:id');
@@ -830,21 +832,26 @@ class HardwareController extends Controller {
         if ($authUser->is_company_admin) {
             $tickets = $hardware->tickets()->where('company_id', $hardware->company_id)->with([
                 'ticketType',
-                'company',
+                'company' => function ($query) {
+                    $query->select('id', 'name', 'logo_url');
+                },
                 'user' => function ($query) {
                     $query->select('id', 'name', 'surname', 'email', 'is_admin', 'is_company_admin', 'is_deleted')
                           ->with('companies:id');
-                }
+                },
+                'referer' => function ($query) {
+                    $query->select('id', 'name', 'surname', 'email', 'is_admin', 'is_company_admin', 'is_deleted')
+                          ->with('companies:id');
+                },
+                'refererIt' => function ($query) {
+                    $query->select('id', 'name', 'surname', 'email', 'is_admin', 'is_company_admin', 'is_deleted')
+                          ->with('companies:id');
+                },
             ])->get();
 
 
 
             foreach ($tickets as $ticket) {
-                // Aggiungere il referer se esiste
-                $ticket->referer = $ticket->referer();
-                if ($ticket->referer) {
-                    $ticket->referer->makeHidden(['email_verified_at', 'microsoft_token', 'created_at', 'updated_at', 'phone', 'city', 'zip_code', 'address']);
-                }
                 // Nascondere i dati utente se è stato aperto dal supporto
                 if ($ticket->user->is_admin) {
                     $ticket->user->id = 1;
@@ -862,25 +869,24 @@ class HardwareController extends Controller {
         // Qui devono vedersi tutti i ticket collegati a questo hardware, aperti dall'utente o in cui è associato come utente interessato (referer)
         if ($hardware->users->contains($authUser)) {
             $tickets = $hardware->tickets()
+                ->where('user_id', $authUser->id)
+                ->orWhere('referer_id', $authUser->id)
                 ->with([
                     'ticketType',
-                    'company',
+                    'company' => function ($query) {
+                        $query->select('id', 'name', 'logo_url');
+                    },
                     'user' => function ($query) {
                         $query->select('id', 'name', 'surname', 'email', 'is_admin', 'is_company_admin', 'is_deleted')
                           ->with('companies:id');
-                    }
+                    },
+                    'referer' => function ($query) {
+                        $query->select('id', 'name', 'surname', 'email', 'is_admin', 'is_company_admin', 'is_deleted')
+                              ->with('companies:id');
+                    },
                 ])->get();
 
-            $tickets = $tickets->filter(function ($ticket) use ($authUser) {
-                return $ticket->user_id == $authUser->id || (!!$ticket->referer() && $ticket->referer()->id == $authUser->id);
-            });
-
             foreach ($tickets as $ticket) {
-                // Aggiungere il referer se esiste
-                $ticket->referer = $ticket->referer();
-                if ($ticket->referer) {
-                    $ticket->referer->makeHidden(['email_verified_at', 'microsoft_token', 'created_at', 'updated_at', 'phone', 'city', 'zip_code', 'address']);
-                }
                 // Nascondere i dati utente se è stato aperto dal supporto
                 if ($ticket->user->is_admin) {
                     $ticket->user->id = 1;

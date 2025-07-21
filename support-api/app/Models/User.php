@@ -90,18 +90,23 @@ class User extends Authenticatable {
      * get user's tickets as referer (seen in the webform message)
      */
     public function refererTickets() {
-        $filteredTickets = $this->company
-            ? $this->company->tickets->filter(function ($ticket) {
-                return $ticket->referer() && ($ticket->referer()->id == $this->id);
-            })
-            :  collect();
-        $ids = $filteredTickets->pluck('id')->all();
-        $tickets = Ticket::whereIn('id', $ids)->with([
-            'user' => function ($query) {
-                $query->select(['id', 'name', 'surname', 'is_admin', 'is_company_admin', 'is_deleted']); // Specify the columns you want to include
-            },
-            'user.companies:id,name'
-        ])->get();
+        $companiesIds = $this->companies()->pluck('companies.id')->all();
+        if (empty($companiesIds)) {
+            return collect(); // Return an empty collection if the user has no companies
+        }
+        $tickets = Ticket::whereIn('company_id', $companiesIds)
+            ->where('referer_id', $this->id)
+            ->with([
+                'user' => function ($query) {
+                    $query->select(['id', 'name', 'surname', 'is_admin', 'is_company_admin', 'is_deleted']); // Specify the columns you want to include
+                },
+                'company' => function ($query) {
+                    $query->select(['id', 'name', 'logo_url']); // Specify the columns you want to include
+                },
+                'referer' => function ($query) {
+                    $query->select(['id', 'name', 'surname', 'email', 'is_admin', 'is_company_admin', 'is_deleted']); // Specify the columns you want to include
+                }
+            ])->get();
         return $tickets;
     }
 
@@ -109,19 +114,26 @@ class User extends Authenticatable {
      * get user's tickets merge as user and as referer (seen in the webform message)
      */
     public function ownTicketsMerged() {
-        $ticketsTemp = $this->tickets->merge($this->refererTickets());
+        $ticketsTemp = $this->tickets()->with([
+                'user' => function ($query) {
+                    $query->select(['id', 'name', 'surname', 'is_admin', 'is_company_admin', 'is_deleted']); // Specify the columns you want to include
+                },
+                'company' => function ($query) {
+                    $query->select(['id', 'name', 'logo_url']); // Specify the columns you want to include
+                },
+                'referer' => function ($query) {
+                    $query->select(['id', 'name', 'surname', 'email', 'is_admin', 'is_company_admin', 'is_deleted']); // Specify the columns you want to include
+                }
+            ])->get()
+            ->merge($this->refererTickets());
         foreach ($ticketsTemp as $ticket) {
-            $ticket->referer = $ticket->referer();
-            if ($ticket->referer) {
-                $ticket->referer->makeHidden(['email_verified_at', 'microsoft_token', 'created_at', 'updated_at', 'phone', 'city', 'zip_code', 'address']);
-            }
             // Nascondere i dati utente se è stato aperto dal supporto. Essendo lato admin al momento non serve
-            // if ($ticket->user->is_admin) {
-            //     $ticket->user->id = 1;
-            //     $ticket->user->name = "Supporto";
-            //     $ticket->user->surname = "";
-            //     $ticket->user->email = "Supporto";
-            // }
+            if ($ticket->user->is_admin) {
+                $ticket->user->id = 1;
+                $ticket->user->name = "Supporto";
+                $ticket->user->surname = "";
+                $ticket->user->email = "Supporto";
+            }
         }
         return $ticketsTemp;
     }

@@ -33,8 +33,8 @@ class SendCloseTicketEmail implements ShouldQueue {
      * Execute the job.
      */
     public function handle(): void {
-      $referer = $this->ticket->referer();
-      $refererIT = $this->ticket->refererIT();
+      $referer = $this->ticket->referer;
+      $refererIT = $this->ticket->refererIt;
 
       // L'invio al data_owner è in un evento uguale a questo ma dispacciato a parte, con sendToDataOwner = true
       if($this->sendToDataOwner == true){

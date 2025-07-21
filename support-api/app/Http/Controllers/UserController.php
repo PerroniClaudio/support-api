@@ -533,10 +533,6 @@ class UserController extends Controller {
             $tickets = $user->ownTicketsMerged();
 
             foreach ($tickets as $ticket) {
-                $ticket->referer = $ticket->referer();
-                if ($ticket->referer) {
-                    $ticket->referer->makeHidden(['email_verified_at', 'microsoft_token', 'created_at', 'updated_at', 'phone', 'city', 'zip_code', 'address']);
-                }
                 // Nascondere i dati utente se è stato aperto dal supporto
                 if ($ticket->user->is_admin) {
                     $ticket->user->id = 1;

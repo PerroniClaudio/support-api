@@ -57,8 +57,8 @@ class SendOpenMassiveTicketEmail implements ShouldQueue {
         }
       } 
 
-      $referer = $sampleTicket->referer();
-      $refererIT = $sampleTicket->refererIT();
+      $referer = $sampleTicket->referer;
+      $refererIT = $sampleTicket->refererIt;
 
       // Se l'utente interessato (referer) è impostato ed è diverso dall'utente che ha aperto il ticket, gli invia la mail.
       if($referer && $referer->id !== $ticketUser->id && $referer->email){
