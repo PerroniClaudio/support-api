@@ -302,6 +302,14 @@ Route::middleware(['auth:sanctum', 'admin.or.company'])->group(function () {
     Route::post("/properties/{property}", [App\Http\Controllers\PropertyController::class, "update"]);
     Route::delete("/properties/{property}", [App\Http\Controllers\PropertyController::class, "destroy"]);
 
+    // Document Routes
+    Route::get("/documents", [App\Http\Controllers\DocumentController::class, "index"]);
+    Route::post("/documents", [App\Http\Controllers\DocumentController::class, "store"]);
+    Route::get("/documents/{document}/download", [App\Http\Controllers\DocumentController::class, "downloadFile"]);
+    Route::delete("/documents/{document}", [App\Http\Controllers\DocumentController::class, "destroy"]);
+    Route::get("/documents/search", [App\Http\Controllers\DocumentController::class, "search"]);
+    Route::get("/documents/company/{companyId}/search", [App\Http\Controllers\DocumentController::class, "searchByCompany"]);
+
     // Help Routes
 
     Route::get('/files/public/search', [App\Http\Controllers\WikiObjectController::class, "searchPublic"]);
