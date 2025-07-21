@@ -36,74 +36,55 @@ class TicketController extends Controller {
         $user = $request->user();
         // Deve comprendere i ticket chiusi?
         $withClosed = $request->query('with-closed') == 'true' ? true : false;
+            
+        // Generazione query in base ai parametri della richiesta.
+        $query = Ticket::query()->where('company_id', $user->selectedCompany()->id);
+        if (!$withClosed) {
+            $query->where("status", "!=", 5);
+        }
+        if ($user["is_company_admin"] != 1) {
+            $query->where(function (Builder $query) use ($user) {
+                $query->where('user_id', $user->id)
+                    ->orWhere('referer_id', $user->id);
+                if ($user->is_company_admin) {
+                    $query->orWhere('referer_it_id', $user->id);
+                }
+            });
+        }
+        $query->with([
+            'referer' => function ($query) {
+                $query->select('id', 'name', 'surname', 'email');
+            },
+            'refererIt' => function ($query) {
+                $query->select('id', 'name', 'surname', 'email');
+            },
+            'user' => function ($query) {
+                $query->select('id', 'name', 'surname', 'email', 'is_admin');
+            },
+        ]);
 
+        // Generazione chiave cache in base all'utente e ai parametri della richiesta.
         if ($withClosed) {
             $cacheKey = 'user_' . $user->id . '_' . $user->selectedCompany()->id . '_tickets_with_closed';
         } else {
             $cacheKey = 'user_' . $user->id . '_' . $user->selectedCompany()->id . '_tickets';
         }
 
-        $tickets = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($user, $withClosed) {
-            if ($user["is_company_admin"] == 1) {
-                $selectedCompany = $user->selectedCompany();
-                if ($withClosed) {
-                    $ticketsTemp = $selectedCompany ? $selectedCompany->tickets : collect();
-                } else {
-                    $ticketsTemp = $selectedCompany ? Ticket::where("status", "!=", 5)->where('company_id', $selectedCompany->id)->with('user')->get() : collect();
-                }
+        // Recupero dati e salvataggio in cache per 5 minuti
+        $tickets = Cache::remember($cacheKey, now()->addMinutes(5), function () use ($user, $withClosed, $query) {
 
-                foreach ($ticketsTemp as $ticket) {
-                    $ticket->referer = $ticket->referer();
-                    if ($ticket->referer) {
-                        $ticket->referer->makeHidden(['email_verified_at', 'microsoft_token', 'created_at', 'updated_at', 'phone', 'city', 'zip_code', 'address']);
-                    }
-                    // Nascondere i dati utente se è stato aperto dal supporto
-                    if ($ticket->user->is_admin) {
-                        $ticket->user->id = 1;
-                        $ticket->user->name = "Supporto";
-                        $ticket->user->surname = "";
-                        $ticket->user->email = "Supporto";
-                    }
-                    // Aggiunge la proprietà unread_admins_messages
-                    // $ticket->append('unread_admins_messages');
-                }
-                return $ticketsTemp;
-            } else {
-                $selectedCompany = $user->selectedCompany();
+            $ticketsTemp = $query->get();
 
-                $userRefererTickets = $selectedCompany
-                    ? $user->refererTickets()->where('company_id', $selectedCompany->id)
-                    : collect();
-
-                if ($withClosed) {
-                    // $ticketsTemp = $selectedCompany ? $selectedCompany->tickets : collect();
-                    $ticketsTemp = $selectedCompany
-                        ? $user->tickets()->where('company_id', $selectedCompany->id)->get()->merge($userRefererTickets)
-                        : collect();
-                } else {
-                    // $ticketsTemp = $selectedCompany ? Ticket::where("status", "!=", 5)->where('company_id', $selectedCompany->id)->with('user')->get() : collect();
-                    $ticketsTemp = $selectedCompany
-                        ? $user->tickets()->where("status", "!=", 5)->where('company_id', $selectedCompany->id)->get()->merge($userRefererTickets->where("status", "!=", 5))
-                        : collect();
+            foreach ($ticketsTemp as $ticket) {
+                if ($ticket->user && $ticket->user->is_admin) {
+                    $ticket->user->id = 1;
+                    $ticket->user->name = "Supporto";
+                    $ticket->user->surname = "";
+                    $ticket->user->email = "Supporto";
                 }
-
-                $ticketsTemp = $user->tickets->merge($user->refererTickets());
-                foreach ($ticketsTemp as $ticket) {
-                    $ticket->referer = $ticket->referer();
-                    if ($ticket->referer) {
-                        $ticket->referer->makeHidden(['email_verified_at', 'microsoft_token', 'created_at', 'updated_at', 'phone', 'city', 'zip_code', 'address']);
-                    }
-                    // Nascondere i dati utente se è stato aperto dal supporto
-                    if ($ticket->user->is_admin) {
-                        $ticket->user->id = 1;
-                        $ticket->user->name = "Supporto";
-                        $ticket->user->surname = "";
-                        $ticket->user->email = "Supporto";
-                    }
-                    // $ticket->append('unread_admins_messages');
-                }
-                return $ticketsTemp;
             }
+
+            return $ticketsTemp;
         });
 
         return response([
@@ -133,6 +114,7 @@ class TicketController extends Controller {
         $fields = $request->validate([
             'description' => 'required|string',
             'type_id' => 'required|int',
+            'referer_it' => 'required|int',
         ]);
 
         DB::beginTransaction();
@@ -177,6 +159,8 @@ class TicketController extends Controller {
                 'source' => $user["is_admin"] == 1 ? ($request->source ?? null) : 'platform',
                 'is_user_error' => 1, // is_user_error viene usato per la responsabilità del dato e di default è assegnata al cliente.
                 'is_billable' => $ticketType['expected_is_billable'],
+                'referer_it_id' => $request->referer_it ?? null,
+                'referer_id' => $request->referer ?? null,
             ]);
 
             if (Feature::for(config('app.tenant'))->active('ticket.show_visibility_fields')) {
@@ -387,21 +371,7 @@ class TicketController extends Controller {
      * Display the specified resource.
      */
     public function show($id, Request $request) {
-
         $user = $request->user();
-        // $cacheKey = 'user_' . $user->id . '_tickets_show:' . $id;
-        // cache()->forget($cacheKey);
-
-        // $ticket = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($user, $id) {
-        //     $item = Ticket::where('id', $id)->where('user_id', $user->id)->with(['ticketType' => function ($query) {
-        //         $query->with('category');
-        //     }, 'company', 'user', 'files'])->first();
-
-        //     return [
-        //         'ticket' => $item,
-        //         'from' => time(),
-        //     ];
-        // });
 
         $ticket = Ticket::where('id', $id)->with([
             'ticketType' => function ($query) {
@@ -410,8 +380,12 @@ class TicketController extends Controller {
             'hardware' => function ($query) {
                 $query->with('hardwareType');
             },
-            'company',
-            'user',
+            'company' => function ($query) {
+                $query->select('id', 'name', 'logo_url');
+            },
+            'user' => function ($query) {
+                $query->select('id', 'name', 'surname', 'email', 'is_admin');
+            },
             'files'
         ])->first();
 
@@ -420,9 +394,6 @@ class TicketController extends Controller {
                 'message' => 'Ticket not found',
             ], 404);
         }
-
-        $ticket->user->makeHidden(["microsoft_token", "email_verified_at", "created_at", "updated_at", "phone", "city", "zip_code", "address"]);
-        $ticket->company->makeHidden(["sla", "sla_take_low", "sla_take_medium", "sla_take_high", "sla_take_critical", "sla_solve_low", "sla_solve_medium", "sla_solve_high", "sla_solve_critical", "sla_prob_take_low", "sla_prob_take_medium", "sla_prob_take_high", "sla_prob_take_critical", "sla_prob_solve_low", "sla_prob_solve_medium", "sla_prob_solve_high", "sla_prob_solve_critical"]);
 
         // Se la richiesta è lato utente ed il ticket è stato aperto dal supporto, si deve nascondere il nome dell'utente che ha aperto il ticket
         if (!$user->is_admin && $ticket->user->is_admin) {
@@ -452,7 +423,7 @@ class TicketController extends Controller {
             ($user["is_admin"] == 1 && $groupIdExists) ||
             (($ticket->company_id == $user->selectedCompany()->id) && $user["is_company_admin"] == 1) ||
             (($ticket->company_id == $user->selectedCompany()->id) && $ticket->user_id == $user->id) ||
-            (($ticket->referer() ? $ticket->referer()->id == $user->id : false)) ||
+            ($ticket->referer?->id == $user->id) ||
             ($ticket->company->data_owner_email == $user->email)
         ) {
             $authorized = true;
@@ -996,6 +967,11 @@ class TicketController extends Controller {
                 'show_to_user' => $request->sendMail,
             ]);
 
+            // Invalida la cache per chi ha creato il ticket e per i referenti.
+            $ticket->invalidateCache();
+            
+            DB::commit();
+           
             dispatch(new SendUpdateEmail($update));
 
             // Controllare se si deve inviare la mail (l'invio al data_owner e al cliente sono separati per dare maggiore scelta all'admin)
@@ -1014,11 +990,6 @@ class TicketController extends Controller {
                 dispatch(new SendCloseTicketEmail($ticket, $fields['message'], $brand_url, true));
             }
 
-            // Invalida la cache per chi ha creato il ticket e per i referenti.
-            $ticket->invalidateCache();
-
-            DB::commit();
-
             return response([
                 'ticket' => $ticket,
             ], 200);
@@ -1031,8 +1002,6 @@ class TicketController extends Controller {
             ], 500);
         }
     }
-
-
 
     public function assignToGroup(Ticket $ticket, Request $request) {
 
@@ -1357,31 +1326,10 @@ class TicketController extends Controller {
             ], 401);
         }
 
-        /** LENTISSIMA!!!! */
-
-        /*
-
-        
-        $tickets = [];
-        foreach ($groups as $group) {
-            $groupTickets = $group->ticketsWithUser;
-            foreach ($groupTickets as $ticket) {
-                $ticket->referer = $ticket->referer();
-                if ($ticket->referer) {
-                    $ticket->referer->makeHidden(['email_verified_at', 'microsoft_token', 'created_at', 'updated_at', 'phone', 'city', 'zip_code', 'address']);
-                }
-                // $ticket->append('unread_users_messages');
-            }
-            $tickets = array_merge($tickets, $groupTickets->toArray());
-        }
-
-        */
-
         $groups = $user->groups;
 
         $withClosed = $request->query('with-closed') == 'true' ? true : false;
 
-        // $tickets = Ticket::where("status", "!=", 5)->whereIn('group_id', $groups->pluck('id'))->with('user')->get();
         if ($withClosed) {
             $tickets = Ticket::whereIn('group_id', $groups->pluck('id'))->with('user')->get();
         } else {
@@ -1489,7 +1437,7 @@ class TicketController extends Controller {
                 );
             $slaveTicket->makeVisible(['user_full_name']);
 
-            $referer = $slaveTicket->referer();
+            $referer = $slaveTicket->referer;
             if ($referer) {
                 $slaveTicket->referer_full_name =
                     $referer->surname

@@ -58,8 +58,8 @@ class SendOpenTicketEmail implements ShouldQueue {
         }
       } 
 
-      $referer = $this->ticket->referer();
-      $refererIT = $this->ticket->refererIT();
+      $referer = $this->ticket->referer;
+      $refererIT = $this->ticket->refererIt;
 
       // Se l'utente interessato (referer) è impostato ed è diverso dall'utente che ha aperto il ticket, gli invia la mail (se la sua è valida).
       if($referer && $referer->id !== $ticketUser->id && $referer->email){

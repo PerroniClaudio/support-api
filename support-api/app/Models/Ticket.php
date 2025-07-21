@@ -41,6 +41,8 @@ class Ticket extends Model {
         'master_id',
         'reopen_parent_id',
         'no_user_response',
+        'referer_id',
+        'referer_it_id',
     ];
 
     public function toSearchableArray() {
@@ -74,35 +76,29 @@ class Ticket extends Model {
 
     /* get the referer (utente interessato) */
 
+    // public function referer() {
+    //     // Si usa newQueryWithoutRelationships per evitare di caricare i messaggi, che non servono
+    //     $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
+    //     if (!!$ticketWithoutMessages) {
+    //         $messages = $ticketWithoutMessages->messages;
+    //         if (count($messages) > 0) {
+    //             $message_obj = json_decode($messages[0]->message);
+    //             // Controllo se esiste la proprietà, perchè nei ticket vecchi non c'è e può dare errore.
+    //             if (isset($message_obj->referer)) {
+    //                 return User::find($message_obj->referer);
+    //             }
+    //         }
+    //     }
+    //     return User::find(0);
+    // }
+
     public function referer() {
-        // Si usa newQueryWithoutRelationships per evitare di caricare i messaggi, che non servono
-        $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
-        if (!!$ticketWithoutMessages) {
-            $messages = $ticketWithoutMessages->messages;
-            if (count($messages) > 0) {
-                $message_obj = json_decode($messages[0]->message);
-                // Controllo se esiste la proprietà, perchè nei ticket vecchi non c'è e può dare errore.
-                if (isset($message_obj->referer)) {
-                    return User::find($message_obj->referer);
-                }
-            }
-        }
-        return User::find(0);
+        return $this->belongsTo(User::class, 'referer_id');
     }
 
     /* get the IT referer (referente IT) */
-
-    public function refererIT() {
-        $ticketWithoutMessages = $this->newQueryWithoutRelationships()->find($this->id);
-        $messages = $ticketWithoutMessages->messages;
-        if (count($messages) > 0) {
-            $message_obj = json_decode($messages[0]->message);
-            // Controllo se esiste la proprietà, perchè nei ticket vecchi non c'è e può dare errore.
-            if (isset($message_obj->referer_it)) {
-                return User::find($message_obj->referer_it);
-            }
-        }
-        return User::find(0);
+    public function refererIt() {
+        return $this->belongsTo(User::class, 'referer_it_id');
     }
 
     public function hardware() {
@@ -142,8 +138,8 @@ class Ticket extends Model {
     public function invalidateCache() {
         // $cacheKey = 'user_' . $user->id . '_tickets';
         $ticketUser = $this->user;
-        $referer = $this->referer();
-        $refererIT = $this->refererIT();
+        $referer = $this->referer;
+        $refererIT = $this->refererIt;
         if ($ticketUser) {
             Cache::forget('user_' . $ticketUser->id . '_tickets');
             Cache::forget('user_' . $ticketUser->id . '_tickets_with_closed');
