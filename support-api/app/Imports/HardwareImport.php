@@ -22,21 +22,6 @@ class HardwareImport implements ToCollection
     // 4 "Data d'acquisto (gg/mm/aaaa)",
     // 5 "Proprietà (testo, preso tra le opzioni nel gestionale)",
     // 6 "Specificare (se proprietà è Altro)",
-    // 7 "Cespite aziendale",
-    // 8 "Note",
-    // 9 "Uso esclusivo (Si/No, Se manca viene impostato su No)",
-    // 10 "ID Azienda",
-    // 11 "ID utenti (separati da virgola)",
-    // 12 "ID utente responsabile dell'assegnazione (deve essere admin o del supporto)"
-
-    // Nuovo template:
-    // 0 "Marca *",
-    // 1 "Modello *",
-    // 2 "Seriale *",
-    // 3 "Tipo (testo, preso dalla lista nel gestionale)",
-    // 4 "Data d'acquisto (gg/mm/aaaa)",
-    // 5 "Proprietà (testo, preso tra le opzioni nel gestionale)",
-    // 6 "Specificare (se proprietà è Altro)",
     // 7 "Cespite aziendale (compilare almeno uno tra cespite aziendale e identificativo)",
     // 8 "Identificativo (compilare almeno uno tra cespite aziendale e identificativo)",
     // 9 "Note",
@@ -44,6 +29,8 @@ class HardwareImport implements ToCollection
     // 11 "ID Azienda",
     // 12 "ID utenti (separati da virgola)",
     // 13 "ID utente responsabile dell'assegnazione (deve essere admin o del supporto)"
+    // 14 "Posizione (testo, preso tra le opzioni nel gestionale, Se manca viene impostato su 'Azienda')",
+    // 15 "Stato (testo, preso tra le opzioni nel gestionale, Se manca viene impostato su 'Nuovo')"
 
     protected $authUser;
 
@@ -60,6 +47,11 @@ class HardwareImport implements ToCollection
         DB::beginTransaction();
 
         try {
+            $positions = config('app.hardware_positions');
+            $normalizedPositions = array_map('strtolower', $positions);
+            $statuses = config('app.hardware_statuses');
+            $normalizedStatuses = array_map('strtolower', $statuses);
+
             foreach ($rows as $row) {
                 // Deve saltare la prima riga contentente i titoli
                 if (strpos(strtolower($row[2]), 'seriale') !== false) {
@@ -131,6 +123,21 @@ class HardwareImport implements ToCollection
                     }
                 }
 
+                // Posizione
+                $inputPosition = strtolower(trim($row[14] ?? ''));
+                $positionKey = array_search($inputPosition, $normalizedPositions);
+                if ($positionKey === false) {
+                    $positionKey = 'company'; // fallback
+                }
+
+                // Stato
+                $inputStatus = strtolower(trim($row[15] ?? ''));
+                $statusKey = array_search($inputStatus, $normalizedStatuses);
+                if ($statusKey === false) {
+                    $statusKey = 'new'; // fallback
+                }
+
+
                 // Il controllo che ci sia almeno uno tra cespite aziendale e identificativo è fatto nel boot del modello, nel metodo creating.
                 $hardware = Hardware::create([
                     'make' => $row[0],
@@ -145,6 +152,8 @@ class HardwareImport implements ToCollection
                     'notes' => $row[9] ?? null,
                     'is_exclusive_use' => strtolower($row[10]) == 'si' ? 1 : 0,
                     'company_id' => $row[11] ?? null,
+                    'status' => $statusKey,
+                    'position' => $positionKey,
                 ]);
 
                 if(isset($hardware->company_id)){

@@ -162,12 +162,16 @@ class HardwareController extends Controller {
             ], 403);
         }
 
-
+        $allowedStatuses = array_keys(config('app.hardware_statuses'));
+        $allowedPositions = array_keys(config('app.hardware_positions'));
+        
         $data = $request->validate([
             'make' => 'required|string',
             'model' => 'required|string',
             'serial_number' => 'required|string',
             'is_exclusive_use' => 'required|boolean',
+            'status' => 'required|string|in:' . implode(',', $allowedStatuses),
+            'position' => 'required|string|in:' . implode(',', $allowedPositions),
             'company_asset_number' => 'nullable|string',
             'support_label' => 'nullable|string',
             'purchase_date' => 'nullable|date',
@@ -317,11 +321,16 @@ class HardwareController extends Controller {
             ], 403);
         }
 
+        $allowedStatuses = array_keys(config('app.hardware_statuses'));
+        $allowedPositions = array_keys(config('app.hardware_positions'));
+
         $data = $request->validate([
             'make' => 'required|string',
             'model' => 'required|string',
             'serial_number' => 'required|string',
             'is_exclusive_use' => 'required|boolean',
+            'status' => 'required|string|in:' . implode(',', $allowedStatuses),
+            'position' => 'required|string|in:' . implode(',', $allowedPositions),
             'company_asset_number' => 'nullable|string',
             'support_label' => 'nullable|string',
             'purchase_date' => 'nullable|date',

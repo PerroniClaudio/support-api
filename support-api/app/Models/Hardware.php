@@ -25,6 +25,8 @@ class Hardware extends Model {
     'ownership_type_note',
     'notes',
     'is_exclusive_use',
+    'status',
+    'position',
   ];
 
   protected static function boot() {
