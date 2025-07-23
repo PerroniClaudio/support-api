@@ -263,6 +263,22 @@ return [
         'hardware_company' => 'Associazione con azienda',
     ],
     
+    'hardware_statuses' => [
+        'new' => 'Nuovo',
+        'repaired' => 'Riparato',
+        'broken' => 'Guasto',
+        'repairing' => 'In riparazione',
+        'to_be_dismissed' => 'Da dismettere',
+        'dismissed' => 'Dismesso',
+    ],
+
+    'hardware_positions' => [
+        'user' => "Utente",
+        'company' => 'Azienda',
+        'support' => 'Supporto',
+        'dismissed' => 'Dismesso',
+    ],
+    
     // Ancora non vengono usate, ma da implementare.
     // 'problem_causes' => [
     //     'user_data_entry' => 'Errore del cliente in inserimento dati',

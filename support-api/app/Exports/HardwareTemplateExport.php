@@ -27,7 +27,9 @@ class HardwareTemplateExport implements FromArray
             "Uso esclusivo (Si/No, Se manca viene impostato su No)",
             "ID Azienda",
             "ID utenti (separati da virgola)",
-            "ID utente responsabile dell'assegnazione (deve essere admin o del supporto)"
+            "ID utente responsabile dell'assegnazione (deve essere admin o del supporto)",
+            "Posizione (testo, preso tra le opzioni nel gestionale, Se manca viene impostato su 'Azienda')",
+            "Stato (testo, preso tra le opzioni nel gestionale, Se manca viene impostato su 'Nuovo')"
         ];
         
         return [
