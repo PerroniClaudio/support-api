@@ -265,6 +265,7 @@ return [
     
     'hardware_statuses' => [
         'new' => 'Nuovo',
+        'used' => 'Usato',
         'repaired' => 'Riparato',
         'broken' => 'Guasto',
         'repairing' => 'In riparazione',
@@ -274,8 +275,9 @@ return [
 
     'hardware_positions' => [
         'user' => "Utente",
-        'company' => 'Azienda',
-        'support' => 'Supporto',
+        'company' => 'Magazzino azienda',
+        'support' => 'Magazzino supporto',
+        'repair_center' => 'Centro di riparazione',
         'dismissed' => 'Dismesso',
     ],
     
