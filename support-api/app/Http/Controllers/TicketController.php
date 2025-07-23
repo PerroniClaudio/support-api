@@ -44,9 +44,15 @@ class TicketController extends Controller {
         }
         if ($user["is_company_admin"] != 1) {
             $query->where(function (Builder $query) use ($user) {
+                /** 
+                 * @disregard Intelephense non rileva il metodo whereIn
+                 */
                 $query->where('user_id', $user->id)
                     ->orWhere('referer_id', $user->id);
                 if ($user->is_company_admin) {
+                    /** 
+                     * @disregard Intelephense non rileva il metodo whereIn
+                     */
                     $query->orWhere('referer_it_id', $user->id);
                 }
             });
