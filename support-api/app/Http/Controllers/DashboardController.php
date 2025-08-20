@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Dashboard;
 use App\Models\Company;
 use App\Models\Ticket;
+use App\Models\TicketType;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -43,56 +44,24 @@ class DashboardController extends Controller {
      * Ottiene la configurazione predefinita delle card in base al tenant corrente
      */
     private function getDefaultConfigForTenant() {
-        // Ottieni il tenant corrente
         $tenant = $this->getCurrentTenant();
-        
-        // Configurazione per il tenant domustart
-        if ($tenant === 'domustart') {
-            return [
-                'leftCards' => [
-                    [
-                        'id' => 'condomini-registrati',
-                        'type' => 'companies-count',
-                        'color' => 'bg-primary',
-                        'content' => 'Condomini registrati'
-                    ],
-                    [
-                        'id' => 'utenti-registrati',
-                        'type' => 'users-count',
-                        'color' => 'bg-secondary',
-                        'content' => 'Utenti registrati'
-                    ]
-                ],
-                'rightCards' => [
-                    [
-                        'id' => 'casi-aperti',
-                        'type' => 'open-tickets',
-                        'color' => 'bg-primary',
-                        'content' => 'Casi aperti'
-                    ],
-                    [
-                        'id' => 'ticket-redirect',
-                        'type' => 'tickets-redirect',
-                        'color' => 'bg-secondary',
-                        'content' => 'Vai ai ticket'
-                    ]
-                ]
-            ];
+        $config = config('dashboard');
+        if (isset($config[$tenant])) {
+            return $config[$tenant];
         }
-        
         // Configurazione predefinita per altri tenant
         return [
             'leftCards' => [
                 [
                     'id' => 'ticket-aperti',
                     'type' => 'open-tickets',
-                    'color' => 'bg-primary',
+                    'color' => 'primary',
                     'content' => 'Ticket aperti'
                 ],
                 [
                     'id' => 'ticket-in-corso',
                     'type' => 'in-progress-tickets',
-                    'color' => 'bg-secondary',
+                    'color' => 'secondary',
                     'content' => 'Ticket in corso'
                 ]
             ],
@@ -100,13 +69,13 @@ class DashboardController extends Controller {
                 [
                     'id' => 'ticket-in-attesa',
                     'type' => 'waiting-tickets',
-                    'color' => 'bg-primary',
+                    'color' => 'primary',
                     'content' => 'Ticket in attesa'
                 ],
                 [
                     'id' => 'ticket-redirect',
                     'type' => 'tickets-redirect',
-                    'color' => 'bg-secondary',
+                    'color' => 'secondary',
                     'content' => 'Gestione ticket'
                 ]
             ]
@@ -187,8 +156,26 @@ class DashboardController extends Controller {
                     'label' => 'Visualizza ticket'
                 ];
                 break;
+            case 'latest-dpo-articles':
+                $card['data'] = $this->getLatestDpoArticlesData();
+                break;
+            case 'integys-articles':
+                $card['data'] = $this->getIntegysArticlesData();
+                break;
+            case 'frequent-tickets':
+                $card['data'] = $this->getFrequentTicketsData();
+                break;
+            case 'quick-access-reports':
+                $card['data'] = $this->getQuickAccessReportsData();
+                break;
+            case 'vendor-news':
+                $card['data'] = $this->getVendorNewsData();
+                break;
+            case 'recent-functions':
+            case 'recent-tickets':
+                $card['data'] = $this->getRecentTicketsData();
+                break;
         }
-        
         return $card;
     }
     
@@ -270,5 +257,91 @@ class DashboardController extends Controller {
      */
     public function destroy(Dashboard $dashboard) {
         //
+    }
+
+    /**
+     * Ottiene i dati per la card "Ultimi articoli in DPO del comune"
+     */
+    private function getLatestDpoArticlesData() {
+        // TODO: implementa la logica
+        return [];
+    }
+
+    /**
+     * Ottiene i dati per la card "Articoli di Integys"
+     */
+    private function getIntegysArticlesData() {
+        // TODO: implementa la logica
+        return [];
+    }
+
+    /**
+     * Ottiene i dati per la card "Ticket più frequenti"
+     */
+    private function getFrequentTicketsData() {
+        // TODO: implementa la logica
+
+        $frequentTypes = Ticket::select('type_id', DB::raw('count(*) as total'))
+            ->groupBy('type_id')
+            ->orderByDesc('total')
+            ->take(5)
+            ->get();
+
+        $result = [];
+
+        foreach ($frequentTypes as $item) {
+            $ticketType = TicketType::with('company')->find($item->type_id);
+
+            if ($ticketType) {
+                $result[] = [
+                    'type' => $ticketType,
+                    'count' => $item->total,
+                ];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Ottiene i dati per la card "Accesso rapido ai report"
+     */
+    private function getQuickAccessReportsData() {
+        // TODO: implementa la logica
+        return [];
+    }
+
+    /**
+     * Ottiene i dati per la card "News riguardanti vendor diversi"
+     */
+    private function getVendorNewsData() {
+        // TODO: implementa la logica
+        return [];
+    }
+
+    /**
+     * Ottiene i dati per la card "Ultime funzioni utilizzate"
+     */
+    private function getRecentTicketsData() {
+        // TODO: implementa la logica
+
+        $tickets = Ticket::where('user_id', auth()->id())
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->unique('type_id')
+            ->take(5);
+
+        $types = $tickets->pluck('type_id')->toArray();
+
+        $functions = [];
+
+        foreach($types as $type) {
+            $ticketType = TicketType::with('company')->find($type);
+            if ($ticketType) {
+                $functions[] = $ticketType;
+            }
+        }
+
+        return $functions;
     }
 }

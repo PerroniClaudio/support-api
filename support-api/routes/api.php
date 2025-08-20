@@ -205,6 +205,7 @@ Route::middleware(['auth:sanctum', 'admin.or.company'])->group(function () {
     // Ticket Type Routes
 
     Route::get("/ticket-type/all", [App\Http\Controllers\TicketTypeController::class, "index"]);
+    Route::get("/ticket-type/{ticketType}/context", [App\Http\Controllers\TicketTypeController::class, "context"]);
     Route::get("/ticket-type/{ticketType}", [App\Http\Controllers\TicketTypeController::class, "show"]);
     Route::delete("/ticket-type/{ticketType}/delete", [App\Http\Controllers\TicketTypeController::class, "destroy"]);
     Route::delete("/ticket-type-category/{ticketTypeCategory}/delete", [App\Http\Controllers\TicketTypeCategoryController::class, "destroy"]);

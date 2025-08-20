@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Company;
+use App\Models\Ticket;
 use App\Models\TicketType;
 use App\Models\TypeFormFields;
 use App\Models\TicketTypeCategory;
@@ -519,6 +520,23 @@ class TicketTypeController extends Controller {
 
         return response([
             'ticketType' => $ticketType,
+        ], 200);
+    }
+
+    function context(TicketType $ticketType) {
+       
+        $ticketType->load('category', 'company');
+
+        $context = [
+            'company' => $ticketType->company,
+            'category' => $ticketType->category,
+            'type_id' => $ticketType->id,
+            'isRequest' => $ticketType->category?->is_request,
+            'isProblem' => $ticketType->category?->is_problem,
+        ];
+
+        return response([
+            'context' => $context,
         ], 200);
     }
 }
