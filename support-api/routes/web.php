@@ -30,6 +30,8 @@ Route::get('/info', function () {
     phpinfo();
 });
 
+Route::get('/test-scraper', [App\Http\Controllers\NewsController::class, 'testScraper']);
+
 require __DIR__ . '/auth.php';
 require __DIR__ . '/webhook.php';
 

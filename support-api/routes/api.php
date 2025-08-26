@@ -338,6 +338,10 @@ Route::middleware(['auth:sanctum', 'admin.or.company'])->group(function () {
     Route::get('/admin/dashboard/card-config', [ App\Http\Controllers\DashboardController::class,"index"]);
     Route::put('/admin/dashboard/card-config', [ App\Http\Controllers\DashboardController::class,"updateCardConfig"]);
 
+    // News
+    Route::get('/news/source/{newsSource}', [App\Http\Controllers\NewsController::class, 'bySource']);
+    
+
 });
 
 // PUBLIC ROUTES
