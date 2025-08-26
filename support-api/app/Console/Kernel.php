@@ -23,11 +23,6 @@ class Kernel extends ConsoleKernel {
             $schedule->job(new \App\Jobs\PlatformActivity)->dailyAt("$j:00");
         }
 
-        // Esegue FetchNewsForSource ogni giorno alle 7:00
-        foreach (\App\Models\NewsSource::all() as $source) {
-            $schedule->job(new \App\Jobs\FetchNewsForSource($source))->dailyAt('07:00');
-        }
-
         // AUTO_ASSIGN_TICKET=true
         $isAutoAssignEnabled = env('AUTO_ASSIGN_TICKET', false);
         
@@ -43,7 +38,6 @@ class Kernel extends ConsoleKernel {
      */
     protected function commands(): void {
         $this->load(__DIR__ . '/Commands');
-
         require base_path('routes/console.php');
     }
 }
