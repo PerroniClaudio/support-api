@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 
+@php 
+    $ticketSources = config('app.ticket_sources'); 
+@endphp
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -799,7 +803,7 @@
                             {{ $ticket['is_billable'] ? 'Si' : 'No' }}
                         </td>
                         <td style="width:8%; border: 1px solid #353131; text-align: center;">
-                            {{ $ticket['opened_by_initials'] }}
+                            {{ $ticket['opened_by_initials'] }} {{ $ticketSources['on_site_technician'] == $ticket['source'] ? 'ONSITE' : '' }}
                         </td>
                         <td style="width:8%; border: 1px solid #353131; text-align: center;">
                             @if ($ticket['master_id'] != null)
