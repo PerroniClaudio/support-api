@@ -1122,6 +1122,13 @@
                             </tr>
                             <tr>
                                 <td colspan="2">
+                                    <p><span class="ticket-section-title">Provenienza:</span>
+                                        <span>{{ $ticket['source'] }}</span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2">
                                     <p><span class="ticket-section-title">Aperto da:</span>
                                         <span>{{ $ticket['opened_by'] }}</span>
                                     </p>
