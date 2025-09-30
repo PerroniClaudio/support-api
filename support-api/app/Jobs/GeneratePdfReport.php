@@ -67,6 +67,7 @@ class GeneratePdfReport implements ShouldQueue {
                 $tickets->load('ticketType');
             }
             
+            $ticketSources = config('app.ticket_sources');
 
             // Questa parte va provata, perchè nella request dovrebbe esserci l'indicazione, ma verrà inserita negli optional parameters.
             // $filter = $report->type_filter;
@@ -81,10 +82,12 @@ class GeneratePdfReport implements ShouldQueue {
 
             // Conteggio ticket non fatturabili
             $unbillable_remote_tickets_count = 0;
-            $unbillable_on_site_tickets_count = 0;
+            $unbillable_on_site_normal_tickets_count = 0;
+            $unbillable_on_site_slave_tickets_count = 0;
             // Tempo di lavoro per gestire i ticket non fatturabili (in minuti)
             $unbillable_remote_work_time = 0;
-            $unbillable_on_site_work_time = 0;
+            $unbillable_on_site_normal_work_time = 0;
+            $unbillable_on_site_slave_work_time = 0;
 
             // Conteggio ticket fatturabili
             // $billable_tickets_count = 0;
@@ -151,8 +154,17 @@ class GeneratePdfReport implements ShouldQueue {
                     if($ticket->is_billable == 0) {
                         // Anche qui vogliamo escludere gli slave? per ora non faccio niente, poi si vedrà
                         if($ticket->work_mode == "on_site"){
-                            $unbillable_on_site_tickets_count++;
-                            $unbillable_on_site_work_time += $ticket->actual_processing_time;
+                            // $unbillable_on_site_tickets_count++;
+                            // $unbillable_on_site_work_time += $ticket->actual_processing_time;
+                            if($ticket->master_id != null) {
+                                // Ticket slave
+                                $unbillable_on_site_slave_tickets_count++;
+                                $unbillable_on_site_slave_work_time += $ticket->actual_processing_time;
+                            } else {
+                                // Ticket normale
+                                $unbillable_on_site_normal_tickets_count++;
+                                $unbillable_on_site_normal_work_time += $ticket->actual_processing_time;
+                            }
                         } else if($ticket->work_mode == "remote") {
                             $unbillable_remote_tickets_count++;
                             $unbillable_remote_work_time += $ticket->actual_processing_time;
@@ -570,7 +582,12 @@ class GeneratePdfReport implements ShouldQueue {
                     "incident_request" => $ticket['data']['ticketType']['category']['is_problem'] == 1 ? "Incident" : "Request",
                     "category" => $ticket['data']['ticketType']['category']['name'],
                     "type" => $ticket['data']['ticketType']['name'],
-                    "opened_by_initials" => $ticket['data']['user']['is_admin'] == 1 ? "SUP" : (strtoupper($ticket['data']['user']['name'][0]) . ". " . $ticket['data']['user']['surname'] ? (strtoupper($ticket['data']['user']['surname'][0]) . ".") : ""),
+                    "opened_by_initials" => $ticket['data']['user']['is_admin'] == 1
+                        ? "SUP"
+                        : (
+                            (!empty($ticket['data']['user']['name']) && is_string($ticket['data']['user']['name']) ? strtoupper($ticket['data']['user']['name'][0]) . ". " : "") .
+                              (!empty($ticket['data']['user']['surname']) && is_string($ticket['data']['user']['surname']) ? strtoupper($ticket['data']['user']['surname'][0]) . "." : "")
+                        ),
                     "opened_by" => $ticket['data']['user']['is_admin'] == 1 ? "Supporto" : $ticket['data']['user']['name'] . " " . $ticket['data']['user']['surname'],
                     "opened_at" => \Carbon\Carbon::createFromFormat('Y-m-d H:i:s', $ticket['data']['created_at'])->format('d/m/Y H:i'),
                     "webform_data" => $ticket['webform_data'],
@@ -588,6 +605,7 @@ class GeneratePdfReport implements ShouldQueue {
                     'slave_ids' => Ticket::where('master_id', $ticket['data']['id'])->pluck('id')->toArray(),
                     'handler_full_name' => $handlerFullName,
                     'work_mode' => $ticket['data']['work_mode'],
+                    'source' => $ticketSources[$ticket['data']['source']] ?? "N/A",
                 ];
 
                 if (count($ticket['data']['messages']) > 3) {
@@ -1020,20 +1038,40 @@ class GeneratePdfReport implements ShouldQueue {
 
             // 5 - Provenienza ticket
 
+            // Costruisci array [label, valore]
+            $source_data = [];
+            foreach ($ticketSources as $key => $label) {
+                $source_data[] = [
+                    'label' => $label,
+                    'value' => $ticket_by_source[$key] ?? 0
+                ];
+            }
+
+            // Ordina in base a 'value' decrescente
+            usort($source_data, function($a, $b) {
+                return $b['value'] <=> $a['value'];
+            });
+
+            // Estrai labels e data ordinati
+            $ticketSourcesLabels = array_column($source_data, 'label');
+            $ticketSourcesData = array_column($source_data, 'value');
+
             $ticket_by_source_data = [
                 "type" => "horizontalBar",
                 "data" => [
-                    "labels" => ["Email", "Telefono", "Tecnico onsite", "Piattaforma", "Supporto", "Automatico"],
+                    // "labels" => ["Email", "Telefono", "Tecnico onsite", "Piattaforma", "Supporto", "Automatico"],
+                    "labels" => [$ticketSourcesLabels],
                     "datasets" => [[
                         "label" => "Numero di Ticket",
-                        "data" => [
-                            $ticket_by_source['email'] ?? 0,
-                            $ticket_by_source['phone'] ?? 0,
-                            $ticket_by_source['on_site_technician'] ?? 0,
-                            $ticket_by_source['platform'] ?? 0,
-                            $ticket_by_source['internal'] ?? 0,
-                            $ticket_by_source['automatic'] ?? 0
-                        ],
+                        // "data" => [
+                        //     $ticket_by_source['email'] ?? 0,
+                        //     $ticket_by_source['phone'] ?? 0,
+                        //     $ticket_by_source['on_site_technician'] ?? 0,
+                        //     $ticket_by_source['platform'] ?? 0,
+                        //     $ticket_by_source['internal'] ?? 0,
+                        //     $ticket_by_source['automatic'] ?? 0
+                        // ],
+                        "data" => $ticketSourcesData,
                         "backgroundColor" => $this->getColorShades(5, true)
                     ]]
                 ],
@@ -1547,9 +1585,13 @@ class GeneratePdfReport implements ShouldQueue {
                 'closed_tickets_count' => $closed_tickets_count,
                 'still_open_tickets_count' => $still_open_tickets_count,
                 'other_tickets_count' => $other_tickets_count,
-                'unbillable_on_site_tickets_count' => $unbillable_on_site_tickets_count,
+                // 'unbillable_on_site_tickets_count' => $unbillable_on_site_tickets_count,
+                'unbillable_on_site_normal_tickets_count' => $unbillable_on_site_normal_tickets_count,
+                'unbillable_on_site_slave_tickets_count' => $unbillable_on_site_slave_tickets_count,
                 'unbillable_remote_tickets_count' => $unbillable_remote_tickets_count,
-                'unbillable_on_site_work_time' => $unbillable_on_site_work_time,
+                // 'unbillable_on_site_work_time' => $unbillable_on_site_work_time,
+                'unbillable_on_site_normal_work_time' => $unbillable_on_site_normal_work_time,
+                'unbillable_on_site_slave_work_time' => $unbillable_on_site_slave_work_time,
                 'unbillable_remote_work_time' => $unbillable_remote_work_time,
                 'remote_billable_tickets_count' => $remote_billable_tickets_count,
                 'on_site_billable_tickets_count' => $on_site_billable_tickets_count,
@@ -1604,11 +1646,13 @@ class GeneratePdfReport implements ShouldQueue {
                 $shortenedMessage = substr($shortenedMessage, 0, 500) . '...';
             }
 
+            $errorLine = $e->getLine();
+            $errorFile = $e->getFile();
+
             if ($this->attempts() >= $this->tries) {
                 $this->report->is_failed = true;
-                
-                $this->report->error_message = 'Error generating the report at ' . now() . '. ' . $shortenedMessage;
-
+                $this->report->error_message = 'Error generating the report at ' . now() .
+                    ' (line ' . $errorLine . ' in ' . $errorFile . '). ' . $shortenedMessage;
                 $this->report->save();
             } else {
                 throw $e;

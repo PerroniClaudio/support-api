@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\TicketReportExport;
 use Illuminate\Http\Request;
 use App\Jobs\GenerateGenericReport;
-use App\Jobs\GeneratePdfReport;
 use App\Jobs\GenerateReport;
 use App\Jobs\GenerateUserReport;
 use App\Models\Company;

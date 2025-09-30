@@ -66,8 +66,8 @@
                 $on_site_billable_tickets_count + $remote_billable_tickets_count;
             $total_billable_work_time = $on_site_billable_work_time + $remote_billable_work_time;
             $total_unbillable_tickets_count =
-                $unbillable_on_site_tickets_count + $unbillable_remote_tickets_count;
-            $total_unbillable_work_time = $unbillable_on_site_work_time + $unbillable_remote_work_time;
+                $unbillable_on_site_normal_tickets_count + $unbillable_on_site_slave_tickets_count + $unbillable_remote_tickets_count;
+            $total_unbillable_work_time = $unbillable_on_site_normal_work_time + $unbillable_on_site_slave_work_time + $unbillable_remote_work_time;
         @endphp
 
         <table style="width:100%; border: 1px solid #353131; border-collapse: collapse;">
@@ -75,7 +75,7 @@
             <thead>
                 <tr style="border: 1px solid #353131;">
                     <th style="border: 1px solid #353131;" class="text-small-plus  ">
-                        Descrizione delle attività
+                        Descrizione delle attività che andranno in fattura
                     </th>
                     <th style="border: 1px solid #353131; width:15%;" class="text-small-plus  ">
                         Conteggio ticket
@@ -148,7 +148,7 @@
             <thead>
                 <tr style="border: 1px solid #353131;">
                     <th style="border: 1px solid #353131;" class="text-small-plus  ">
-                        Descrizione delle attività
+                        Descrizione delle attività incluse nei ticket master o nel contratto accordi di servizio
                     </th>
                     <th style="border: 1px solid #353131; width:15%;" class="text-small-plus  ">
                         Conteggio ticket
@@ -162,17 +162,34 @@
                 <tr style="border: 1px solid #353131;">
                     <td style="border: 1px solid #353131; padding-left: 0.5rem;">
                         <p class="text-small-plus">
-                            Attività onsite incluse nel contratto quadro/accordi di servizio
+                            Attività onsite incluse nel contratto quadro/accordi di servizio (non fatturabili e non incluse in un master)
                         </p>
                     </td>
                     <td style="border: 1px solid #353131; text-align: center;">
                         <p class="text-small-plus " style="font-weight: 600">
-                            {{ $unbillable_on_site_tickets_count }}
+                            {{ $unbillable_on_site_normal_tickets_count }}
                         </p>
                     </td>
                     <td style="border: 1px solid #353131; text-align: center;">
                         <p class="text-small-plus " style="font-weight: 600">
-                            {{ sprintf('%02d:%02d', intdiv($unbillable_on_site_work_time, 60), $unbillable_on_site_work_time % 60) }}
+                            {{ sprintf('%02d:%02d', intdiv($unbillable_on_site_normal_work_time, 60), $unbillable_on_site_normal_work_time % 60) }}
+                        </p>
+                    </td>
+                </tr>
+                <tr style="border: 1px solid #353131;">
+                    <td style="border: 1px solid #353131; padding-left: 0.5rem;">
+                        <p class="text-small-plus">
+                            Attività onsite non fatturabili incluse in un master
+                        </p>
+                    </td>
+                    <td style="border: 1px solid #353131; text-align: center;">
+                        <p class="text-small-plus " style="font-weight: 600">
+                            {{ $unbillable_on_site_slave_tickets_count }}
+                        </p>
+                    </td>
+                    <td style="border: 1px solid #353131; text-align: center;">
+                        <p class="text-small-plus " style="font-weight: 600">
+                            {{ sprintf('%02d:%02d', intdiv($unbillable_on_site_slave_work_time, 60), $unbillable_on_site_slave_work_time % 60) }}
                         </p>
                     </td>
                 </tr>
@@ -875,6 +892,13 @@
                                     <p>
                                         <span class="ticket-section-title">Fatturabile:</span>
                                         <span>{{ $ticket['is_billable'] ? 'Si' : 'No' }}</span>
+                                    </p>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2">
+                                    <p><span class="ticket-section-title">Provenienza:</span>
+                                        <span>{{ $ticket['source'] }}</span>
                                     </p>
                                 </td>
                             </tr>
