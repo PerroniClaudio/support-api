@@ -1060,7 +1060,7 @@ class GeneratePdfReport implements ShouldQueue {
                 "type" => "horizontalBar",
                 "data" => [
                     // "labels" => ["Email", "Telefono", "Tecnico onsite", "Piattaforma", "Supporto", "Automatico"],
-                    "labels" => [$ticketSourcesLabels],
+                    "labels" => $ticketSourcesLabels,
                     "datasets" => [[
                         "label" => "Numero di Ticket",
                         // "data" => [
