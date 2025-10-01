@@ -32,7 +32,7 @@ class TicketReportPdfExportController extends Controller {
 
         $reports = TicketReportPdfExport::where('company_id', $company->id)
             // ->where('is_generated', true)
-            ->orderBy('created_at', 'DESC')
+            ->orderBy('start_date', 'DESC')
             ->get();
 
         return response([
@@ -56,7 +56,7 @@ class TicketReportPdfExportController extends Controller {
             'company_id' => $company->id,
             'is_approved_billing' => true,
         ])
-            ->orderBy('created_at', 'DESC')
+            ->orderBy('start_date', 'DESC')
             ->get();
 
         return response([
